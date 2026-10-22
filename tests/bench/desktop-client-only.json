@@ -1,0 +1,42 @@
+﻿{
+    "Date":  "2026-10-22T21:35:29",
+    "Exe":  "target\\release\\nexustalk.exe",
+    "Cores":  16,
+    "Runs":  [
+                 {
+                     "Run":  1,
+                     "StartupMs":  705,
+                     "Processes":  7,
+                     "WorkingSetMB":  353.9,
+                     "PrivateMB":  166.3,
+                     "IdleCpuPercent":  0.16
+                 },
+                 {
+                     "Run":  2,
+                     "StartupMs":  697,
+                     "Processes":  7,
+                     "WorkingSetMB":  354.8,
+                     "PrivateMB":  173.4,
+                     "IdleCpuPercent":  0.16
+                 },
+                 {
+                     "Run":  3,
+                     "StartupMs":  684,
+                     "Processes":  7,
+                     "WorkingSetMB":  350.1,
+                     "PrivateMB":  165,
+                     "IdleCpuPercent":  0.05
+                 }
+             ],
+    "InstallDirMB":  2753.52,
+    "Installers":  [
+                       {
+                           "File":  "NexusTalk_0.1.0_x64_de-DE.msi",
+                           "MB":  6.22
+                       },
+                       {
+                           "File":  "NexusTalk_0.1.0_x64-setup.exe",
+                           "MB":  4.49
+                       }
+                   ]
+}

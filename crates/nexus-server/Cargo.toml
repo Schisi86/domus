@@ -1,0 +1,43 @@
+[package]
+name = "nexus-server"
+description = "NexusTalk server: accounts, channels, messages, signaling"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "nexustalk-server"
+path = "src/main.rs"
+
+[dependencies]
+argon2 = "0.5"
+axum = { version = "0.8.9", features = ["ws"] }
+axum-server = { version = "0.8.0", features = ["tls-rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+base64 = "0.22"
+futures-util = "0.3.34"
+hex = "0.4.3"
+memory-stats = "1.2.0"
+rcgen = { version = "0.14.10", default-features = false, features = ["crypto", "pem", "ring"] }
+rusqlite = { version = "0.40", features = ["bundled", "backup"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.10"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "net", "time", "sync", "signal", "fs", "io-util"] }
+toml = "1.1.8"
+tracing = "0.1.44"
+tracing-appender = "0.2.5"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+turn = "0.17.2"
+webrtc-util = "0.17"
+cpu-time = "1.0.0"
+tower-http = { version = "0.7.1", features = ["cors"] }
+tokio-util = { version = "0.7.20", features = ["io"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+
+[dev-dependencies]
+nexus-net = { path = "../nexus-net" }

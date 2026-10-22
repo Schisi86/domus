@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-22T19:45:33.305Z",
+  "results": [
+    {
+      "name": "users registered",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "audio: peer connection established (2 clients)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "audio: bytes flowing A→B",
+      "ok": true,
+      "detail": "276 → 7204 bytes"
+    },
+    {
+      "name": "audio: bytes flowing B→A",
+      "ok": true,
+      "detail": "7015 bytes"
+    },
+    {
+      "name": "audio: active speaker detected",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "stats: RTT measured",
+      "ok": true,
+      "detail": "{\"state\":\"connected\",\"rtt\":0,\"loss\":0,\"relay\":false,\"quality\":\"good\"}"
+    },
+    {
+      "name": "mute state propagated",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "screen: capture started on A",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "screen: stream received on B",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "screen: frames decoded on B",
+      "ok": true,
+      "detail": "1 → 48 frames"
+    },
+    {
+      "name": "screen: rendered in B's UI",
+      "ok": true,
+      "detail": "videoWidth=480"
+    },
+    {
+      "name": "screen: stopped and removed on B",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "camera: stream received on B",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "camera: turned off and removed on B",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "mesh: 3 participants fully connected",
+      "ok": true,
+      "detail": "2/2 2/2 2/2"
+    },
+    {
+      "name": "restart: signaling reconnected and voice seat restored",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "restart: media kept flowing",
+      "ok": true,
+      "detail": "24758 → 57351 bytes, 2 peers"
+    },
+    {
+      "name": "leave: others see participant leave",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "rejoin: media connections re-established",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "permissions: guest screen share refused",
+      "ok": true,
+      "detail": "Bildschirmübertragung nicht erlaubt\nDafür fehlt dir die Berechtigung."
+    }
+  ]
+}

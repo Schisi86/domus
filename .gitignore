@@ -1,0 +1,5 @@
+/target
+*.log
+nexustalk-data/
+scratch-data/
+tests/e2e/node_modules/

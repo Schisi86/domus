@@ -1,0 +1,42 @@
+﻿{
+    "Date":  "2026-10-22T21:40:43",
+    "Exe":  "C:\\Users\\CeeJay\\AppData\\Local\\NexusTalk\\nexustalk.exe",
+    "Cores":  16,
+    "Runs":  [
+                 {
+                     "Run":  1,
+                     "StartupMs":  1029,
+                     "Processes":  7,
+                     "WorkingSetMB":  373.7,
+                     "PrivateMB":  185,
+                     "IdleCpuPercent":  0.02
+                 },
+                 {
+                     "Run":  2,
+                     "StartupMs":  745,
+                     "Processes":  7,
+                     "WorkingSetMB":  363.6,
+                     "PrivateMB":  172.8,
+                     "IdleCpuPercent":  0.03
+                 },
+                 {
+                     "Run":  3,
+                     "StartupMs":  787,
+                     "Processes":  7,
+                     "WorkingSetMB":  372.6,
+                     "PrivateMB":  175.7,
+                     "IdleCpuPercent":  0.02
+                 }
+             ],
+    "InstallDirMB":  15.62,
+    "Installers":  [
+                       {
+                           "File":  "NexusTalk_0.1.0_x64_de-DE.msi",
+                           "MB":  6.22
+                       },
+                       {
+                           "File":  "NexusTalk_0.1.0_x64-setup.exe",
+                           "MB":  4.49
+                       }
+                   ]
+}

@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-22T19:30:29.307Z",
+  "cpu": "AMD Ryzen 7 5800X 8-Core Processor             ",
+  "cores": 16,
+  "server": {
+    "idle": {
+      "core_pct": 0,
+      "machine_pct": 0,
+      "mb": 13.6
+    },
+    "connected_idle": {
+      "core_pct": 0,
+      "machine_pct": 0,
+      "mb": 29.8
+    },
+    "load": {
+      "core_pct": 15.7,
+      "machine_pct": 1,
+      "mb": 32.5,
+      "description": "100 clients, each sending 1 message/s; every message fans out to all 101 connections"
+    }
+  },
+  "media": {
+    "idle_two_clients": {
+      "core_pct": 1.1,
+      "machine_pct": 0.1,
+      "mb": 394.1
+    },
+    "voice_call": {
+      "core_pct": 25.4,
+      "machine_pct": 1.6,
+      "mb": 538.1
+    },
+    "screen_720p_10fps": {
+      "core_pct": 33.7,
+      "machine_pct": 2.1,
+      "mb": 615.9,
+      "note": "fake capture device (synthetic video), headless Chromium, software encoding"
+    },
+    "screen_1080p_30fps": {
+      "core_pct": 43.3,
+      "machine_pct": 2.7,
+      "mb": 686,
+      "note": "fake capture device (synthetic video), headless Chromium, software encoding"
+    }
+  }
+}

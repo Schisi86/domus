@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-22T19:50:40.105Z",
+  "results": [
+    {
+      "name": "app UI loaded in WebView2",
+      "ok": true,
+      "detail": "Edg/155.0.0.0"
+    },
+    {
+      "name": "server mode defaults to 'Nur dieser PC'",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "embedded server started with TLS",
+      "ok": true,
+      "detail": "95F0C4C343E16428…"
+    },
+    {
+      "name": "owner created and connected via pinned TLS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "message sent and displayed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "settings and server administration dialogs open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "WebRTC + getDisplayMedia available in WebView2",
+      "ok": true,
+      "detail": "[\"video/VP8\",\"video/rtx\",\"video/H264\",\"video/AV1\",\"video/VP9\",\"video/red\",\"video/ulpfec\"]"
+    },
+    {
+      "name": "microphone permission granted by app handler (no prompt)",
+      "ok": true,
+      "detail": "Geräte: {\"audioinput\":4,\"videoinput\":1,\"audiooutput\":4}"
+    },
+    {
+      "name": "joined voice channel in desktop app",
+      "ok": true,
+      "detail": "Sprachverbindung"
+    },
+    {
+      "name": "getDisplayMedia opens a source picker (not rejected)",
+      "ok": true,
+      "detail": "picker-open"
+    }
+  ]
+}
