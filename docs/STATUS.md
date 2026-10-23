@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.3.0)
+# Funktionsstand (Version 0.4.0)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -79,7 +79,7 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
 
-### Fensterrahmen, Designs, Sounds (nach 0.3.0)
+### Fensterrahmen, Designs, Sounds (neu in 0.4.0)
 | Funktion | Stand |
 |---|---|
 | Eigene Titelleiste statt Windows-Leiste (Farben des Designs, Ort in der Mitte, Minimieren/Maximieren/Schließen, Ziehen, Doppelklick) | ✅ Desktop-E2E `chrome.mjs`; 🟡 Einrasten per Windows-Snap-Layout-Menü am Maximieren-Knopf entfällt (Win+Pfeiltasten und Ziehen an den Rand funktionieren) |

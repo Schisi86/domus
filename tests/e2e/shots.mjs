@@ -30,10 +30,12 @@ for (const combo of list) {
     await page.waitForSelector(".voice-controls", { timeout: 15000 });
     await page.waitForTimeout(1500);
   } else if (view === "about") {
-    await page.click(".rail-btn.heart");
+    await page.click(".user-panel .who");
+    await page.waitForSelector(".pane-nav");
+    await page.locator(".pane-nav button").last().click();
     await page.waitForTimeout(400);
   } else if (view === "lang") {
-    await page.click(".rail-btn.flag");
+    await page.click(".foot-flag");
     await page.waitForTimeout(400);
   }
   // SHOT_FORMAT=jpeg produces smaller files for the website.

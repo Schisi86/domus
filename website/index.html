@@ -12,7 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="NexusTalk – Deine Community. Dein Server.">
 <meta property="og:description" content="Selbst hostbare Alternative zu Discord: Text, Sprache, Video und Bildschirm – ohne Cloud, ohne Werbung, ohne Tracking.">
-<meta property="og:image" content="https://nexustalk-app.netlify.app/assets/shots/emerald-de-chat.jpg">
+<meta property="og:image" content="https://nexustalk-app.netlify.app/assets/shots/desk-emerald.jpg">
 <meta property="og:url" content="https://nexustalk-app.netlify.app/">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">
@@ -22,11 +22,11 @@
   "name": "NexusTalk",
   "operatingSystem": "Windows 10, Windows 11 (x64)",
   "applicationCategory": "CommunicationApplication",
-  "softwareVersion": "0.3.0",
+  "softwareVersion": "0.4.0",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-  "downloadUrl": "https://nexustalk-app.netlify.app/download/NexusTalk_0.3.0_x64-setup.exe",
+  "downloadUrl": "https://nexustalk-app.netlify.app/download/NexusTalk_0.4.0_x64-setup.exe",
   "image": "https://nexustalk-app.netlify.app/assets/logo.png",
-  "screenshot": "https://nexustalk-app.netlify.app/assets/shots/emerald-de-chat.jpg",
+  "screenshot": "https://nexustalk-app.netlify.app/assets/shots/desk-emerald.jpg",
   "license": "https://opensource.org/licenses/MIT",
   "author": { "@type": "Person", "name": "Christian Schiessl", "url": "https://cjs86.netlify.app" }
 }
@@ -441,11 +441,11 @@ footer .brand { font-size: 15px; }
     <div class="wrap hero-grid">
       <div>
         <div class="logo3d"><img src="assets/logo.png" alt="NexusTalk Logo" width="120" height="120"></div>
-        <span class="eyebrow"><span class="dot"></span>Neu in 0.3.0: mehrere Server hosten · kostenlos · MIT</span>
+        <span class="eyebrow"><span class="dot"></span>Neu in 0.4.0: Farbverlauf-Designs &amp; Sounds · kostenlos · MIT</span>
         <h1>Deine Community.<br><em>Dein Server.</em></h1>
         <p class="lead">NexusTalk ist eine schlanke Alternative zu Discord für Windows: Text, Sprache, Video und Bildschirmübertragung – auf einem Server, der dir gehört. Per Klick direkt in der App gestartet. Keine Cloud, keine Werbung, kein Tracking.</p>
         <div class="hero-actions">
-          <a class="btn primary" href="download/NexusTalk_0.3.0_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
+          <a class="btn primary" href="download/NexusTalk_0.4.0_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
           <a class="btn" href="#vergleich">Warum nicht Discord?</a>
         </div>
         <div class="hero-meta">
@@ -456,8 +456,7 @@ footer .brand { font-size: 15px; }
       </div>
       <div class="stage">
         <div class="device" id="device">
-          <div class="bar"><i></i><i></i><i></i><span>NexusTalk – Cyber Crew</span></div>
-          <img src="assets/shots/emerald-de-chat.jpg" alt="NexusTalk Textkanal im Design Smaragd" width="2040" height="1230">
+          <img src="assets/shots/desk-emerald.jpg" alt="NexusTalk Desktop-App im Design Smaragd mit eigener Titelleiste" width="1770" height="1140">
         </div>
         <div class="floating-card fc1"><span class="ic"><svg><use href="#i-mic"/></svg></span><div><b>Sprachverbindung</b><small>Opus · Rauschunterdrückung</small></div></div>
         <div class="floating-card fc2"><span class="ic"><svg><use href="#i-lock"/></svg></span><div><b>TLS-verschlüsselt</b><small>Zertifikat per Fingerabdruck geprüft</small></div></div>
@@ -489,7 +488,7 @@ footer .brand { font-size: 15px; }
         <div class="card reveal"><div class="ficon"><svg><use href="#i-shield"/></svg></div><h3>Sicher ab Werk</h3><p>TLS-Verschlüsselung, Zertifikatsprüfung per Fingerabdruck, Argon2-Passwörter, Rate-Limits, Audit-Log und Einladungs-Registrierung.</p></div>
         <div class="card reveal"><div class="ficon"><svg><use href="#i-users"/></svg></div><h3>Rollen &amp; Rechte</h3><p>Feingranulare Rechte pro Rolle und pro Kanal, Moderation, Bann, Freigabe neuer Konten, Backups und Wiederherstellung.</p></div>
         <div class="card reveal"><div class="ficon"><svg><use href="#i-feather"/></svg></div><h3>Federleicht</h3><p>Rust und Tauri statt Electron: ≈ 5 MB Installer, Start in unter einer Sekunde, der Server braucht im Leerlauf rund 14 MB RAM.</p></div>
-        <div class="card reveal"><div class="ficon"><svg><use href="#i-bolt"/></svg></div><h3>Durchdacht im Alltag</h3><p>Schnellwechsler (Strg+K), Tastenkürzel, Freunde &amp; Direktnachrichten, Auto-Abwesend, Benachrichtigungen, Autostart und Tray.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-bolt"/></svg></div><h3>Durchdacht im Alltag</h3><p>Dezente Sounds beim Beitreten und Wechseln, Schnellwechsler (Strg+K), Tastenkürzel, Freunde &amp; Direktnachrichten, Auto-Abwesend, Benachrichtigungen, Autostart und Tray.</p></div>
       </div>
     </div>
   </section>
@@ -497,9 +496,18 @@ footer .brand { font-size: 15px; }
   <section id="neu">
     <div class="wrap">
       <div class="sec-head reveal">
-        <div class="kicker">Neu in 0.3.0</div>
-        <h2>Hosten so einfach wie Chatten</h2>
-        <p>Die grüne Schaltfläche unten links öffnet deine Hosting-Zentrale. Name eingeben, „Erstellen &amp; starten“, Link kopieren – fertig.</p>
+        <div class="kicker">Neu in 0.4.0 &amp; 0.3.0</div>
+        <h2>Ein neuer Look – und Hosten so einfach wie Chatten</h2>
+        <p>Farbverläufe durch die ganze App, eine Titelleiste im selben Design, dezente Sounds und ein neues Logo. Dazu die Hosting-Zentrale: Name eingeben, „Erstellen &amp; starten“, Link kopieren – fertig.</p>
+      </div>
+      <div class="showcase rev reveal">
+        <div class="show-text">
+          <span class="show-num">✦</span>
+          <h3>Designs mit Tiefe und Farbverlauf</h3>
+          <p>Alle zehn Designs legen einen satten Verlauf hinter die ganze Oberfläche – Seitenleiste, Chat und Mitgliederliste schweben halbtransparent darüber, Fenster und Menüs bekommen einen Glas-Effekt. Selbst die Titelleiste ist Teil des Designs.</p>
+          <ul class="ticks"><li>Eigene Titelleiste statt grauer Windows-Leiste</li><li>Dezente, freundliche Sounds beim Beitreten, Verlassen und Wechseln</li><li>Neues Logo: das mechanische N</li></ul>
+        </div>
+        <div class="show-img"><img src="assets/shots/desk-sunset.jpg" alt="NexusTalk im Design Sonnenuntergang mit Farbverlauf" width="1770" height="1140" loading="lazy"></div>
       </div>
       <div class="showcase reveal">
         <div class="show-text">
@@ -571,7 +579,7 @@ footer .brand { font-size: 15px; }
       <div class="sec-head reveal">
         <div class="kicker">Designs</div>
         <h2>Zehn Designs, eine Handschrift</h2>
-        <p>Feine Linien, Tiefe und Licht: Jedes Design hat eigene Farben, Schatten und Glanzkanten – vom grünen Standard „Smaragd“ bis zum OLED-tiefen „Obsidian“.</p>
+        <p>Farbverläufe, Tiefe und Licht: Jedes Design hat einen eigenen Verlauf hinter der ganzen App, eigene Farben, Schatten und Glanzkanten – vom grünen Standard „Smaragd“ bis zum OLED-tiefen „Obsidian“.</p>
       </div>
       <div class="gallery reveal">
         <div class="shot-main"><img id="shot" src="assets/shots/emerald-de-chat.jpg" alt="NexusTalk Vorschau" width="2040" height="1230" loading="lazy"></div>
@@ -588,7 +596,7 @@ footer .brand { font-size: 15px; }
       <div class="sec-head reveal">
         <div class="kicker">Sprachen</div>
         <h2>Spricht 15 Sprachen</h2>
-        <p>Ein Klick auf die Landesflagge unten links in der App – sofort umgestellt, inklusive Rechts-nach-links für Arabisch.</p>
+        <p>Ein Klick auf die kleine Landesflagge unten rechts in der Fußzeile – sofort umgestellt, inklusive Rechts-nach-links für Arabisch.</p>
       </div>
       <div class="langs reveal" id="langs"></div>
     </div>
@@ -615,14 +623,14 @@ footer .brand { font-size: 15px; }
       <div class="dl reveal">
         <div class="dl-main">
           <div class="kicker" style="font-size:12.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);font-weight:600">Download</div>
-          <h2>NexusTalk 0.3.0 für Windows</h2>
+          <h2>NexusTalk 0.4.0 für Windows</h2>
           <p style="color:var(--muted);margin:0">Ein Installer für alles: Client und eingebauter Server. Kostenlos, ohne Werbung, ohne Konto bei Dritten.</p>
           <div class="dl-file">
             <img src="assets/logo.png" alt="">
-            <div style="flex:1"><b>NexusTalk_0.3.0_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>4,8 MB</span></small></div>
+            <div style="flex:1"><b>NexusTalk_0.4.0_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>4,8 MB</span></small></div>
           </div>
-          <a class="btn primary" href="download/NexusTalk_0.3.0_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
-          <div class="hash">SHA-256: <span class="mono" id="sha-client">2a13b129e7a4489c1a4474bad71bf3e9e62aeb4cba37c15d9b7ceeab0f70d24c</span></div>
+          <a class="btn primary" href="download/NexusTalk_0.4.0_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
+          <div class="hash">SHA-256: <span class="mono" id="sha-client">c5a9e9039f3303083eac21c9afe5d66698f6fb34faa10558761754808a163cf6</span></div>
         </div>
         <div class="dl-side">
           <h3>Systemvoraussetzungen</h3>
@@ -636,7 +644,7 @@ footer .brand { font-size: 15px; }
             <div><b>Headless-Server für Windows</b><small>nexustalk-server.exe · <span id="srv-size">7,0 MB</span> · ohne Oberfläche</small></div>
             <a class="btn small" href="download/nexustalk-server.exe" download><svg><use href="#i-download"/></svg>Server</a>
           </div>
-          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">622d92d2ff61ba346454dd6e7dee59a995ede71b3b40a5fece0c7cdc38fc183d</span></p>
+          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">2e08e45e03d15d0b5cc424df66306cd69155e7ce6b4fbbaec4e6669d61008b85</span></p>
           <p class="hash" style="margin-top:10px">Hinweis: Der Installer ist (noch) nicht code-signiert. Windows SmartScreen kann deshalb warnen – „Weitere Informationen“ → „Trotzdem ausführen“. Prüfe im Zweifel die Prüfsumme.</p>
         </div>
       </div>
@@ -712,12 +720,12 @@ footer .brand { font-size: 15px; }
     ["jade", "Jade", "hell", ["#d8ece2", "#eaf6f0", "#fbfefc", "#0e9f68", "#34d399"], "jade-de-chat.jpg"],
     ["midnight", "Mitternacht", "dunkel", ["#070b18", "#0b1122", "#0f172c", "#6b97ff", "#a9c2ff"], "midnight-de-chat.jpg"],
     ["aurora", "Aurora", "dunkel", ["#0b0a1a", "#110f24", "#15132c", "#a78bfa", "#2dd4bf"], "aurora-de-settings.jpg"],
-    ["obsidian", "Obsidian", "OLED-schwarz", ["#000000", "#070707", "#0b0b0b", "#b6f23d", "#dcff8f"], null],
+    ["obsidian", "Obsidian", "OLED-schwarz", ["#000000", "#070707", "#0b0b0b", "#b6f23d", "#dcff8f"], "obsidian-de-chat.jpg"],
     ["sakura", "Sakura", "hell", ["#f6dfe8", "#fcf0f5", "#fffbfd", "#e0558a", "#f78fb3"], "sakura-de-about.jpg"],
-    ["arctic", "Arktis", "hell", ["#dce8f2", "#edf4fa", "#fbfdff", "#1683e0", "#00b8d4"], null],
+    ["arctic", "Arktis", "hell", ["#dce8f2", "#edf4fa", "#fbfdff", "#1683e0", "#00b8d4"], "arctic-de-chat.jpg"],
     ["sunset", "Sonnenuntergang", "dunkel", ["#130b0d", "#1a0f13", "#201418", "#ff7a45", "#ff4d8d"], "sunset-de-voice.jpg"],
     ["neon", "Neon", "dunkel", ["#05050c", "#090914", "#0d0d1b", "#00e5ff", "#ff2bd6"], "neon-en-chat.jpg"],
-    ["sandstone", "Sandstein", "hell", ["#e6dccc", "#f4ede2", "#fdfaf5", "#c0623b", "#d99b4a"], null],
+    ["sandstone", "Sandstein", "hell", ["#e6dccc", "#f4ede2", "#fdfaf5", "#c0623b", "#d99b4a"], "sandstone-de-chat.jpg"],
   ];
   const themesEl = document.getElementById("themes");
   const shot = document.getElementById("shot");

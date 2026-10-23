@@ -1,80 +1,106 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- NexusTalk "mechanical N": faceted metal plates lit by emerald energy. -->
   <defs>
-    <!-- tile faces -->
-    <linearGradient id="face" x1="0.15" y1="0" x2="0.85" y2="1">
-      <stop offset="0" stop-color="#5ff2b0"/>
+    <radialGradient id="tile" cx="50%" cy="30%" r="78%">
+      <stop offset="0" stop-color="#173a2f"/>
+      <stop offset="0.5" stop-color="#0a1b15"/>
+      <stop offset="1" stop-color="#030806"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8dfad0"/>
       <stop offset="0.45" stop-color="#16c47f"/>
-      <stop offset="1" stop-color="#047a4d"/>
+      <stop offset="1" stop-color="#04432e"/>
     </linearGradient>
-    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#03563a"/>
-      <stop offset="1" stop-color="#012a1c"/>
-    </linearGradient>
-    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#d9fff0" stop-opacity="0.95"/>
-      <stop offset="0.5" stop-color="#7bf5c4" stop-opacity="0.15"/>
-      <stop offset="1" stop-color="#012a1c" stop-opacity="0.6"/>
-    </linearGradient>
-    <radialGradient id="gloss" cx="0.35" cy="0.12" r="0.75">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
-      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.06"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.55" r="0.5">
-      <stop offset="0" stop-color="#b6ffe0" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#b6ffe0" stop-opacity="0"/>
-    </radialGradient>
-    <!-- letter -->
-    <linearGradient id="letter" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="lite" x1="0" y1="0" x2="0.4" y2="1">
       <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="0.6" stop-color="#e9fff6"/>
-      <stop offset="1" stop-color="#b9f7dc"/>
+      <stop offset="0.3" stop-color="#d7e3df"/>
+      <stop offset="0.65" stop-color="#93a7a1"/>
+      <stop offset="1" stop-color="#c3d1cc"/>
     </linearGradient>
-    <linearGradient id="extrude" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#056b45"/>
-      <stop offset="1" stop-color="#013522"/>
+    <linearGradient id="dark" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#7d908a"/>
+      <stop offset="0.45" stop-color="#3c4a46"/>
+      <stop offset="1" stop-color="#1b2422"/>
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="22"/>
-      <feOffset dy="26" result="b"/>
-      <feFlood flood-color="#00140c" flood-opacity="0.55"/>
-      <feComposite in2="b" operator="in"/>
-      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    <linearGradient id="energy" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c8ffeb"/>
+      <stop offset="0.5" stop-color="#2ee59d"/>
+      <stop offset="1" stop-color="#0fae6c"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="12" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <filter id="soft" x="-10%" y="-10%" width="120%" height="130%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
-      <feOffset dy="8" result="b"/>
-      <feFlood flood-color="#00180e" flood-opacity="0.5"/>
-      <feComposite in2="b" operator="in"/>
-      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5"/>
     </filter>
-    <path id="n" d="M318 704V320h96l196 248V320h96v384h-94L414 456v248z"/>
+    <filter id="drop" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+    <pattern id="hex" width="56" height="48.5" patternUnits="userSpaceOnUse">
+      <path d="M14 0h28l14 24.25L42 48.5H14L0 24.25z" fill="none" stroke="#2ee59d" stroke-opacity="0.08" stroke-width="2"/>
+    </pattern>
+    <clipPath id="tileClip"><rect x="64" y="64" width="896" height="896" rx="210"/></clipPath>
+
+    <!-- plate outlines (reused for glow, fill and edge) -->
+    <path id="pL" d="M236 320 L286 236 L370 236 L370 706 L306 830 L236 786Z"/>
+    <path id="pR" d="M788 746 L738 830 L654 830 L654 360 L718 236 L788 280Z"/>
+    <path id="pD" d="M384 236 L488 236 L640 636 L640 830 L536 830 L384 430Z"/>
   </defs>
 
-  <g filter="url(#shadow)">
-    <!-- thickness of the tile -->
-    <rect x="84" y="120" width="856" height="840" rx="210" fill="url(#side)"/>
-    <!-- top face -->
-    <rect x="84" y="72" width="856" height="840" rx="210" fill="url(#face)"/>
-    <rect x="84" y="72" width="856" height="840" rx="210" fill="url(#glow)"/>
-    <rect x="84" y="72" width="856" height="840" rx="210" fill="url(#gloss)"/>
-    <rect x="90" y="78" width="844" height="828" rx="204" fill="none" stroke="url(#rim)" stroke-width="10"/>
+  <!-- tile with machined rim -->
+  <rect x="64" y="64" width="896" height="896" rx="210" fill="url(#tile)"/>
+  <rect x="64" y="64" width="896" height="896" rx="210" fill="url(#hex)"/>
+  <g clip-path="url(#tileClip)">
+    <ellipse cx="512" cy="96" rx="560" ry="210" fill="#fff" opacity="0.06"/>
+    <ellipse cx="512" cy="560" rx="360" ry="330" fill="#2ee59d" opacity="0.07" filter="url(#soft)"/>
+  </g>
+  <rect x="80" y="80" width="864" height="864" rx="196" fill="none" stroke="url(#rim)" stroke-width="14"/>
+  <rect x="102" y="102" width="820" height="820" rx="176" fill="none" stroke="#fff" stroke-opacity="0.07" stroke-width="3"/>
+
+  <!-- emerald energy behind every plate -->
+  <g filter="url(#glow)" fill="none" stroke="url(#energy)" stroke-width="18" stroke-linejoin="round">
+    <use href="#pL"/>
+    <use href="#pR"/>
+    <use href="#pD"/>
   </g>
 
-  <!-- sound waves -->
-  <g fill="none" stroke-linecap="round" stroke="#eafff6" opacity="0.9">
-    <path d="M748 262a120 120 0 0 1 0 150" stroke-width="22" opacity="0.55"/>
-    <path d="M800 222a184 184 0 0 1 0 230" stroke-width="18" opacity="0.32"/>
+  <!-- metal plates: lit left facet, shaded right facet -->
+  <g filter="url(#drop)">
+    <use href="#pL" fill="url(#lite)"/>
+    <path d="M303 236 L370 236 L370 706 L306 830 L303 830Z" fill="url(#dark)"/>
+
+    <use href="#pR" fill="url(#lite)"/>
+    <path d="M721 241 L788 280 L788 746 L738 830 L721 830Z" fill="url(#dark)"/>
+
+    <use href="#pD" fill="url(#lite)"/>
+    <path d="M436 236 L488 236 L640 636 L640 830 L588 830 L436 430Z" fill="url(#dark)"/>
   </g>
 
-  <!-- extruded letter: stacked depth layers + face -->
-  <g filter="url(#soft)">
-    <use href="#n" transform="translate(18 26)" fill="url(#extrude)"/>
-    <use href="#n" transform="translate(14 20)" fill="url(#extrude)"/>
-    <use href="#n" transform="translate(10 14)" fill="url(#extrude)"/>
-    <use href="#n" transform="translate(6 8)" fill="#06804f"/>
-    <use href="#n" transform="translate(3 4)" fill="#0aa064"/>
-    <use href="#n" fill="url(#letter)"/>
-    <use href="#n" fill="none" stroke="#ffffff" stroke-opacity="0.65" stroke-width="3"/>
+  <!-- crisp edges -->
+  <g fill="none" stroke="#04110c" stroke-width="6" stroke-linejoin="round">
+    <use href="#pL"/><use href="#pR"/><use href="#pD"/>
+  </g>
+
+  <!-- machined details: grooves, bevel highlights, bolts -->
+  <g stroke-linecap="round" fill="none">
+    <path d="M244 420 L364 420 M244 600 L364 600" stroke="#04110c" stroke-width="7"/>
+    <path d="M244 428 L300 428 M244 608 L300 608" stroke="#fff" stroke-opacity="0.45" stroke-width="3"/>
+    <path d="M660 466 L780 466 M660 646 L780 646" stroke="#04110c" stroke-width="7"/>
+    <path d="M660 474 L716 474 M660 654 L716 654" stroke="#fff" stroke-opacity="0.45" stroke-width="3"/>
+    <path d="M292 246 L362 246 M394 246 L480 246" stroke="#fff" stroke-width="5" opacity="0.9"/>
+    <path d="M394 438 L538 818" stroke="#fff" stroke-opacity="0.25" stroke-width="4"/>
+  </g>
+  <g fill="#0b1712" stroke="#b4c5bf" stroke-width="3">
+    <circle cx="336" cy="300" r="10"/>
+    <circle cx="336" cy="520" r="10"/>
+    <circle cx="756" cy="560" r="10"/>
+    <circle cx="756" cy="770" r="10"/>
+  </g>
+
+  <!-- energy core on the blade -->
+  <g filter="url(#glow)">
+    <path d="M498 488 L526 488 L540 518 L526 548 L498 548 L484 518Z" fill="#2ee59d"/>
+    <path d="M503 498 L521 498 L530 518 L521 538 L503 538 L494 518Z" fill="#d4fff0"/>
   </g>
 </svg>
