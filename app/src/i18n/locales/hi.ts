@@ -753,6 +753,15 @@ const dict: Partial = {
   "crop.preview": "पूर्वावलोकन",
   "crop.apply": "लागू करें और अपलोड करें",
   "crop.loadFailed": "छवि लोड नहीं हो सकी।",
+  "tb.minimize": "छोटा करें",
+  "tb.maximize": "बड़ा करें",
+  "tb.restore": "पुनर्स्थापित करें",
+  "tb.close": "बंद करें",
+  "foot.donate": "दान करें",
+  "snd.ui": "इंटरफ़ेस ध्वनियाँ",
+  "snd.uiDesc": "वॉइस चैनल में आने-जाने, चैनल बदलने, म्यूट करने और स्क्रीन साझा करने पर हल्की ध्वनियाँ।",
+  "snd.demo": "सुनें",
+  "snd.volume": "वॉल्यूम",
 };
 
 export default dict;

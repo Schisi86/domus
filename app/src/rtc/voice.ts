@@ -12,6 +12,7 @@ import type { VoiceMember } from "../types";
 import { errorText, t } from "../i18n";
 import { isTauri, log } from "../platform";
 import { normalizeAddress } from "../net/transport";
+import { play } from "../sound";
 
 export type StreamKind = "mic" | "screen" | "camera";
 
@@ -112,6 +113,8 @@ export class VoiceSession {
   private keyDown = (e: KeyboardEvent) => this.onKey(e, true);
   private keyUp = (e: KeyboardEvent) => this.onKey(e, false);
   readonly selfId: number;
+  /** Other people in the channel – to play a cue when someone joins or leaves. */
+  private present = new Set<number>();
 
   private constructor(public server: ServerStore, public channelId: number) {
     this.selfId = server.me.value!.id;
@@ -188,6 +191,7 @@ export class VoiceSession {
     });
     this.suppressed.value = r.self.suppressed;
     const ids = new Set(r.participants.map((p) => p.user_id));
+    for (const uid of ids) if (uid !== this.selfId) this.present.add(uid);
     // Drop peers that are gone; connect to everyone we do not know yet. After a
     // reconnect (possibly a server restart with an empty voice registry) the
     // others may simply not have rejoined yet, so their running media
@@ -394,8 +398,14 @@ export class VoiceSession {
         }
         return;
       }
-      if (d.left) this.closePeer(d.user_id);
-      else {
+      if (d.left) {
+        if (this.present.delete(d.user_id)) play("userLeave");
+        this.closePeer(d.user_id);
+      } else {
+        if (!this.present.has(d.user_id)) {
+          this.present.add(d.user_id);
+          play("userJoin");
+        }
         // Only render streams the server says are active (honest-client enforcement).
         if (!d.screen) this.dropRemote(d.user_id, "screen");
         if (!d.video) this.dropRemote(d.user_id, "camera");
@@ -466,12 +476,14 @@ export class VoiceSession {
   }
 
   async setMuted(m: boolean) {
+    if (m !== this.muted.value) play(m ? "mute" : "unmute");
     this.muted.value = m;
     this.applyMicEnabled();
     await this.server.rpc("voice.update", { muted: m }).catch(() => {});
   }
 
   async setDeafened(d: boolean) {
+    if (d !== this.deafened.value) play(d ? "deafen" : "undeafen");
     this.deafened.value = d;
     for (const p of this.peers.values()) this.applyOutput(p);
     this.applyMicEnabled();
@@ -542,6 +554,7 @@ export class VoiceSession {
     }
     this.screen = stream;
     this.sharingScreen.value = true;
+    play("streamStart");
     this.screenHasAudio.value = stream.getAudioTracks().length > 0;
     if (st.screenAudio && !this.screenHasAudio.value) {
       toast(
@@ -562,6 +575,7 @@ export class VoiceSession {
     const s = this.screen;
     this.screen = null;
     this.sharingScreen.value = false;
+    play("streamStop");
     this.screenHasAudio.value = null;
     for (const p of this.peers.values()) {
       for (const sender of p.pc.getSenders()) if (sender.track && s.getTracks().includes(sender.track)) p.pc.removeTrack(sender);
@@ -753,6 +767,7 @@ export async function joinVoice(server: ServerStore, channelId: number) {
   try {
     if (cur) await endVoice();
     voice.value = await VoiceSession.join(server, channelId);
+    play("join");
   } catch (e) {
     toast(t("voice.joinFailed"), errorText(e), "error");
   } finally {
@@ -763,6 +778,7 @@ export async function joinVoice(server: ServerStore, channelId: number) {
 export async function endVoice() {
   const cur = voice.value;
   voice.value = null;
+  if (cur) play("leave");
   await cur?.leave();
 }
 

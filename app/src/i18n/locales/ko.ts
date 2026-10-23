@@ -753,6 +753,15 @@ const dict: Partial = {
   "crop.preview": "미리 보기",
   "crop.apply": "적용 및 업로드",
   "crop.loadFailed": "이미지를 불러올 수 없습니다.",
+  "tb.minimize": "최소화",
+  "tb.maximize": "최대화",
+  "tb.restore": "이전 크기로",
+  "tb.close": "닫기",
+  "foot.donate": "후원하기",
+  "snd.ui": "인터페이스 효과음",
+  "snd.uiDesc": "음성 채널 참여·퇴장, 채널 전환, 음소거, 화면 공유 시 은은한 효과음을 재생합니다.",
+  "snd.demo": "미리 듣기",
+  "snd.volume": "음량",
 };
 
 export default dict;

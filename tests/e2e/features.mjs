@@ -60,6 +60,15 @@ try {
   await ctx.grantPermissions(["microphone", "camera"], { origin: UI });
   const cfg = { servers: [{ id: "srv", address: ADDR, fingerprint: null, name: "E2E", username: "alice", token }], settings: { notifications: false, language: "de" } };
   await ctx.addInitScript(([k, v]) => localStorage.setItem(k, v), ["nexustalk.config.feat", JSON.stringify(cfg)]);
+  // Count synthesized UI sounds (each cue starts one or more oscillators).
+  await ctx.addInitScript(() => {
+    window.__osc = 0;
+    const start = OscillatorNode.prototype.start;
+    OscillatorNode.prototype.start = function (...a) {
+      window.__osc++;
+      return start.apply(this, a);
+    };
+  });
   const page = await ctx.newPage();
   page.on("pageerror", (e) => console.log("pageerror", e.message));
   await page.goto(`${UI}/?profile=feat`);
@@ -69,6 +78,8 @@ try {
   await page.locator(".chan", { hasText: "Allgemein" }).filter({ has: page.locator("svg") }).last().click();
   await page.locator(".voice-view .btn.primary").click().catch(() => {});
   await page.waitForSelector(".voice-controls");
+  const osc = () => page.evaluate(() => window.__osc);
+  check("joining voice plays a sound", (await waitFor(async () => (await osc()) > 0, 3000)) !== null, `${await osc()} oscillators`);
   await page.locator(".voice-controls .share-group .round-btn").click();
   const menu = await page.waitForSelector(".screen-menu", { timeout: 5000 }).catch(() => null);
   check("share button opens the options menu", !!menu);
@@ -89,7 +100,9 @@ try {
     await page.screenshot({ path: join(SHOTS, "screen-menu.png") });
   }
   await page.locator(".screen-menu .btn.primary").click();
+  const beforeShare = await osc();
   check("sharing starts from the menu", !!(await waitFor(() => page.evaluate(share))));
+  check("starting a share plays a sound", (await waitFor(async () => (await osc()) > beforeShare, 3000)) !== null);
   const track = () =>
     page.evaluate(() => {
       const v = window.__nexus.voice.value;
@@ -112,6 +125,10 @@ try {
   check("header shows the current quality", (await page.locator(".main-head .btn.sm").textContent())?.includes("1080p · 60 FPS") ?? false);
   await page.locator(".voice-controls .share-group .round-btn").click();
   check("share button stops the share", !!(await waitFor(async () => !(await page.evaluate(share)))));
+
+  const beforeSwitch = await osc();
+  await page.locator(".chan", { hasText: "allgemein" }).first().click();
+  check("switching channels plays a soft tick", (await waitFor(async () => (await osc()) > beforeSwitch, 3000)) !== null);
 
   // ---------------------------------------------------------- icon crop
   const png = await page.evaluate(() => {

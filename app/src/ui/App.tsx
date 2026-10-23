@@ -14,6 +14,7 @@ import { lang, t } from "../i18n";
 import { applyTheme } from "../themes";
 import { isTauri, tauriInvoke } from "../platform";
 import { QuickSwitcher, ShortcutsDialog } from "./QuickSwitcher";
+import { Footer, TitleBar } from "./Chrome";
 
 function useAppearance() {
   const s = settings.value;
@@ -105,13 +106,17 @@ export function App() {
         if (!tg.closest("input, textarea, .selectable, .msg-text")) e.preventDefault();
       }}
     >
-      <Rail />
-      <div class="shell">
-        <Sidebar />
-        <main class="main" aria-label={t("app.content")}>
-          <Main />
-        </main>
+      <TitleBar />
+      <div class="app-body">
+        <Rail />
+        <div class="shell">
+          <Sidebar />
+          <main class="main" aria-label={t("app.content")}>
+            <Main />
+          </main>
+        </div>
       </div>
+      <Footer />
       {modal.value}
       {dialog.value}
       {contextMenu.value && <ContextMenu />}

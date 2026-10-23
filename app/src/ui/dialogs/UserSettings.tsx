@@ -17,7 +17,7 @@ import { DonateCard } from "./About";
 import { ShortcutsDialog } from "../QuickSwitcher";
 import { AUTHOR, COPYRIGHT, HOMEPAGE, PRODUCT_SITE } from "../../brand";
 import { openExternal } from "../links";
-import { playChime } from "../../sound";
+import { play, playDemo } from "../../sound";
 
 type Tab = "account" | "voice" | "screen" | "notify" | "look" | "app" | "about";
 
@@ -292,7 +292,19 @@ function Notify() {
           <div class="grow">
             <Toggle checked={s.notifySound} disabled={!s.notifications} onChange={(x) => updateSettings({ notifySound: x })} label={t("settings.sound")} />
           </div>
-          <button class="btn sm ghost" onClick={() => playChime()}>▶ {t("settings.test")}</button>
+          <button class="btn sm ghost" onClick={() => play("message", true)}>▶ {t("settings.test")}</button>
+        </div>
+      </div>
+      <div class="card col">
+        <div class="row">
+          <div class="grow">
+            <Toggle checked={s.uiSounds} onChange={(x) => updateSettings({ uiSounds: x })} label={t("snd.ui")} desc={t("snd.uiDesc")} />
+          </div>
+          <button class="btn sm ghost" onClick={() => playDemo()}>▶ {t("snd.demo")}</button>
+        </div>
+        <div class="row" style={{ gap: "10px", opacity: s.uiSounds ? 1 : 0.5 }}>
+          <span class="label" style={{ margin: "0px", minWidth: "80px" }}>{t("snd.volume")}</span>
+          <input class="range grow" type="range" min={0.1} max={1} step={0.05} value={s.uiVolume} disabled={!s.uiSounds} onChange={(e) => { updateSettings({ uiVolume: Number((e.target as HTMLInputElement).value) }); play("join", true); }} />
         </div>
       </div>
       <div class="card col">
@@ -317,10 +329,10 @@ function Look() {
         <div class="theme-grid">
           {THEMES.map((th) => (
             <button key={th.id} class={`theme-card${s.theme === th.id && !s.followSystemTheme ? " active" : ""}`} onClick={() => updateSettings({ theme: th.id, followSystemTheme: false })}>
-              <div class="preview">
-                <i style={{ width: "16%", background: th.swatch[0] }} />
-                <i style={{ width: "26%", background: th.swatch[1] }} />
-                <i style={{ flex: 1, background: `radial-gradient(circle at 70% 30%, ${th.swatch[3]}33, transparent 60%), ${th.swatch[2]}`, position: "relative" }}>
+              <div class="preview" style={{ background: th.preview }}>
+                <i style={{ width: "14%" }} />
+                <i style={{ width: "26%", margin: "6px 0 6px 0", borderRadius: "6px 0 0 6px", background: th.light ? "#ffffff80" : "#00000055" }} />
+                <i style={{ flex: 1, margin: "6px 6px 6px 0", borderRadius: "0 6px 6px 0", background: th.light ? "#ffffffb0" : "#00000033", position: "relative" }}>
                   <b style={{ position: "absolute", left: "12%", top: "22%", width: "54%", height: "9px", borderRadius: "5px", background: th.swatch[3], boxShadow: `0 0 12px ${th.swatch[3]}88` }} />
                   <b style={{ position: "absolute", left: "12%", top: "48%", width: "70%", height: "6px", borderRadius: "4px", background: th.light ? "#0002" : "#fff2" }} />
                   <b style={{ position: "absolute", left: "12%", top: "66%", width: "42%", height: "6px", borderRadius: "4px", background: th.swatch[4], opacity: 0.8 }} />

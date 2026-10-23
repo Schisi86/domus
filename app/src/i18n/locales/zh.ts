@@ -753,6 +753,15 @@ const dict: Partial = {
   "crop.preview": "预览",
   "crop.apply": "应用并上传",
   "crop.loadFailed": "无法加载该图片。",
+  "tb.minimize": "最小化",
+  "tb.maximize": "最大化",
+  "tb.restore": "还原",
+  "tb.close": "关闭",
+  "foot.donate": "捐赠",
+  "snd.ui": "界面音效",
+  "snd.uiDesc": "进出语音频道、切换频道、静音和共享屏幕时播放轻柔的提示音。",
+  "snd.demo": "试听",
+  "snd.volume": "音量",
 };
 
 export default dict;

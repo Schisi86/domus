@@ -35,13 +35,14 @@
 :root,
 :root[data-theme="emerald"] {
   color-scheme: dark;
-  --bg-app: radial-gradient(1200px 700px at 12% -10%, rgba(46, 229, 157, 0.10), transparent 60%), radial-gradient(900px 600px at 110% 120%, rgba(20, 184, 166, 0.08), transparent 60%), #06110d;
-  --bg-0: #07140f;
-  --bg-1: #0b1a15;
-  --bg-2: #0f221b;
-  --bg-3: #142b23;
-  --bg-4: #1b372d;
-  --bg-float: #10251e;
+  --solid: #07160f;
+  --bg-app: radial-gradient(1000px 640px at 0% 0%, rgba(46, 229, 157, 0.34), transparent 62%), radial-gradient(900px 760px at 100% 100%, rgba(20, 170, 200, 0.32), transparent 60%), radial-gradient(700px 500px at 70% 10%, rgba(143, 245, 207, 0.08), transparent 60%), linear-gradient(155deg, #0f3d2e 0%, #0a2b22 38%, #0c3742 74%, #061f19 100%);
+  --bg-0: rgba(4, 18, 14, 0.72);
+  --bg-1: rgba(4, 18, 14, 0.46);
+  --bg-2: rgba(4, 18, 14, 0.28);
+  --bg-3: rgba(255, 255, 255, 0.055);
+  --bg-4: rgba(255, 255, 255, 0.10);
+  --bg-float: color-mix(in srgb, #07160f 90%, transparent);
   --line: rgba(160, 255, 210, 0.08);
   --line-strong: rgba(160, 255, 210, 0.16);
   --text: #e3f4ec;
@@ -63,13 +64,14 @@
 /* --- 2 Jade (hell) -------------------------------------------------------- */
 :root[data-theme="jade"] {
   color-scheme: light;
-  --bg-app: radial-gradient(1000px 600px at 0% 0%, rgba(16, 185, 129, 0.12), transparent 60%), #e4f2eb;
-  --bg-0: #d8ece2;
-  --bg-1: #eaf6f0;
-  --bg-2: #fbfefc;
-  --bg-3: #eef7f2;
-  --bg-4: #dcede4;
-  --bg-float: #ffffff;
+  --solid: #eef8f2;
+  --bg-app: radial-gradient(1000px 700px at 0% 0%, rgba(52, 211, 153, 0.55), transparent 60%), radial-gradient(900px 760px at 100% 100%, rgba(125, 211, 252, 0.55), transparent 60%), linear-gradient(150deg, #c8efdb 0%, #eef8e8 50%, #c8e8f2 100%);
+  --bg-0: rgba(255, 255, 255, 0.26);
+  --bg-1: rgba(255, 255, 255, 0.4);
+  --bg-2: rgba(255, 255, 255, 0.54);
+  --bg-3: rgba(255, 255, 255, 0.72);
+  --bg-4: rgba(30, 30, 60, 0.07);
+  --bg-float: color-mix(in srgb, #eef8f2 90%, transparent);
   --line: rgba(10, 70, 45, 0.10);
   --line-strong: rgba(10, 70, 45, 0.18);
   --text: #0d2a1f;
@@ -91,13 +93,14 @@
 /* --- 3 Mitternacht ----------------------------------------------------------- */
 :root[data-theme="midnight"] {
   color-scheme: dark;
-  --bg-app: radial-gradient(1100px 700px at 15% -10%, rgba(91, 140, 255, 0.14), transparent 60%), #060a16;
-  --bg-0: #070b18;
-  --bg-1: #0b1122;
-  --bg-2: #0f172c;
-  --bg-3: #141e37;
-  --bg-4: #1c2846;
-  --bg-float: #111a31;
+  --solid: #0b0f28;
+  --bg-app: radial-gradient(1000px 700px at 0% 0%, rgba(107, 151, 255, 0.40), transparent 60%), radial-gradient(900px 800px at 100% 100%, rgba(160, 90, 255, 0.40), transparent 60%), linear-gradient(160deg, #1e2b70 0%, #141a50 45%, #301965 100%);
+  --bg-0: rgba(8, 10, 32, 0.72);
+  --bg-1: rgba(8, 10, 32, 0.46);
+  --bg-2: rgba(8, 10, 32, 0.28);
+  --bg-3: rgba(255, 255, 255, 0.055);
+  --bg-4: rgba(255, 255, 255, 0.10);
+  --bg-float: color-mix(in srgb, #0b0f28 90%, transparent);
   --line: rgba(150, 180, 255, 0.09);
   --line-strong: rgba(150, 180, 255, 0.18);
   --text: #e5ebfb;
@@ -119,13 +122,14 @@
 /* --- 4 Aurora --------------------------------------------------------------- */
 :root[data-theme="aurora"] {
   color-scheme: dark;
-  --bg-app: radial-gradient(900px 600px at 0% 0%, rgba(167, 139, 250, 0.20), transparent 60%), radial-gradient(900px 700px at 100% 100%, rgba(45, 212, 191, 0.16), transparent 60%), #0a0918;
-  --bg-0: #0b0a1a;
-  --bg-1: #110f24;
-  --bg-2: #15132c;
-  --bg-3: #1c1938;
-  --bg-4: #262247;
-  --bg-float: #17152f;
+  --solid: #0e0d22;
+  --bg-app: radial-gradient(900px 600px at 8% 0%, rgba(45, 212, 191, 0.40), transparent 60%), radial-gradient(900px 700px at 92% 15%, rgba(167, 139, 250, 0.42), transparent 60%), radial-gradient(900px 600px at 50% 115%, rgba(236, 72, 153, 0.32), transparent 60%), linear-gradient(160deg, #0f3048 0%, #1d1a4e 50%, #3a1650 100%);
+  --bg-0: rgba(10, 10, 28, 0.72);
+  --bg-1: rgba(10, 10, 28, 0.46);
+  --bg-2: rgba(10, 10, 28, 0.28);
+  --bg-3: rgba(255, 255, 255, 0.055);
+  --bg-4: rgba(255, 255, 255, 0.10);
+  --bg-float: color-mix(in srgb, #0e0d22 90%, transparent);
   --line: rgba(200, 180, 255, 0.09);
   --line-strong: rgba(200, 180, 255, 0.18);
   --text: #ece8fb;
@@ -147,13 +151,14 @@
 /* --- 5 Obsidian (OLED) ------------------------------------------------------ */
 :root[data-theme="obsidian"] {
   color-scheme: dark;
-  --bg-app: #000000;
-  --bg-0: #000000;
-  --bg-1: #070707;
-  --bg-2: #0b0b0b;
-  --bg-3: #141414;
-  --bg-4: #1d1d1d;
-  --bg-float: #101010;
+  --solid: #000000;
+  --bg-app: radial-gradient(900px 600px at 100% 0%, rgba(182, 242, 61, 0.16), transparent 60%), radial-gradient(800px 600px at 0% 100%, rgba(182, 242, 61, 0.09), transparent 60%), #000000;
+  --bg-0: rgba(0, 0, 0, 0.9);
+  --bg-1: rgba(0, 0, 0, 0.74);
+  --bg-2: rgba(0, 0, 0, 0.58);
+  --bg-3: rgba(255, 255, 255, 0.055);
+  --bg-4: rgba(255, 255, 255, 0.10);
+  --bg-float: color-mix(in srgb, #000000 90%, transparent);
   --line: rgba(255, 255, 255, 0.07);
   --line-strong: rgba(255, 255, 255, 0.14);
   --text: #f0f2ec;
@@ -175,13 +180,14 @@
 /* --- 6 Sakura (hell) -------------------------------------------------------- */
 :root[data-theme="sakura"] {
   color-scheme: light;
-  --bg-app: radial-gradient(900px 600px at 100% 0%, rgba(240, 120, 165, 0.16), transparent 60%), #fbeef3;
-  --bg-0: #f6dfe8;
-  --bg-1: #fcf0f5;
-  --bg-2: #fffbfd;
-  --bg-3: #fbeef3;
-  --bg-4: #f4dde7;
-  --bg-float: #ffffff;
+  --solid: #fbeef4;
+  --bg-app: radial-gradient(1000px 700px at 0% 0%, rgba(247, 143, 179, 0.62), transparent 60%), radial-gradient(900px 760px at 100% 100%, rgba(196, 181, 253, 0.65), transparent 60%), linear-gradient(150deg, #fbcfe0 0%, #f6e4f2 50%, #ddd3fb 100%);
+  --bg-0: rgba(255, 255, 255, 0.26);
+  --bg-1: rgba(255, 255, 255, 0.4);
+  --bg-2: rgba(255, 255, 255, 0.54);
+  --bg-3: rgba(255, 255, 255, 0.72);
+  --bg-4: rgba(30, 30, 60, 0.07);
+  --bg-float: color-mix(in srgb, #fbeef4 90%, transparent);
   --line: rgba(120, 20, 60, 0.09);
   --line-strong: rgba(120, 20, 60, 0.17);
   --text: #35141f;
@@ -203,13 +209,14 @@
 /* --- 7 Arktis (hell) -------------------------------------------------------- */
 :root[data-theme="arctic"] {
   color-scheme: light;
-  --bg-app: radial-gradient(1000px 600px at 0% 0%, rgba(0, 188, 212, 0.12), transparent 60%), #e8f1f8;
-  --bg-0: #dce8f2;
-  --bg-1: #edf4fa;
-  --bg-2: #fbfdff;
-  --bg-3: #eef4f9;
-  --bg-4: #dfe9f2;
-  --bg-float: #ffffff;
+  --solid: #eef5fc;
+  --bg-app: radial-gradient(1000px 700px at 0% 0%, rgba(94, 200, 255, 0.58), transparent 60%), radial-gradient(900px 760px at 100% 100%, rgba(110, 231, 183, 0.52), transparent 60%), linear-gradient(150deg, #c4def8 0%, #e9f3ff 50%, #c8efe4 100%);
+  --bg-0: rgba(255, 255, 255, 0.26);
+  --bg-1: rgba(255, 255, 255, 0.4);
+  --bg-2: rgba(255, 255, 255, 0.54);
+  --bg-3: rgba(255, 255, 255, 0.72);
+  --bg-4: rgba(30, 30, 60, 0.07);
+  --bg-float: color-mix(in srgb, #eef5fc 90%, transparent);
   --line: rgba(15, 60, 100, 0.09);
   --line-strong: rgba(15, 60, 100, 0.17);
   --text: #0e2235;
@@ -231,13 +238,14 @@
 /* --- 8 Sonnenuntergang ------------------------------------------------------ */
 :root[data-theme="sunset"] {
   color-scheme: dark;
-  --bg-app: radial-gradient(1000px 650px at 0% 110%, rgba(255, 122, 69, 0.18), transparent 60%), radial-gradient(800px 600px at 100% -10%, rgba(255, 77, 141, 0.14), transparent 60%), #120a0c;
-  --bg-0: #130b0d;
-  --bg-1: #1a0f13;
-  --bg-2: #201418;
-  --bg-3: #2a1a1f;
-  --bg-4: #37232a;
-  --bg-float: #23161b;
+  --solid: #1f0c16;
+  --bg-app: radial-gradient(900px 600px at 100% 100%, rgba(255, 140, 50, 0.42), transparent 62%), radial-gradient(900px 700px at 0% 0%, rgba(120, 40, 160, 0.45), transparent 60%), linear-gradient(165deg, #3a1242 0%, #681c3e 42%, #9c3c1f 88%, #b85219 100%);
+  --bg-0: rgba(24, 8, 16, 0.72);
+  --bg-1: rgba(24, 8, 16, 0.46);
+  --bg-2: rgba(24, 8, 16, 0.28);
+  --bg-3: rgba(255, 255, 255, 0.055);
+  --bg-4: rgba(255, 255, 255, 0.10);
+  --bg-float: color-mix(in srgb, #1f0c16 90%, transparent);
   --line: rgba(255, 190, 170, 0.09);
   --line-strong: rgba(255, 190, 170, 0.18);
   --text: #fbe9e4;
@@ -259,13 +267,14 @@
 /* --- 9 Neon ----------------------------------------------------------------- */
 :root[data-theme="neon"] {
   color-scheme: dark;
-  --bg-app: radial-gradient(900px 600px at 0% 0%, rgba(0, 240, 255, 0.12), transparent 60%), radial-gradient(900px 600px at 100% 100%, rgba(255, 43, 214, 0.12), transparent 60%), #04040a;
-  --bg-0: #05050c;
-  --bg-1: #090914;
-  --bg-2: #0d0d1b;
-  --bg-3: #141428;
-  --bg-4: #1c1c38;
-  --bg-float: #10101f;
+  --solid: #070816;
+  --bg-app: radial-gradient(900px 640px at 0% 0%, rgba(0, 229, 255, 0.38), transparent 60%), radial-gradient(900px 760px at 100% 100%, rgba(255, 43, 214, 0.40), transparent 60%), radial-gradient(600px 400px at 60% 40%, rgba(107, 123, 255, 0.12), transparent 60%), linear-gradient(150deg, #0a1440 0%, #16104a 50%, #2e0b46 100%);
+  --bg-0: rgba(6, 6, 20, 0.72);
+  --bg-1: rgba(6, 6, 20, 0.46);
+  --bg-2: rgba(6, 6, 20, 0.28);
+  --bg-3: rgba(255, 255, 255, 0.055);
+  --bg-4: rgba(255, 255, 255, 0.10);
+  --bg-float: color-mix(in srgb, #070816 90%, transparent);
   --line: rgba(0, 240, 255, 0.10);
   --line-strong: rgba(0, 240, 255, 0.22);
   --text: #e8f9ff;
@@ -287,13 +296,14 @@
 /* --- 10 Sandstein (hell) ---------------------------------------------------- */
 :root[data-theme="sandstone"] {
   color-scheme: light;
-  --bg-app: radial-gradient(900px 600px at 0% 0%, rgba(192, 98, 59, 0.10), transparent 60%), #efe6d8;
-  --bg-0: #e6dccc;
-  --bg-1: #f4ede2;
-  --bg-2: #fdfaf5;
-  --bg-3: #f5eee3;
-  --bg-4: #e9dfd0;
-  --bg-float: #fffdf9;
+  --solid: #f8eee4;
+  --bg-app: radial-gradient(1000px 700px at 0% 0%, rgba(231, 179, 111, 0.60), transparent 60%), radial-gradient(900px 760px at 100% 100%, rgba(244, 163, 163, 0.55), transparent 60%), linear-gradient(150deg, #f3d3b8 0%, #f9e9da 50%, #efcfc4 100%);
+  --bg-0: rgba(255, 255, 255, 0.26);
+  --bg-1: rgba(255, 255, 255, 0.4);
+  --bg-2: rgba(255, 255, 255, 0.54);
+  --bg-3: rgba(255, 255, 255, 0.72);
+  --bg-4: rgba(30, 30, 60, 0.07);
+  --bg-float: color-mix(in srgb, #f8eee4 90%, transparent);
   --line: rgba(90, 55, 20, 0.10);
   --line-strong: rgba(90, 55, 20, 0.19);
   --text: #2b2118;
@@ -321,6 +331,8 @@ body {
   line-height: 1.45;
   color: var(--text);
   background: var(--bg-app);
+  background-color: var(--solid);
+  background-attachment: fixed;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -430,7 +442,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 650; letter-spacing:
 .presence.online { background: var(--ok); }
 .presence.idle { background: var(--idle); }
 .presence.dnd { background: var(--dnd); }
-.avatar.speaking { box-shadow: 0 0 0 2px var(--bg-1), 0 0 0 3.5px var(--ok), 0 0 14px rgba(52, 211, 153, 0.55); }
+.avatar.speaking { box-shadow: 0 0 0 2px var(--solid), 0 0 0 3.5px var(--ok), 0 0 14px rgba(52, 211, 153, 0.55); }
 
 .overlay { position: fixed; inset: 0; background: rgba(2, 6, 4, 0.55); backdrop-filter: blur(3px); display: grid; place-items: center; z-index: 50; animation: fade var(--dur) var(--ease); }
 .modal {
@@ -457,7 +469,9 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 650; letter-spacing:
 .pane-nav button.danger { color: var(--danger); }
 .pane-content { flex: 1; overflow: auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; min-width: 0; position: relative; }
 .pane-content h2 { margin: 0; font-size: var(--fs-xl); }
-.pane-close { position: absolute; top: 12px; inset-inline-end: 12px; }
+/* stays in the corner while the settings content scrolls */
+.pane-close { position: sticky; top: -12px; height: 0; align-self: flex-end; z-index: 5; margin: -12px -16px 0 0; }
+.pane-close .icon-btn { background: color-mix(in srgb, var(--solid) 70%, transparent); backdrop-filter: blur(8px); }
 
 .card { background: color-mix(in srgb, var(--bg-1) 85%, transparent); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; box-shadow: inset 0 1px 0 var(--hi); }
 .table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
@@ -491,10 +505,34 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 650; letter-spacing:
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ===================================================================== layout */
-.app { display: flex; height: 100%; }
+.app { display: flex; flex-direction: column; height: 100%; }
+.app-body { flex: 1; display: flex; min-height: 0; }
+.app:not(:has(> .titlebar)) > .app-body { padding-top: 8px; }
+
+/* title bar (desktop): drawn by the app so it follows the design */
+.titlebar { height: 32px; flex: none; display: flex; align-items: center; gap: 10px; padding-inline-start: 12px; position: relative; z-index: 60; color: var(--text-2); font-size: var(--fs-xs); -webkit-app-region: drag; }
+.tb-brand { display: flex; align-items: center; gap: 7px; font-weight: 650; letter-spacing: 0.02em; color: var(--text); flex: none; }
+.tb-brand img { width: 16px; height: 16px; pointer-events: none; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35)); }
+.tb-brand span, .tb-title { pointer-events: none; }
+.tb-title { position: absolute; left: 50%; transform: translateX(-50%); max-width: 46%; text-align: center; color: var(--text-2); font-weight: 600; white-space: pre; }
+.tb-controls { margin-inline-start: auto; display: flex; height: 100%; -webkit-app-region: no-drag; }
+.tb-btn { width: 46px; height: 100%; border: 0; background: transparent; color: var(--text-2); display: grid; place-items: center; cursor: default; transition: background 90ms, color 90ms; }
+.tb-btn:hover { background: var(--bg-4); color: var(--text); }
+.tb-btn:active { background: color-mix(in srgb, var(--bg-4) 70%, var(--text) 8%); }
+.tb-btn.close:hover { background: #e81123; color: #fff; }
+.tb-btn.close:active { background: #f1707a; }
+
+/* footer: quiet credits, donation and language */
+.app-foot { height: 24px; flex: none; display: flex; align-items: center; gap: 7px; padding: 0 12px 0 14px; font-size: var(--fs-2xs); color: var(--text-3); letter-spacing: 0.02em; }
+.app-foot a { color: var(--text-3); text-decoration: none; transition: color var(--dur); }
+.app-foot a:hover { color: var(--accent); text-decoration: none; }
+.app-foot .sep { opacity: 0.6; }
+.foot-flag { width: 22px; height: 16px; margin-inline-start: 6px; display: grid; place-items: center; border: 0; padding: 0; background: transparent; cursor: pointer; border-radius: 3px; opacity: 0.8; transition: opacity var(--dur), transform var(--dur); }
+.foot-flag:hover { opacity: 1; transform: translateY(-1px); }
+.foot-flag svg { width: 18px; height: 12px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25); }
 
 /* server rail */
-.rail { width: 66px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 12px 0 10px; overflow-y: auto; }
+.rail { width: 66px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 6px 0 8px; overflow-y: auto; }
 .rail::-webkit-scrollbar { width: 0; }
 .rail-sep { width: 28px; height: 1px; background: var(--line-strong); flex: none; margin: 2px 0; }
 .rail-item { position: relative; flex: none; }
@@ -518,13 +556,13 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 650; letter-spacing:
 .rail-pill { position: absolute; inset-inline-start: -11px; top: 50%; width: 4px; height: 8px; border-radius: 0 4px 4px 0; background: var(--accent); box-shadow: 0 0 8px var(--accent); transform: translateY(-50%); transition: height var(--dur) var(--ease); }
 .rail-item.active .rail-pill { height: 30px; }
 .rail-item:not(.active):not(.unread) .rail-pill { height: 0; }
-.rail-badge { position: absolute; inset-inline-end: -5px; bottom: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; box-shadow: 0 0 0 2.5px var(--bg-0); }
-.rail-status { position: absolute; inset-inline-end: -2px; top: -2px; width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 0 2.5px var(--bg-0); background: var(--warn); }
+.rail-badge { position: absolute; inset-inline-end: -5px; bottom: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; box-shadow: 0 0 0 2.5px var(--solid); }
+.rail-status { position: absolute; inset-inline-end: -2px; top: -2px; width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 0 2.5px var(--solid); background: var(--warn); }
 .rail-status.offline { background: var(--danger); }
 
 /* shell: sidebar + main float above the app background */
-.shell { flex: 1; display: flex; min-width: 0; margin: 8px 8px 8px 0; border-radius: var(--r-xl); overflow: hidden; border: 1px solid var(--line); box-shadow: inset 0 1px 0 var(--hi), var(--shadow-2); background: var(--bg-2); }
-[dir="rtl"] .shell { margin: 8px 0 8px 8px; }
+.shell { flex: 1; display: flex; min-width: 0; margin: 0 8px 0 0; border-radius: var(--r-xl); overflow: hidden; border: 1px solid var(--line); box-shadow: inset 0 1px 0 var(--hi), var(--shadow-2); background: transparent; }
+[dir="rtl"] .shell { margin: 0 0 0 8px; }
 
 .sidebar { width: 246px; flex: none; background: linear-gradient(180deg, var(--bg-1), color-mix(in srgb, var(--bg-1) 85%, var(--bg-0))); display: flex; flex-direction: column; min-height: 0; border-inline-end: 1px solid var(--line); }
 .sidebar-head { height: 50px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 15px; border-bottom: 1px solid var(--line); font-weight: 650; cursor: default; font-family: var(--font-display); font-size: var(--fs-lg); box-shadow: 0 1px 0 var(--hi); }
@@ -755,7 +793,7 @@ kbd { font-family: var(--font-mono); font-size: 10.5px; padding: 1px 6px; border
 .rail-btn.host { color: var(--accent); background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, var(--bg-4)), var(--bg-2)); border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); }
 .rail-btn.host:hover { background: var(--accent-grad); color: var(--on-accent); }
 .rail-item.hosting .rail-btn.host { box-shadow: inset 0 1px 0 var(--hi), 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), 0 0 16px -2px color-mix(in srgb, var(--accent) 55%, transparent); }
-.rail-host-badge { position: absolute; inset-inline-end: -5px; bottom: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--bg-4); color: var(--text-3); font-size: 10px; font-weight: 700; display: grid; place-items: center; box-shadow: 0 0 0 2.5px var(--bg-0); }
+.rail-host-badge { position: absolute; inset-inline-end: -5px; bottom: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--bg-4); color: var(--text-3); font-size: 10px; font-weight: 700; display: grid; place-items: center; box-shadow: 0 0 0 2.5px var(--solid); }
 .rail-host-badge.on { background: var(--ok); color: #03130b; }
 .host-modal .pane-nav button { padding: 7px 10px; }
 .host-modal .pane-nav .add-host { margin-top: 6px; color: var(--accent); border: 1px dashed color-mix(in srgb, var(--accent) 40%, transparent); justify-content: center; }
@@ -824,3 +862,6 @@ details.advanced[open] > summary::after { transform: rotate(90deg); }
 @media (max-width: 980px) {
   .members { display: none; }
 }
+
+/* glass: floating layers blur the gradient behind them */
+.modal, .menu, .popover, .toast, .autocomplete, .msg-actions { backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3); }

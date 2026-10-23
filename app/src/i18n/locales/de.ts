@@ -793,6 +793,15 @@ const de = {
   "crop.preview": "Vorschau",
   "crop.apply": "Übernehmen & hochladen",
   "crop.loadFailed": "Das Bild konnte nicht geladen werden.",
+  "tb.minimize": "Minimieren",
+  "tb.maximize": "Maximieren",
+  "tb.restore": "Wiederherstellen",
+  "tb.close": "Schließen",
+  "foot.donate": "Spenden",
+  "snd.ui": "Interface-Sounds",
+  "snd.uiDesc": "Dezente Töne beim Betreten und Verlassen von Sprachkanälen, beim Kanalwechsel, Stummschalten und Bildschirmübertragen.",
+  "snd.demo": "Anhören",
+  "snd.volume": "Lautstärke",
 };
 
 export default de;

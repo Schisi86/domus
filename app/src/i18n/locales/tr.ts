@@ -753,6 +753,15 @@ const dict: Partial = {
   "crop.preview": "Önizleme",
   "crop.apply": "Uygula ve yükle",
   "crop.loadFailed": "Resim yüklenemedi.",
+  "tb.minimize": "Simge durumuna küçült",
+  "tb.maximize": "Ekranı kapla",
+  "tb.restore": "Geri yükle",
+  "tb.close": "Kapat",
+  "foot.donate": "Bağış yap",
+  "snd.ui": "Arayüz sesleri",
+  "snd.uiDesc": "Ses kanallarına girerken ve çıkarken, kanal değiştirirken, sessize alırken ve ekran paylaşırken hafif sesler.",
+  "snd.demo": "Dinle",
+  "snd.volume": "Ses düzeyi",
 };
 
 export default dict;

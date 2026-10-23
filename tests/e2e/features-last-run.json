@@ -1,6 +1,11 @@
 {
-  "at": "2026-10-23T20:59:36.177Z",
+  "at": "2026-10-23T21:47:50.741Z",
   "results": [
+    {
+      "name": "joining voice plays a sound",
+      "ok": true,
+      "detail": "7 oscillators"
+    },
     {
       "name": "share button opens the options menu",
       "ok": true,
@@ -27,6 +32,11 @@
       "detail": ""
     },
     {
+      "name": "starting a share plays a sound",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "chosen limits applied to the capture (720p, 15 FPS, detail)",
       "ok": true,
       "detail": "{\"frameRate\":{\"max\":15,\"ideal\":15},\"height\":{\"max\":720},\"width\":{\"max\":1280}} → 1280×720@15 (≤ 0,6 Mbit/s)"
@@ -43,6 +53,11 @@
     },
     {
       "name": "share button stops the share",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "switching channels plays a soft tick",
       "ok": true,
       "detail": ""
     },

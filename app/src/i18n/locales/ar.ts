@@ -753,6 +753,15 @@ const dict: Partial = {
   "crop.preview": "معاينة",
   "crop.apply": "تطبيق ورفع",
   "crop.loadFailed": "تعذّر تحميل الصورة.",
+  "tb.minimize": "تصغير",
+  "tb.maximize": "تكبير",
+  "tb.restore": "استعادة",
+  "tb.close": "إغلاق",
+  "foot.donate": "تبرّع",
+  "snd.ui": "أصوات الواجهة",
+  "snd.uiDesc": "أصوات هادئة عند الدخول إلى القنوات الصوتية ومغادرتها وتبديل القنوات وكتم الصوت ومشاركة الشاشة.",
+  "snd.demo": "استماع",
+  "snd.volume": "مستوى الصوت",
 };
 
 export default dict;

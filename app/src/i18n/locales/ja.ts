@@ -753,6 +753,15 @@ const dict: Partial = {
   "crop.preview": "プレビュー",
   "crop.apply": "適用してアップロード",
   "crop.loadFailed": "画像を読み込めませんでした。",
+  "tb.minimize": "最小化",
+  "tb.maximize": "最大化",
+  "tb.restore": "元に戻す",
+  "tb.close": "閉じる",
+  "foot.donate": "寄付する",
+  "snd.ui": "インターフェース音",
+  "snd.uiDesc": "ボイスチャンネルへの参加・退出、チャンネル切り替え、ミュート、画面共有のときに控えめな音を鳴らします。",
+  "snd.demo": "試聴",
+  "snd.volume": "音量",
 };
 
 export default dict;

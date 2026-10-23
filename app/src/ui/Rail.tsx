@@ -1,4 +1,4 @@
-// Left server rail: home, servers, add, hosting, donation and language switcher.
+// Left server rail: home, servers, add and the hosting center.
 
 import { activeServerId, isMuted, openModal, removeServer, selectServer, servers, settings, showMenu, updateSettings } from "../state/app";
 import type { ServerStore } from "../state/server";
@@ -11,8 +11,6 @@ import { AddServerDialog } from "./dialogs/AddServer";
 import { HostDialog } from "./dialogs/Host";
 import { ServerSettingsDialog } from "./dialogs/ServerSettings";
 import { InviteDialog } from "./dialogs/Invite";
-import { AboutDialog } from "./dialogs/About";
-import { LangPicker } from "./LangPicker";
 
 function serverBadge(s: ServerStore) {
   const mentions = Object.values(s.mentionCounts.value).reduce((a, b) => a + b, 0);
@@ -112,14 +110,6 @@ export function Rail() {
       </div>
       <div class="spacer" />
       <HostButton />
-      <div class="rail-item">
-        <button class="rail-btn heart" title={t("about.donate")} aria-label={t("about.donate")} onClick={() => openModal(<AboutDialog />)}>
-          <Icon.Heart size={18} class="" />
-        </button>
-      </div>
-      <div class="rail-item">
-        <LangPicker />
-      </div>
     </nav>
   );
 }

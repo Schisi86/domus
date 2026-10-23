@@ -194,6 +194,8 @@ pub fn run() {
                 .title("NexusTalk")
                 .inner_size(1180.0, 760.0)
                 .min_inner_size(760.0, 480.0)
+                // The UI draws its own title bar in the colours of the active design.
+                .decorations(false)
                 .visible(!background)
                 .on_permission_request(|_, kind| match kind {
                     // Requested only after an explicit user action (joining voice,

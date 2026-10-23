@@ -12,7 +12,7 @@ Schlanke, selbst hostbare Kommunikationssoftware für Text, Sprache, Video und B
 * **Sprache/Video:** WebRTC-Mesh mit Opus, Echo-/Rauschunterdrückung, Stumm/Ton aus, Push-to-Talk (auch global im Hintergrund), Sprecheranzeige, Lautstärke pro Benutzer, Geräteauswahl, Qualitätsanzeige (RTT, Verlust, Relay), automatische Wiederverbindung, Webcam.
 * **Bildschirm:** Monitor oder Fenster (Systemdialog); vor dem Start ein Menü mit Schnellwahl, Auflösung (720p–4K/Original), Bildrate (5–60 FPS), „Optimiert für“ (Text/Bewegung) und Bitrate – auch während der Übertragung änderbar; Systemton getrennt vom Mikrofon, Anzeige wer überträgt, Vollbild.
 * **Benutzer:** Registrierung nach Serverrichtlinie, Argon2id-Passwörter, Avatare und Serverbilder mit quadratischem Zuschnitt, Status (Online/Abwesend/Nicht stören/Unsichtbar), Statusmeldung, DMs und Direktanrufe, Freunde, Blockieren, Konto löschen.
-* **Oberfläche:** 15 Sprachen (per Landesflagge umschaltbar, Arabisch von rechts nach links), 10 Designs mit Tiefeneffekt, Schnellwechsler (Strg+K), Tastenkürzel, automatisch „Abwesend“, Benachrichtigungston.
+* **Oberfläche:** eigene Titelleiste in den Farben des Designs, 10 Designs mit durchgehendem Farbverlauf und halbtransparenten Flächen, dezente Interface-Sounds (Beitreten, Verlassen, Kanalwechsel, Stummschalten, Bildschirm), 15 Sprachen (Landesflagge in der Fußzeile, Arabisch von rechts nach links), mechanisches N-Logo, Schnellwechsler (Strg+K), Tastenkürzel, automatisch „Abwesend“, Benachrichtigungston.
 * **Windows:** NSIS-/MSI-Installer, Startmenü, Tray-Betrieb, Autostart, Single-Instance, DPAPI-geschützte Sitzungstoken, Fehlerprotokolle.
 
 Den genauen, geprüften Stand (inkl. offener Punkte) beschreibt **[docs/STATUS.md](docs/STATUS.md)**.

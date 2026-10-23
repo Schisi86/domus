@@ -8,7 +8,7 @@ import type { Message, SavedServer } from "../types";
 import { ServerStore } from "./server";
 import { detectLang, setLang, t } from "../i18n";
 import { applyTheme } from "../themes";
-import { playChime } from "../sound";
+import { play, playChime } from "../sound";
 
 // ------------------------------------------------------------- settings
 
@@ -32,6 +32,9 @@ export interface Settings {
   globalPttKey: string;
   notifications: boolean;
   notifySound: boolean;
+  /** Quiet cues for joining, leaving, switching, muting, sharing. */
+  uiSounds: boolean;
+  uiVolume: number;
   autoAway: boolean;
   autoAwayMinutes: number;
   recentEmojis: string[];
@@ -90,6 +93,8 @@ export const defaultSettings: Settings = {
   globalPttKey: "F8",
   notifications: true,
   notifySound: true,
+  uiSounds: true,
+  uiVolume: 0.6,
   autoAway: true,
   autoAwayMinutes: 10,
   recentEmojis: [],
@@ -154,6 +159,7 @@ export function selectServer(id: string | null) {
 }
 
 export function selectChannel(cid: number) {
+  if (activeChannelId.value !== cid) play("switch");
   activeChannelId.value = cid;
   const sid = activeServerId.value;
   if (sid) updateSettings({ lastChannel: { ...settings.value.lastChannel, [sid]: cid } });

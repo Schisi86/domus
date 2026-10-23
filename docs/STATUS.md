@@ -79,6 +79,16 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
 
+### Fensterrahmen, Designs, Sounds (nach 0.3.0)
+| Funktion | Stand |
+|---|---|
+| Eigene Titelleiste statt Windows-Leiste (Farben des Designs, Ort in der Mitte, Minimieren/Maximieren/Schließen, Ziehen, Doppelklick) | ✅ Desktop-E2E `chrome.mjs`; 🟡 Einrasten per Windows-Snap-Layout-Menü am Maximieren-Knopf entfällt (Win+Pfeiltasten und Ziehen an den Rand funktionieren) |
+| 10 Designs mit Farbverlauf hinter der ganzen Oberfläche, halbtransparente Flächen, Glas-Effekt für Fenster/Menüs | ✅ Screenshots aller Designs (Browser + Desktop) |
+| Interface-Sounds (synthetisch, ohne Audiodateien), abschaltbar, Lautstärke, Vorhören | ✅ Auslösung per Browser-E2E nachgewiesen; Klang manuell zu beurteilen |
+| Fußzeile mit „Spenden“, Copyright-Link und Sprachflagge; Herz-Knopf entfernt | ✅ Desktop-E2E |
+| Schließen-Knopf der Einstellungen bleibt beim Scrollen sichtbar | ✅ Desktop-E2E |
+| Neues Logo (mechanisches N) inkl. aller Icon-Größen | ✅ |
+
 ### Hosting, Bildschirm, Bilder (neu in 0.3.0)
 | Funktion | Stand |
 |---|---|

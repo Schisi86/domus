@@ -8,24 +8,8 @@ import { errorText, presenceText, t } from "../i18n";
 import { Avatar, EmptyState, IconButton, Icon, LogoMark } from "./components";
 import { AddServerDialog } from "./dialogs/AddServer";
 import { HostDialog } from "./dialogs/Host";
-import { AboutDialog } from "./dialogs/About";
-import { COPYRIGHT, HOMEPAGE } from "../brand";
-import { openExternal } from "./links";
-import { LangPicker } from "./LangPicker";
 
 type Tab = "online" | "all" | "pending" | "blocked";
-
-function Credit() {
-  return (
-    <div class="credit" style={{ marginTop: "18px" }}>
-      {COPYRIGHT} ·{" "}
-      <a href={HOMEPAGE} onClick={(e) => { e.preventDefault(); void openExternal(HOMEPAGE, true); }}>
-        {HOMEPAGE.replace("https://", "")}
-      </a>{" "}
-      · <a href="#" onClick={(e) => { e.preventDefault(); openModal(<AboutDialog />); }}>{t("about.title")}</a>
-    </div>
-  );
-}
 
 export function FriendsView() {
   const [tab, setTab] = useState<Tab>("online");
@@ -37,10 +21,6 @@ export function FriendsView() {
           <button class="btn primary lg" onClick={() => openModal(<AddServerDialog />)}><Icon.Plus /> {t("rail.add")}</button>
           <button class="btn lg" onClick={() => openModal(<HostDialog />)}><Icon.ServerIcon /> {t("home.startOwn")}</button>
         </div>
-        <div class="row faint small" style={{ marginTop: "8px" }}>
-          <LangPicker class="btn ghost sm" /> {t("lang.choose")}
-        </div>
-        <Credit />
       </EmptyState>
     );
   }
@@ -91,7 +71,6 @@ export function FriendsView() {
             </div>
           );
         })}
-        <Credit />
       </div>
     </div>
   );

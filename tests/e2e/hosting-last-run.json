@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-23T21:00:11.721Z",
+  "at": "2026-10-23T21:44:47.915Z",
   "results": [
     {
       "name": "hosting button sits at the bottom of the rail",
@@ -19,12 +19,12 @@
     {
       "name": "server A: permanent invite link shown",
       "ok": true,
-      "detail": "nexustalk://127.0.0.1:7878/YKFZBRA6#fp=1E2561E2884F2C7C94B76DCE9C100C8989C0D04BA6BE93B1238B59840CF525B4"
+      "detail": "nexustalk://127.0.0.1:7878/5UMJFS32#fp=3FDB25123279471FF7CAF2835E4BA89A374210EB1B7929D9A3D6070C8A59AB86"
     },
     {
       "name": "server B: invite link shown",
       "ok": true,
-      "detail": "nexustalk://127.0.0.1:7879/EA47USUS#fp=83AB1BE2B09AF39E13F8DDEBCAAB6B28A37F44CBB246419C8E7E7E76160C7811"
+      "detail": "nexustalk://127.0.0.1:7879/5WJUHZKM#fp=07EA7FF75A9AF6D692101A913C6F168015EFF17C6D0BC4FBC94F15D12D9BC87D"
     },
     {
       "name": "both servers use different ports",
@@ -49,7 +49,7 @@
     {
       "name": "registry stores both servers",
       "ok": true,
-      "detail": "server, servers/s4449151a3c1c"
+      "detail": "server, servers/s46b82c33320c"
     },
     {
       "name": "invite link stays the same when reopened",
