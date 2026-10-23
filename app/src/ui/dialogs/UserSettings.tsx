@@ -1,16 +1,23 @@
-// User settings: account (per server), audio/video devices, screen sharing,
-// notifications, appearance, app & diagnostics.
+// User settings: account (per server), audio/video, screen sharing,
+// notifications, design & language, app & diagnostics, about.
 
 import { useEffect, useRef, useState } from "preact/hooks";
-import { activeServer, closeModal, minimizeToTray, persistNow, removeServer, servers, settings, toast, updateSettings, type Settings } from "../../state/app";
+import { activeServer, closeModal, minimizeToTray, openModal, persistNow, removeServer, servers, settings, toast, updateSettings, type Settings } from "../../state/app";
 import type { ServerStore } from "../../state/server";
-import { errorText, PRESENCE_TEXT } from "../../i18n";
+import { errorText, lang, LANGS, presenceText, t, type Key } from "../../i18n";
 import { transport } from "../../net/transport";
 import { appInfo, autostart, isTauri, openFolder, quitApp, type AppInfo } from "../../platform";
-import { Avatar, Field, IconButton, Icon, Modal, Toggle, confirmDialog, promptDialog } from "../components";
+import { Avatar, Field, IconButton, Icon, LogoMark, Modal, Toggle, confirmDialog, promptDialog } from "../components";
 import { SCREEN_PROFILES, voice } from "../../rtc/voice";
+import { THEMES } from "../../themes";
+import { Flag } from "../flags";
+import { DonateCard } from "./About";
+import { ShortcutsDialog } from "../QuickSwitcher";
+import { AUTHOR, COPYRIGHT, HOMEPAGE, PRODUCT_SITE } from "../../brand";
+import { openExternal } from "../links";
+import { playChime } from "../../sound";
 
-type Tab = "account" | "voice" | "screen" | "notify" | "look" | "app";
+type Tab = "account" | "voice" | "screen" | "notify" | "look" | "app" | "about";
 
 function Account() {
   const [sid, setSid] = useState(activeServer.value?.id ?? servers.value[0]?.id ?? "");
@@ -24,11 +31,10 @@ function Account() {
     setDisplay(me?.display_name ?? "");
     setStatus(me?.status_text ?? "");
   }, [sid, me?.id]);
-  if (!server || !me) return <div class="muted">Mit keinem Server verbunden.</div>;
+  if (!server || !me) return <div class="muted">{t("settings.noServer")}</div>;
 
-  const saveProfile = () =>
-    server.rpc("user.update", { display_name: display, status_text: status }).then(() => toast("Profil gespeichert", undefined, "ok"), (e) => toast("Fehler", errorText(e), "error"));
-  const setPresence = (p: string) => server.rpc("user.presence", { presence: p }).then(() => (server.me.value = { ...me, presence: p as never }), (e) => toast("Fehler", errorText(e), "error"));
+  const saveProfile = () => server.rpc("user.update", { display_name: display, status_text: status }).then(() => toast(t("settings.profileSaved"), undefined, "ok"), (e) => toast(t("common.error"), errorText(e), "error"));
+  const setPresence = (p: string) => server.rpc("user.presence", { presence: p }).then(() => (server.me.value = { ...me, presence: p as never }), (e) => toast(t("common.error"), errorText(e), "error"));
   const avatar = () => {
     const input = document.createElement("input");
     input.type = "file";
@@ -36,10 +42,10 @@ function Account() {
     input.onchange = async () => {
       const f = input.files?.[0];
       if (!f) return;
-      if (f.size > 2 * 1024 * 1024) return toast("Bild zu groß", "Maximal 2 MB.", "warn");
+      if (f.size > 2 * 1024 * 1024) return toast(t("common.imageTooLarge"), t("common.max2mb"), "warn");
       const r = await transport.upload(server.target(), "/api/v1/avatar", server.token, f).catch((e) => ({ status: 0, body: { error: e } }));
-      if (r.status === 200) toast("Avatar aktualisiert", undefined, "ok");
-      else toast("Upload fehlgeschlagen", errorText(r.body?.error), "error");
+      if (r.status === 200) toast(t("settings.avatarUpdated"), undefined, "ok");
+      else toast(t("common.uploadFailed"), errorText(r.body?.error), "error");
     };
     input.click();
   };
@@ -48,43 +54,36 @@ function Account() {
       await server.rpc("user.password", { old_password: oldPw, new_password: newPw });
       setOldPw("");
       setNewPw("");
-      toast("Passwort geändert", "Andere Sitzungen wurden abgemeldet.", "ok");
+      toast(t("settings.pwChanged"), t("settings.pwChangedBody"), "ok");
     } catch (e) {
-      toast("Passwort nicht geändert", errorText(e), "error");
+      toast(t("settings.pwFailed"), errorText(e), "error");
     }
   };
   const logout = async () => {
-    if (!(await confirmDialog({ title: "Abmelden?", body: `Du wirst von „${server.displayName()}“ abgemeldet und der Server wird aus der Liste entfernt.`, confirm: "Abmelden" }))) return;
+    if (!(await confirmDialog({ title: t("settings.logoutTitle"), body: t("settings.logoutBody", { name: server.displayName() }), confirm: t("settings.logout") }))) return;
     await transport.http(server.target(), "POST", "/api/v1/auth/logout", server.token).catch(() => {});
     removeServer(server.id);
     closeModal();
   };
   const deleteAccount = async () => {
-    const pw = await promptDialog({
-      title: "Konto löschen",
-      body: `Dein Konto auf „${server.displayName()}“ wird dauerhaft gelöscht. Andere Server sind nicht betroffen.`,
-      label: "Passwort zur Bestätigung",
-      password: true,
-      confirm: "Weiter",
-      danger: true,
-    });
+    const pw = await promptDialog({ title: t("settings.deleteTitle"), body: t("settings.deleteBody", { name: server.displayName() }), label: t("settings.deletePw"), password: true, confirm: t("common.next"), danger: true });
     if (!pw) return;
-    const withMsgs = await confirmDialog({ title: "Auch Nachrichten löschen?", body: "Sollen alle deine Nachrichten auf diesem Server ebenfalls gelöscht werden? Andernfalls bleiben sie als „Gelöschter Benutzer“ erhalten.", confirm: "Nachrichten löschen" });
+    const withMsgs = await confirmDialog({ title: t("settings.deleteMsgsTitle"), body: t("settings.deleteMsgsBody"), confirm: t("settings.deleteMsgs") });
     try {
       await server.rpc("user.delete_account", { password: pw, delete_messages: withMsgs });
       removeServer(server.id);
       closeModal();
-      toast("Konto gelöscht", undefined, "ok");
+      toast(t("settings.deleted"), undefined, "ok");
     } catch (e) {
-      toast("Löschen fehlgeschlagen", errorText(e), "error");
+      toast(t("common.deleteFailed"), errorText(e), "error");
     }
   };
 
   return (
     <>
-      <h2>Mein Konto</h2>
+      <h2>{t("settings.account")}</h2>
       {servers.value.length > 1 && (
-        <Field label="Server" hint="Konten sind pro Server getrennt.">
+        <Field label={t("settings.server")} hint={t("settings.perServer")}>
           <select class="select" value={sid} onChange={(e) => setSid((e.target as HTMLSelectElement).value)}>
             {servers.value.map((s) => (
               <option key={s.id} value={s.id}>{s.displayName()}</option>
@@ -95,36 +94,36 @@ function Account() {
       <div class="card row" style={{ gap: "14px" }}>
         <Avatar server={server} userId={me.id} name={me.display_name || me.username} size={64} />
         <div class="grow">
-          <div style={{ fontWeight: 700, fontSize: "var(--fs-lg)" }}>{me.display_name || me.username}</div>
+          <div style={{ fontWeight: 650, fontSize: "var(--fs-lg)" }}>{me.display_name || me.username}</div>
           <div class="faint selectable">@{me.username}</div>
         </div>
-        <button class="btn outline" onClick={avatar}>Avatar ändern</button>
-        {me.avatar && <button class="btn ghost" onClick={() => transport.http(server.target(), "DELETE", "/api/v1/avatar", server.token)}>Entfernen</button>}
+        <button class="btn outline" onClick={avatar}>{t("settings.changeAvatar")}</button>
+        {me.avatar && <button class="btn ghost" onClick={() => transport.http(server.target(), "DELETE", "/api/v1/avatar", server.token)}>{t("common.remove")}</button>}
       </div>
-      <Field label="Online-Status">
+      <Field label={t("settings.presence")}>
         <div class="tabs">
           {["online", "idle", "dnd", "invisible"].map((p) => (
-            <button key={p} class={(me.presence ?? "online") === p ? "active" : ""} onClick={() => void setPresence(p)}>{PRESENCE_TEXT[p]}</button>
+            <button key={p} class={(me.presence ?? "online") === p ? "active" : ""} onClick={() => void setPresence(p)}>{presenceText(p)}</button>
           ))}
         </div>
       </Field>
-      <div class="row" style={{ gap: "12px", alignItems: "flex-end" }}>
-        <Field label="Anzeigename"><input class="input" maxLength={32} value={display} onInput={(e) => setDisplay((e.target as HTMLInputElement).value)} /></Field>
-        <Field label="Statusmeldung"><input class="input" maxLength={128} value={status} onInput={(e) => setStatus((e.target as HTMLInputElement).value)} /></Field>
-        <button class="btn primary" onClick={() => void saveProfile()}>Speichern</button>
+      <div class="row wrap" style={{ gap: "12px", alignItems: "flex-end" }}>
+        <Field label={t("settings.displayName")}><input class="input" maxLength={32} value={display} onInput={(e) => setDisplay((e.target as HTMLInputElement).value)} /></Field>
+        <Field label={t("settings.statusText")}><input class="input" maxLength={128} value={status} onInput={(e) => setStatus((e.target as HTMLInputElement).value)} /></Field>
+        <button class="btn primary" onClick={() => void saveProfile()}>{t("common.save")}</button>
       </div>
       <div class="card col">
-        <div class="label">Passwort ändern</div>
-        <div class="row" style={{ gap: "10px" }}>
-          <input class="input" type="password" placeholder="Aktuelles Passwort" autoComplete="current-password" value={oldPw} onInput={(e) => setOldPw((e.target as HTMLInputElement).value)} />
-          <input class="input" type="password" placeholder="Neues Passwort (min. 8)" autoComplete="new-password" value={newPw} onInput={(e) => setNewPw((e.target as HTMLInputElement).value)} />
-          <button class="btn" disabled={!oldPw || newPw.length < 8} onClick={() => void changePw()}>Ändern</button>
+        <div class="label">{t("settings.changePw")}</div>
+        <div class="row wrap" style={{ gap: "10px" }}>
+          <input class="input grow" type="password" placeholder={t("settings.currentPw")} autoComplete="current-password" value={oldPw} onInput={(e) => setOldPw((e.target as HTMLInputElement).value)} />
+          <input class="input grow" type="password" placeholder={t("settings.newPw")} autoComplete="new-password" value={newPw} onInput={(e) => setNewPw((e.target as HTMLInputElement).value)} />
+          <button class="btn" disabled={!oldPw || newPw.length < 8} onClick={() => void changePw()}>{t("common.change")}</button>
         </div>
       </div>
       <div class="row">
-        <button class="btn outline" onClick={() => void logout()}><Icon.Logout /> Abmelden</button>
+        <button class="btn outline" onClick={() => void logout()}><Icon.Logout class="icon flip" /> {t("settings.logout")}</button>
         <span class="spacer" />
-        <button class="btn ghost" style={{ color: "var(--danger)" }} onClick={() => void deleteAccount()}>Konto auf diesem Server löschen</button>
+        <button class="btn ghost" style={{ color: "var(--danger)" }} onClick={() => void deleteAccount()}>{t("settings.deleteAccount")}</button>
       </div>
     </>
   );
@@ -162,25 +161,46 @@ function MicTest() {
       an.fftSize = 512;
       ctx.createMediaStreamSource(stream).connect(an);
       const buf = new Uint8Array(an.fftSize);
-      const t = setInterval(() => {
+      const timer = setInterval(() => {
         an.getByteTimeDomainData(buf);
         let s = 0;
         for (const v of buf) s += ((v - 128) / 128) ** 2;
         setLevel(Math.min(1, Math.sqrt(s / buf.length) * 4));
       }, 80);
       stop.current = () => {
-        clearInterval(t);
+        clearInterval(timer);
         stream.getTracks().forEach((x) => x.stop());
         void ctx.close();
       };
     } catch (e) {
-      toast("Mikrofontest fehlgeschlagen", String(e), "error");
+      toast(t("settings.micTestFailed"), String(e), "error");
     }
   };
   return (
     <div class="row">
-      <button class="btn" onClick={() => void toggle()}>{stop.current ? "Test beenden" : "Mikrofon testen"}</button>
+      <button class="btn" onClick={() => void toggle()}>{stop.current ? t("settings.stopTest") : t("settings.micTest")}</button>
       <div class="meter grow"><div style={{ width: `${(level ?? 0) * 100}%` }} /></div>
+    </div>
+  );
+}
+
+function KeyCapture({ value, onChange, allowAll }: { value: string; onChange: (k: string) => void; allowAll: boolean }) {
+  const [capturing, setCapturing] = useState(false);
+  useEffect(() => {
+    if (!capturing) return;
+    const k = (e: KeyboardEvent) => {
+      e.preventDefault();
+      // Global shortcuts use accelerator names (F8, Pause, …); in-window keys use KeyboardEvent.code.
+      onChange(allowAll ? e.code : e.key.length === 1 ? e.key.toUpperCase() : e.key);
+      setCapturing(false);
+    };
+    window.addEventListener("keydown", k, { once: true });
+    return () => window.removeEventListener("keydown", k);
+  }, [capturing]);
+  return (
+    <div class="row">
+      <span class="grow">{t("settings.key")}: <kbd>{value.replace(/^Key/, "")}</kbd></span>
+      <button class="btn sm" onClick={() => setCapturing(true)}>{capturing ? t("settings.pressKey") : t("common.change")}</button>
     </div>
   );
 }
@@ -191,66 +211,59 @@ function Voice() {
   const inputs = devices.filter((d) => d.kind === "audioinput");
   const outputs = devices.filter((d) => d.kind === "audiooutput");
   const cams = devices.filter((d) => d.kind === "videoinput");
-  const [capturing, setCapturing] = useState(false);
   const v = voice.value;
   const set = (patch: Partial<Settings>) => {
     updateSettings(patch);
     if (v && ("inputDevice" in patch || "echoCancellation" in patch || "noiseSuppression" in patch || "autoGainControl" in patch)) void v.changeInputDevice();
     if (v && "outputDevice" in patch) v.refreshOutputs();
-    if (v && "pushToTalk" in patch) v.applyMicEnabled();
+    if (v && ("pushToTalk" in patch || "globalPtt" in patch || "globalPttKey" in patch)) {
+      v.applyMicEnabled();
+      void v.registerGlobalPtt();
+    }
   };
-  useEffect(() => {
-    if (!capturing) return;
-    const k = (e: KeyboardEvent) => {
-      e.preventDefault();
-      set({ pttKey: e.code });
-      setCapturing(false);
-    };
-    window.addEventListener("keydown", k, { once: true });
-    return () => window.removeEventListener("keydown", k);
-  }, [capturing]);
-  const label = (d: MediaDeviceInfo, i: number) => d.label || `Gerät ${i + 1}`;
+  const label = (d: MediaDeviceInfo, i: number) => d.label || t("settings.deviceN", { n: i + 1 });
   return (
     <>
-      <h2>Sprache & Video</h2>
-      {!devices.some((d) => d.label) && <div class="notice">Gerätenamen werden angezeigt, sobald der Mikrofonzugriff einmal erlaubt wurde (z. B. über „Mikrofon testen“).</div>}
-      <div class="row" style={{ gap: "12px" }}>
-        <Field label="Eingabegerät">
+      <h2>{t("settings.voice")}</h2>
+      {!devices.some((d) => d.label) && <div class="notice">{t("settings.deviceNamesHint")}</div>}
+      <div class="row wrap" style={{ gap: "12px" }}>
+        <Field label={t("settings.input")}>
           <select class="select" value={s.inputDevice} onChange={(e) => set({ inputDevice: (e.target as HTMLSelectElement).value })}>
-            <option value="">Standard</option>
+            <option value="">{t("common.default")}</option>
             {inputs.map((d, i) => <option key={d.deviceId} value={d.deviceId}>{label(d, i)}</option>)}
           </select>
         </Field>
-        <Field label="Ausgabegerät">
+        <Field label={t("settings.output")}>
           <select class="select" value={s.outputDevice} onChange={(e) => set({ outputDevice: (e.target as HTMLSelectElement).value })}>
-            <option value="">Standard</option>
+            <option value="">{t("common.default")}</option>
             {outputs.map((d, i) => <option key={d.deviceId} value={d.deviceId}>{label(d, i)}</option>)}
           </select>
         </Field>
       </div>
       <MicTest />
       <div class="card col">
-        <Toggle checked={s.echoCancellation} onChange={(x) => set({ echoCancellation: x })} label="Echounterdrückung" />
-        <Toggle checked={s.noiseSuppression} onChange={(x) => set({ noiseSuppression: x })} label="Rauschunterdrückung" />
-        <Toggle checked={s.autoGainControl} onChange={(x) => set({ autoGainControl: x })} label="Automatische Lautstärkeregelung" />
-        <div class="faint xs">Verarbeitung durch die WebRTC-Audioengine (Opus-Codec). Änderungen gelten sofort, auch in laufenden Gesprächen.</div>
+        <Toggle checked={s.echoCancellation} onChange={(x) => set({ echoCancellation: x })} label={t("settings.echo")} />
+        <Toggle checked={s.noiseSuppression} onChange={(x) => set({ noiseSuppression: x })} label={t("settings.noise")} />
+        <Toggle checked={s.autoGainControl} onChange={(x) => set({ autoGainControl: x })} label={t("settings.agc")} />
+        <div class="faint xs">{t("settings.audioHint")}</div>
       </div>
       <div class="card col">
-        <Toggle checked={s.pushToTalk} onChange={(x) => set({ pushToTalk: x })} label="Push-to-Talk" desc="Das Mikrofon sendet nur, solange die Taste gedrückt ist (wenn das NexusTalk-Fenster aktiv ist)." />
-        {s.pushToTalk && (
-          <div class="row">
-            <span class="grow">Taste: <b class="mono">{s.pttKey}</b></span>
-            <button class="btn sm" onClick={() => setCapturing(true)}>{capturing ? "Taste drücken …" : "Ändern"}</button>
-          </div>
+        <Toggle checked={s.pushToTalk} onChange={(x) => set({ pushToTalk: x })} label={t("settings.ptt")} desc={t("settings.pttDesc")} />
+        {s.pushToTalk && <KeyCapture value={s.pttKey} allowAll onChange={(k) => set({ pttKey: k })} />}
+        {s.pushToTalk && isTauri && (
+          <>
+            <Toggle checked={s.globalPtt} onChange={(x) => set({ globalPtt: x })} label={t("settings.globalPtt")} desc={t("settings.globalPttDesc")} />
+            {s.globalPtt && <KeyCapture value={s.globalPttKey} allowAll={false} onChange={(k) => set({ globalPttKey: k })} />}
+          </>
         )}
       </div>
-      <Field label="Kamera">
+      <Field label={t("settings.camera")}>
         <select class="select" value={s.videoDevice} onChange={(e) => set({ videoDevice: (e.target as HTMLSelectElement).value })}>
-          <option value="">Standard</option>
+          <option value="">{t("common.default")}</option>
           {cams.map((d, i) => <option key={d.deviceId} value={d.deviceId}>{label(d, i)}</option>)}
         </select>
       </Field>
-      <div class="faint xs">Kamera und Mikrofon werden nur aktiviert, während du in einem Sprachkanal bist bzw. die Kamera einschaltest.</div>
+      <div class="faint xs">{t("settings.privacyHint")}</div>
     </>
   );
 }
@@ -265,33 +278,34 @@ function Screen() {
   const m = s.screenManual;
   return (
     <>
-      <h2>Bildschirmübertragung</h2>
-      <Field label="Qualitätsprofil">
+      <h2>{t("screen.title")}</h2>
+      <Field label={t("screen.quality")}>
         <div class="col" style={{ gap: "6px" }}>
-          {(Object.entries(SCREEN_PROFILES) as [keyof typeof SCREEN_PROFILES, (typeof SCREEN_PROFILES)[keyof typeof SCREEN_PROFILES]][]).map(([k, p]) => (
-            <label class="checkbox" key={k}>
-              <input type="radio" name="prof" checked={s.screenProfile === k} onChange={() => set({ screenProfile: k })} />
-              <span><b>{p.label}</b> <span class="faint small">bis {p.width}×{p.height}, {p.fps} FPS, max. {(p.kbps / 1000).toFixed(1)} Mbit/s</span></span>
-            </label>
-          ))}
+          {(Object.keys(SCREEN_PROFILES) as (keyof typeof SCREEN_PROFILES)[]).map((k) => {
+            const p = SCREEN_PROFILES[k];
+            return (
+              <label class="checkbox" key={k}>
+                <input type="radio" name="prof" checked={s.screenProfile === k} onChange={() => set({ screenProfile: k })} />
+                <span><b>{t(`screen.${k}` as Key)}</b> <span class="faint small">{t("screen.profileInfo", { w: p.width, h: p.height, fps: p.fps, mbit: (p.kbps / 1000).toFixed(1) })}</span></span>
+              </label>
+            );
+          })}
           <label class="checkbox">
             <input type="radio" name="prof" checked={s.screenProfile === "manual"} onChange={() => set({ screenProfile: "manual" })} />
-            <span><b>Manuell</b></span>
+            <span><b>{t("screen.manual")}</b></span>
           </label>
         </div>
       </Field>
       {s.screenProfile === "manual" && (
-        <div class="row" style={{ gap: "10px" }}>
-          <Field label="Breite"><input class="input" type="number" min={320} max={3840} value={m.width} onChange={(e) => set({ screenManual: { ...m, width: Number((e.target as HTMLInputElement).value) } })} /></Field>
-          <Field label="Höhe"><input class="input" type="number" min={240} max={2160} value={m.height} onChange={(e) => set({ screenManual: { ...m, height: Number((e.target as HTMLInputElement).value) } })} /></Field>
+        <div class="row wrap" style={{ gap: "10px" }}>
+          <Field label={t("screen.width")}><input class="input" type="number" min={320} max={3840} value={m.width} onChange={(e) => set({ screenManual: { ...m, width: Number((e.target as HTMLInputElement).value) } })} /></Field>
+          <Field label={t("screen.height")}><input class="input" type="number" min={240} max={2160} value={m.height} onChange={(e) => set({ screenManual: { ...m, height: Number((e.target as HTMLInputElement).value) } })} /></Field>
           <Field label="FPS"><input class="input" type="number" min={1} max={60} value={m.fps} onChange={(e) => set({ screenManual: { ...m, fps: Number((e.target as HTMLInputElement).value) } })} /></Field>
           <Field label="kbit/s"><input class="input" type="number" min={200} max={20000} value={m.kbps} onChange={(e) => set({ screenManual: { ...m, kbps: Number((e.target as HTMLInputElement).value) } })} /></Field>
         </div>
       )}
-      <Toggle checked={s.screenAudio} onChange={(x) => set({ screenAudio: x })} label="Systemton mitübertragen" desc="Getrennt vom Mikrofon. Unter Windows meist nur bei „Gesamter Bildschirm“ verfügbar; NexusTalk zeigt an, wenn kein Ton übertragen wird." />
-      <div class="notice">
-        Beim Start wählst du im Systemdialog, was übertragen wird: einen ganzen Monitor oder ein einzelnes Fenster. Die Bitrate passt sich automatisch an die verfügbare Bandbreite an (WebRTC-Staukontrolle); die Werte oben sind Obergrenzen. Hardware-Encoder werden genutzt, sofern WebView2/Chromium sie für den Codec unterstützt.
-      </div>
+      <Toggle checked={s.screenAudio} onChange={(x) => set({ screenAudio: x })} label={t("screen.audio")} desc={t("screen.audioDesc")} />
+      <div class="notice">{t("screen.notice")}</div>
     </>
   );
 }
@@ -300,15 +314,29 @@ function Notify() {
   const s = settings.value;
   return (
     <>
-      <h2>Benachrichtigungen</h2>
+      <h2>{t("settings.notifications")}</h2>
       <div class="card col">
-        <Toggle checked={s.notifications} onChange={(x) => updateSettings({ notifications: x })} label="Desktop-Benachrichtigungen" />
-        <Toggle checked={s.notifyDMs} disabled={!s.notifications} onChange={(x) => updateSettings({ notifyDMs: x })} label="Direktnachrichten" />
-        <Toggle checked={s.notifyMentions} disabled={!s.notifications} onChange={(x) => updateSettings({ notifyMentions: x })} label="Erwähnungen (@name)" />
-        <Toggle checked={s.notifyAll} disabled={!s.notifications} onChange={(x) => updateSettings({ notifyAll: x })} label="Alle Nachrichten in nicht stummgeschalteten Kanälen" />
-        <Toggle checked={s.notifyVoiceJoin} disabled={!s.notifications} onChange={(x) => updateSettings({ notifyVoiceJoin: x })} label="Eingehende Anrufe" />
+        <Toggle checked={s.notifications} onChange={(x) => updateSettings({ notifications: x })} label={t("settings.desktopNotify")} />
+        <Toggle checked={s.notifyDMs} disabled={!s.notifications} onChange={(x) => updateSettings({ notifyDMs: x })} label={t("settings.notifyDms")} />
+        <Toggle checked={s.notifyMentions} disabled={!s.notifications} onChange={(x) => updateSettings({ notifyMentions: x })} label={t("settings.notifyMentions")} />
+        <Toggle checked={s.notifyAll} disabled={!s.notifications} onChange={(x) => updateSettings({ notifyAll: x })} label={t("settings.notifyAll")} />
+        <Toggle checked={s.notifyVoiceJoin} disabled={!s.notifications} onChange={(x) => updateSettings({ notifyVoiceJoin: x })} label={t("settings.notifyCalls")} />
+        <div class="row">
+          <div class="grow">
+            <Toggle checked={s.notifySound} disabled={!s.notifications} onChange={(x) => updateSettings({ notifySound: x })} label={t("settings.sound")} />
+          </div>
+          <button class="btn sm ghost" onClick={() => playChime()}>▶ {t("settings.test")}</button>
+        </div>
       </div>
-      <div class="faint small">Server und einzelne Kanäle lassen sich per Rechtsklick stummschalten. Im Status „Bitte nicht stören“ gibt es keine Benachrichtigungen.</div>
+      <div class="card col">
+        <Toggle checked={s.autoAway} onChange={(x) => updateSettings({ autoAway: x })} label={t("settings.autoAway")} desc={t("settings.autoAwayDesc", { n: s.autoAwayMinutes })} />
+        {s.autoAway && (
+          <Field label={t("settings.autoAwayMinutes")}>
+            <input class="input" type="number" min={1} max={120} value={s.autoAwayMinutes} style={{ width: "100px" }} onChange={(e) => updateSettings({ autoAwayMinutes: Math.max(1, Number((e.target as HTMLInputElement).value) || 10) })} />
+          </Field>
+        )}
+      </div>
+      <div class="faint small">{t("settings.notifyHint")}</div>
     </>
   );
 }
@@ -317,18 +345,41 @@ function Look() {
   const s = settings.value;
   return (
     <>
-      <h2>Darstellung</h2>
-      <Field label="Design">
-        <div class="tabs">
-          {(["dark", "light", "system"] as const).map((t) => (
-            <button key={t} class={s.theme === t ? "active" : ""} onClick={() => updateSettings({ theme: t })}>{{ dark: "Dunkel", light: "Hell", system: "Wie System" }[t]}</button>
+      <h2>{t("settings.look")}</h2>
+      <Field label={t("settings.design")}>
+        <div class="theme-grid">
+          {THEMES.map((th) => (
+            <button key={th.id} class={`theme-card${s.theme === th.id && !s.followSystemTheme ? " active" : ""}`} onClick={() => updateSettings({ theme: th.id, followSystemTheme: false })}>
+              <div class="preview">
+                <i style={{ width: "16%", background: th.swatch[0] }} />
+                <i style={{ width: "26%", background: th.swatch[1] }} />
+                <i style={{ flex: 1, background: `radial-gradient(circle at 70% 30%, ${th.swatch[3]}33, transparent 60%), ${th.swatch[2]}`, position: "relative" }}>
+                  <b style={{ position: "absolute", left: "12%", top: "22%", width: "54%", height: "9px", borderRadius: "5px", background: th.swatch[3], boxShadow: `0 0 12px ${th.swatch[3]}88` }} />
+                  <b style={{ position: "absolute", left: "12%", top: "48%", width: "70%", height: "6px", borderRadius: "4px", background: th.light ? "#0002" : "#fff2" }} />
+                  <b style={{ position: "absolute", left: "12%", top: "66%", width: "42%", height: "6px", borderRadius: "4px", background: th.swatch[4], opacity: 0.8 }} />
+                </i>
+              </div>
+              <div class="name">{t(`theme.${th.id}` as Key)}</div>
+            </button>
           ))}
         </div>
       </Field>
-      <Field label={`Schriftgröße (${Math.round(s.scale * 100)} %)`}>
+      <Toggle checked={s.followSystemTheme} onChange={(x) => updateSettings({ followSystemTheme: x })} label={t("settings.followSystem")} desc={t("settings.followSystemDesc")} />
+      <Field label={t("lang.title")}>
+        <div class="flag-picker" style={{ width: "auto", padding: "0px" }}>
+          {LANGS.map((l) => (
+            <button key={l.code} class={lang.value === l.code ? "active" : ""} onClick={() => updateSettings({ language: l.code })}>
+              <Flag code={l.flag} />
+              <span dir={l.rtl ? "rtl" : "ltr"}>{l.name}</span>
+            </button>
+          ))}
+        </div>
+      </Field>
+      <Toggle checked={!s.language} onChange={(x) => updateSettings({ language: x ? "" : lang.value })} label={t("lang.system")} />
+      <Field label={t("settings.scale", { n: Math.round(s.scale * 100) })}>
         <input class="range" type="range" min={0.85} max={1.3} step={0.05} value={s.scale} onInput={(e) => updateSettings({ scale: Number((e.target as HTMLInputElement).value) })} />
       </Field>
-      <Toggle checked={s.showMembers} onChange={(x) => updateSettings({ showMembers: x })} label="Mitgliederliste anzeigen" />
+      <Toggle checked={s.showMembers} onChange={(x) => updateSettings({ showMembers: x })} label={t("chat.showMembers")} />
     </>
   );
 }
@@ -342,7 +393,7 @@ function AppTab() {
   }, []);
   return (
     <>
-      <h2>App & Diagnose</h2>
+      <h2>{t("settings.app")}</h2>
       {isTauri && (
         <div class="card col">
           <Toggle
@@ -351,8 +402,8 @@ function AppTab() {
               minimizeToTray.value = x;
               void persistNow();
             }}
-            label="Beim Schließen in den Infobereich minimieren"
-            desc="Bei laufendem eigenem Server bleibt NexusTalk immer im Infobereich aktiv."
+            label={t("settings.tray")}
+            desc={t("settings.trayDesc")}
           />
           <Toggle
             checked={auto}
@@ -360,76 +411,101 @@ function AppTab() {
               try {
                 setAuto(await autostart(x));
               } catch (e) {
-                toast("Autostart nicht geändert", String(e), "error");
+                toast(t("settings.autostartFailed"), String(e), "error");
               }
             }}
-            label="Mit Windows starten"
-            desc="Startet NexusTalk minimiert im Infobereich."
+            label={t("settings.autostart")}
+            desc={t("settings.autostartDesc")}
           />
         </div>
       )}
       <div class="card">
-        <div class="label" style={{ marginBottom: "8px" }}>Verbindungen</div>
+        <div class="label" style={{ marginBottom: "8px" }}>{t("settings.connections")}</div>
         <table class="table">
           <tbody>
             {servers.value.map((s: ServerStore) => (
               <tr key={s.id}>
                 <td>{s.displayName()}</td>
                 <td class="mono xs">{s.saved.value.address}</td>
-                <td>{s.conn.state.value === "ready" ? <span class="badge ok">verbunden</span> : <span class="badge warn">{s.conn.state.value}</span>}</td>
+                <td>{s.conn.state.value === "ready" ? <span class="badge ok">{t("conn.connected")}</span> : <span class="badge warn">{s.conn.state.value}</span>}</td>
                 <td class="xs">{s.conn.latency.value !== null ? `${s.conn.latency.value} ms` : ""}</td>
-                <td><IconButton title="Neu verbinden" class="sm" onClick={() => s.conn.retryNow()}><Icon.Refresh /></IconButton></td>
+                <td><IconButton title={t("rail.reconnect")} class="sm" onClick={() => s.conn.retryNow()}><Icon.Refresh /></IconButton></td>
               </tr>
             ))}
           </tbody>
         </table>
-        <div class="faint xs" style={{ marginTop: "6px" }}>Die Serververbindung (Text, Signalisierung) ist unabhängig von den direkten Medienverbindungen in Sprachkanälen; deren Qualität zeigt das Sprachpanel.</div>
+        <div class="faint xs" style={{ marginTop: "6px" }}>{t("settings.connectionsHint")}</div>
       </div>
+      <button class="btn outline" style={{ alignSelf: "flex-start" }} onClick={() => openModal(<ShortcutsDialog />)}><Icon.Keyboard /> {t("keys.title")}</button>
       {info && (
         <dl class="kv card">
-          <dt>Version</dt><dd>{info.version}</dd>
-          <dt>Daten</dt><dd class="mono xs selectable">{info.data_dir}</dd>
-          <dt>Protokolle</dt><dd class="mono xs selectable">{info.log_dir}</dd>
+          <dt>{t("srv.version")}</dt><dd>{info.version}</dd>
+          <dt>{t("settings.data")}</dt><dd class="mono xs selectable">{info.data_dir}</dd>
+          <dt>{t("settings.logs")}</dt><dd class="mono xs selectable">{info.log_dir}</dd>
         </dl>
       )}
       {info && (
-        <div class="row">
-          <button class="btn outline" onClick={() => void openFolder(info.log_dir)}><Icon.Folder /> Protokollordner öffnen</button>
-          <button class="btn outline" onClick={() => void openFolder(info.data_dir)}><Icon.Folder /> Datenordner öffnen</button>
+        <div class="row wrap">
+          <button class="btn outline" onClick={() => void openFolder(info.log_dir)}><Icon.Folder /> {t("settings.openLogs")}</button>
+          <button class="btn outline" onClick={() => void openFolder(info.data_dir)}><Icon.Folder /> {t("settings.openData")}</button>
           <span class="spacer" />
-          <button class="btn danger" onClick={() => void quitApp()}>NexusTalk beenden</button>
+          <button class="btn danger" onClick={() => void quitApp()}>{t("settings.quit")}</button>
         </div>
       )}
     </>
   );
 }
 
+function About() {
+  return (
+    <>
+      <div class="about-hero">
+        <LogoMark />
+        <div>
+          <h2 style={{ fontSize: "var(--fs-2xl)" }}>NexusTalk</h2>
+          <div class="muted">{t("about.tagline")}</div>
+        </div>
+      </div>
+      <dl class="kv card">
+        <dt>{t("about.author")}</dt><dd>{AUTHOR}</dd>
+        <dt>{t("about.homepage")}</dt><dd><a href={HOMEPAGE} onClick={(e) => { e.preventDefault(); void openExternal(HOMEPAGE, true); }}>{HOMEPAGE.replace("https://", "")}</a></dd>
+        <dt>{t("about.website")}</dt><dd><a href={PRODUCT_SITE} onClick={(e) => { e.preventDefault(); void openExternal(PRODUCT_SITE, true); }}>{PRODUCT_SITE.replace("https://", "")}</a></dd>
+        <dt>{t("about.license")}</dt><dd>MIT</dd>
+      </dl>
+      <DonateCard />
+      <div class="credit">{COPYRIGHT} · {t("about.rights")}</div>
+    </>
+  );
+}
+
 export function UserSettingsDialog({ tab: initial }: { tab?: Tab }) {
   const [tab, setTab] = useState<Tab>(initial ?? "account");
-  const items: [Tab, string][] = [
-    ["account", "Mein Konto"],
-    ["voice", "Sprache & Video"],
-    ["screen", "Bildschirmübertragung"],
-    ["notify", "Benachrichtigungen"],
-    ["look", "Darstellung"],
-    ["app", "App & Diagnose"],
+  const items: [Tab, string, preact.ComponentChild][] = [
+    ["account", t("settings.account"), <Icon.Users />],
+    ["voice", t("settings.voice"), <Icon.Mic />],
+    ["screen", t("screen.title"), <Icon.Screen />],
+    ["notify", t("settings.notifications"), <Icon.Bell />],
+    ["look", t("settings.look"), <Icon.Palette />],
+    ["app", t("settings.app"), <Icon.Gear />],
+    ["about", t("about.title"), <Icon.Heart />],
   ];
   return (
     <Modal wide>
       <nav class="pane-nav">
-        <h3>Einstellungen</h3>
-        {items.map(([k, l]) => (
-          <button key={k} class={tab === k ? "active" : ""} onClick={() => setTab(k)}>{l}</button>
+        <h3>{t("settings.title")}</h3>
+        {items.map(([k, l, ic]) => (
+          <button key={k} class={tab === k ? "active" : ""} onClick={() => setTab(k)}>{ic}{l}</button>
         ))}
       </nav>
-      <div class="pane-content" style={{ position: "relative" }}>
-        <div class="pane-close"><IconButton title="Schließen (Esc)" onClick={closeModal}><Icon.X /></IconButton></div>
+      <div class="pane-content">
+        <div class="pane-close"><IconButton title={t("common.closeEsc")} onClick={closeModal}><Icon.X /></IconButton></div>
         {tab === "account" && <Account />}
         {tab === "voice" && <Voice />}
         {tab === "screen" && <Screen />}
         {tab === "notify" && <Notify />}
         {tab === "look" && <Look />}
         {tab === "app" && <AppTab />}
+        {tab === "about" && <About />}
       </div>
     </Modal>
   );

@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NexusTalk – selbst hostbare Discord-Alternative für Windows</title>
+<meta name="description" content="NexusTalk: schlanke, selbst hostbare Kommunikationsplattform mit Text, Sprache, Video und Bildschirmübertragung. Eigener Server per Klick, keine Cloud, keine Werbung, 15 Sprachen, 10 Designs. Von Christian Schiessl.">
+<meta name="author" content="Christian Schiessl">
+<meta name="theme-color" content="#06140f">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="canonical" href="https://nexustalk-app.netlify.app/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="NexusTalk – Deine Community. Dein Server.">
+<meta property="og:description" content="Selbst hostbare Alternative zu Discord: Text, Sprache, Video und Bildschirm – ohne Cloud, ohne Werbung, ohne Tracking.">
+<meta property="og:image" content="https://nexustalk-app.netlify.app/assets/shots/emerald-de-chat.jpg">
+<meta property="og:url" content="https://nexustalk-app.netlify.app/">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "NexusTalk",
+  "operatingSystem": "Windows 10, Windows 11 (x64)",
+  "applicationCategory": "CommunicationApplication",
+  "softwareVersion": "0.2.0",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+  "downloadUrl": "https://nexustalk-app.netlify.app/download/NexusTalk_0.2.0_x64-setup.exe",
+  "image": "https://nexustalk-app.netlify.app/assets/logo.png",
+  "screenshot": "https://nexustalk-app.netlify.app/assets/shots/emerald-de-chat.jpg",
+  "license": "https://opensource.org/licenses/MIT",
+  "author": { "@type": "Person", "name": "Christian Schiessl", "url": "https://cjs86.netlify.app" }
+}
+</script>
+<style>
+:root {
+  --bg: #040e0a;
+  --bg2: #071812;
+  --card: rgba(16, 38, 29, 0.55);
+  --card-solid: #0c1f18;
+  --line: rgba(143, 245, 207, 0.11);
+  --line-strong: rgba(143, 245, 207, 0.22);
+  --text: #e8f6ef;
+  --muted: #9cb8ab;
+  --faint: #6c8a7d;
+  --accent: #2ee59d;
+  --accent-2: #8ff5cf;
+  --accent-deep: #0a8f5c;
+  --hi: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --shadow: 0 1px 1px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.35), 0 30px 80px rgba(0,0,0,.35);
+  --radius: 18px;
+  --maxw: 1180px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15.5px/1.6 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: -2;
+  background:
+    radial-gradient(1200px 700px at 78% -10%, rgba(46, 229, 157, 0.16), transparent 60%),
+    radial-gradient(900px 600px at -10% 20%, rgba(16, 140, 95, 0.14), transparent 60%),
+    radial-gradient(1000px 800px at 50% 120%, rgba(46, 229, 157, 0.08), transparent 60%),
+    linear-gradient(180deg, #040e0a 0%, #05120d 50%, #040e0a 100%);
+}
+body::after {
+  content: "";
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image: linear-gradient(rgba(143,245,207,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(143,245,207,.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 70%);
+}
+a { color: var(--accent-2); text-decoration: none; }
+a:hover { color: #fff; }
+img { max-width: 100%; height: auto; display: block; }
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+/* ---------- nav ---------- */
+header.nav {
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  background: rgba(4, 14, 10, 0.62);
+  border-bottom: 1px solid var(--line);
+}
+.nav .wrap { display: flex; align-items: center; gap: 24px; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 650; letter-spacing: .2px; font-size: 17px; }
+.brand img { width: 34px; height: 34px; filter: drop-shadow(0 4px 10px rgba(46,229,157,.35)); }
+.nav nav { display: flex; gap: 4px; margin-left: auto; }
+.nav nav a { color: var(--muted); font-size: 14px; padding: 7px 12px; border-radius: 9px; transition: color .15s, background .15s; }
+.nav nav a:hover { color: var(--text); background: rgba(143,245,207,.07); }
+.nav .cta-mini { margin-left: 8px; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 13px 22px; border-radius: 13px;
+  font-weight: 600; font-size: 15px; letter-spacing: .1px;
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  box-shadow: var(--hi), 0 6px 18px rgba(0,0,0,.25);
+  transition: transform .15s ease, box-shadow .2s ease, background .2s;
+  cursor: pointer;
+}
+.btn:hover { transform: translateY(-2px); color: #fff; box-shadow: var(--hi), 0 12px 28px rgba(0,0,0,.35); }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn.primary {
+  color: #022417; border-color: transparent;
+  background: linear-gradient(180deg, #7ff7c8 0%, #2ee59d 45%, #14c180 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.18), 0 10px 30px rgba(46,229,157,.35), 0 2px 4px rgba(0,0,0,.3);
+}
+.btn.primary:hover { color: #011a10; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -2px 0 rgba(0,0,0,.18), 0 16px 44px rgba(46,229,157,.45), 0 2px 4px rgba(0,0,0,.3); }
+.btn.small { padding: 8px 14px; font-size: 13.5px; border-radius: 10px; }
+.btn.heart { color: #fff; border-color: transparent; background: linear-gradient(180deg, #ff86b1, #f2447f 55%, #d42a66); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 10px 28px rgba(242,68,127,.35); }
+.btn.heart:hover { color: #fff; }
+
+/* ---------- hero ---------- */
+.hero { padding: 72px 0 40px; position: relative; }
+.hero-grid { display: grid; grid-template-columns: 1.02fr 1.2fr; gap: 56px; align-items: center; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12.5px; letter-spacing: .6px; text-transform: uppercase; color: var(--accent-2);
+  padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong);
+  background: rgba(46,229,157,.07); box-shadow: var(--hi);
+}
+.eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(46,229,157,.18), 0 0 12px var(--accent); }
+h1 {
+  font-size: clamp(40px, 5.4vw, 66px); line-height: 1.04; margin: 20px 0 18px; letter-spacing: -1.6px; font-weight: 750;
+  background: linear-gradient(180deg, #ffffff 0%, #d7f7e9 55%, #8ff5cf 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+h1 em { font-style: normal; background: linear-gradient(90deg, #2ee59d, #8ff5cf); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { font-size: 18px; color: var(--muted); max-width: 540px; margin: 0 0 30px; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.hero-meta { margin-top: 18px; font-size: 13px; color: var(--faint); display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
+.hero-meta svg { width: 14px; height: 14px; color: var(--accent); }
+
+.logo3d { width: 120px; height: 120px; margin-bottom: 4px; perspective: 600px; }
+.logo3d img {
+  width: 100%; height: 100%;
+  filter: drop-shadow(0 18px 24px rgba(0,0,0,.5)) drop-shadow(0 6px 22px rgba(46,229,157,.35));
+  animation: float 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotateX(8deg) rotateY(-12deg); }
+  50% { transform: translateY(-10px) rotateX(-4deg) rotateY(10deg); }
+}
+
+.stage { perspective: 1800px; position: relative; }
+.stage::before {
+  content: ""; position: absolute; inset: 8% 4% -6% 8%; z-index: -1;
+  background: radial-gradient(closest-side, rgba(46,229,157,.35), transparent);
+  filter: blur(40px);
+}
+.device {
+  border-radius: 16px; overflow: hidden;
+  border: 1px solid rgba(143,245,207,.22);
+  box-shadow: 0 2px 0 rgba(255,255,255,.06) inset, 0 50px 100px -20px rgba(0,0,0,.7), 0 30px 60px -30px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.4);
+  transform: rotateY(-14deg) rotateX(7deg) rotateZ(1deg);
+  transform-style: preserve-3d;
+  transition: transform .5s cubic-bezier(.2,.7,.2,1);
+  background: #07140f;
+  position: relative;
+}
+.device::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 32%);
+}
+.device .bar { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 12px; background: linear-gradient(180deg, #0f231b, #0a1a14); border-bottom: 1px solid rgba(143,245,207,.1); }
+.device .bar i { width: 10px; height: 10px; border-radius: 50%; background: #23463a; }
+.device .bar i:first-child { background: #ff5f57; } .device .bar i:nth-child(2) { background: #febc2e; } .device .bar i:nth-child(3) { background: #28c840; }
+.device .bar span { margin-left: 8px; font-size: 12px; color: var(--faint); }
+.floating-card {
+  position: absolute; z-index: 3;
+  background: rgba(10, 28, 21, .82); backdrop-filter: blur(14px);
+  border: 1px solid var(--line-strong); border-radius: 14px;
+  box-shadow: var(--hi), 0 20px 40px rgba(0,0,0,.45);
+  padding: 12px 14px; font-size: 13px; display: flex; gap: 10px; align-items: center;
+  animation: bob 7s ease-in-out infinite;
+}
+.floating-card b { display: block; font-size: 13.5px; }
+.floating-card small { color: var(--muted); }
+.floating-card .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(180deg, #2ee59d, #0e9f68); color: #022417; box-shadow: inset 0 1px 0 rgba(255,255,255,.5); }
+.floating-card .ic svg { width: 18px; height: 18px; }
+.fc1 { left: -28px; bottom: 14%; }
+.fc2 { right: -18px; top: 9%; animation-delay: -3s; }
+@keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+
+/* ---------- stats ---------- */
+.stats { margin: 56px auto 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: var(--line); box-shadow: var(--shadow); }
+.stat { background: linear-gradient(180deg, rgba(14,34,26,.92), rgba(9,24,18,.92)); padding: 22px 18px; text-align: center; box-shadow: var(--hi); }
+.stat b { display: block; font-size: 28px; letter-spacing: -.6px; font-weight: 700; background: linear-gradient(180deg, #fff, #8ff5cf); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.stat span { font-size: 12.5px; color: var(--muted); }
+
+/* ---------- sections ---------- */
+section { padding: 96px 0 0; }
+.sec-head { text-align: center; max-width: 720px; margin: 0 auto 44px; }
+.sec-head .kicker { font-size: 12.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+h2 { font-size: clamp(30px, 3.6vw, 42px); line-height: 1.12; margin: 10px 0 14px; letter-spacing: -.9px; font-weight: 720; }
+.sec-head p { color: var(--muted); font-size: 16.5px; margin: 0; }
+
+.grid { display: grid; gap: 18px; }
+.features { grid-template-columns: repeat(4, 1fr); }
+.card {
+  position: relative; border-radius: var(--radius); padding: 24px 22px;
+  background: linear-gradient(180deg, rgba(18,42,32,.72), rgba(10,26,20,.72));
+  border: 1px solid var(--line);
+  box-shadow: var(--hi), 0 10px 30px rgba(0,0,0,.25);
+  transition: transform .25s ease, border-color .25s, box-shadow .25s;
+  transform-style: preserve-3d;
+}
+.card:hover { transform: translateY(-4px); border-color: var(--line-strong); box-shadow: var(--hi), 0 20px 48px rgba(0,0,0,.4), 0 0 0 1px rgba(46,229,157,.08); }
+.card h3 { font-size: 16.5px; margin: 16px 0 8px; letter-spacing: -.1px; }
+.card p { margin: 0; color: var(--muted); font-size: 14.2px; }
+.ficon {
+  width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center;
+  color: #032619;
+  background: linear-gradient(160deg, #9af9d5 0%, #2ee59d 45%, #0c9a64 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 0 rgba(0,0,0,.18), 0 8px 20px rgba(46,229,157,.25), 0 2px 3px rgba(0,0,0,.35);
+  transform: translateZ(20px);
+}
+.ficon svg { width: 22px; height: 22px; }
+
+/* ---------- comparison ---------- */
+.compare { border-radius: 22px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: rgba(9, 23, 18, .8); }
+.compare table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.compare th, .compare td { padding: 15px 20px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+.compare tr:last-child td { border-bottom: 0; }
+.compare thead th { background: linear-gradient(180deg, #0f251c, #0b1d16); font-size: 13px; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.compare thead th.nx { color: var(--accent-2); }
+.compare thead th.nx img { width: 20px; height: 20px; display: inline-block; vertical-align: -5px; margin-right: 7px; }
+.compare td:first-child { color: var(--muted); width: 24%; font-weight: 500; }
+.compare td.nx { background: rgba(46,229,157,.045); color: var(--text); }
+.compare td .y, .compare td .n, .compare td .m { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; margin-right: 8px; vertical-align: -4px; font-size: 12px; font-weight: 700; }
+.y { background: rgba(46,229,157,.18); color: var(--accent); }
+.n { background: rgba(255,99,99,.14); color: #ff8c8c; }
+.m { background: rgba(255,196,0,.14); color: #ffd25e; }
+.honest { margin-top: 22px; display: grid; grid-template-columns: auto 1fr; gap: 16px; padding: 20px 22px; border-radius: var(--radius); border: 1px dashed rgba(255,210,94,.3); background: rgba(255,196,0,.04); }
+.honest .ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: rgba(255,196,0,.13); color: #ffd25e; }
+.honest .ic svg { width: 20px; height: 20px; }
+.honest h4 { margin: 2px 0 6px; font-size: 15px; }
+.honest ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
+
+/* ---------- gallery ---------- */
+.gallery { display: grid; grid-template-columns: 1.55fr 1fr; gap: 22px; align-items: start; }
+.shot-main { border-radius: 16px; overflow: hidden; border: 1px solid var(--line-strong); box-shadow: var(--shadow); background: #000; aspect-ratio: 2040 / 1230; position: relative; }
+.shot-main img { width: 100%; height: 100%; object-fit: cover; transition: opacity .35s ease; }
+.themes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.theme {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 13px; cursor: pointer;
+  border: 1px solid var(--line); background: rgba(14,34,26,.6); color: var(--text); font: inherit; font-size: 14px; text-align: left;
+  box-shadow: var(--hi); transition: border-color .2s, transform .2s, background .2s;
+}
+.theme:hover { transform: translateY(-2px); border-color: var(--line-strong); }
+.theme.on { border-color: var(--accent); background: rgba(46,229,157,.08); box-shadow: var(--hi), 0 0 0 3px rgba(46,229,157,.12); }
+.swatch { width: 46px; height: 32px; border-radius: 8px; overflow: hidden; display: grid; grid-template-columns: 7px 10px 1fr; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 3px 8px rgba(0,0,0,.35); }
+.swatch i:nth-child(3) { position: relative; }
+.swatch i:nth-child(3)::before, .swatch i:nth-child(3)::after { content: ""; position: absolute; left: 5px; right: 5px; height: 4px; border-radius: 3px; background: var(--a); top: 8px; }
+.swatch i:nth-child(3)::after { background: var(--b); top: 17px; right: 12px; opacity: .85; }
+.theme small { display: block; color: var(--faint); font-size: 12px; }
+.gal-note { margin-top: 14px; font-size: 13px; color: var(--faint); }
+
+/* ---------- languages ---------- */
+.langs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.lang {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 13px;
+  background: rgba(14,34,26,.6); border: 1px solid var(--line); box-shadow: var(--hi); font-size: 14.5px;
+  transition: transform .2s, border-color .2s;
+}
+.lang:hover { transform: translateY(-2px) rotateX(6deg); border-color: var(--line-strong); }
+.lang svg { width: 30px; height: 20px; border-radius: 3px; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 3px 8px rgba(0,0,0,.4); }
+.lang small { display: block; color: var(--faint); font-size: 11.5px; }
+
+/* ---------- self-host steps ---------- */
+.steps { grid-template-columns: repeat(3, 1fr); counter-reset: s; }
+.step { padding-top: 26px; }
+.step::before {
+  counter-increment: s; content: counter(s);
+  position: absolute; top: -18px; left: 22px; width: 38px; height: 38px; border-radius: 12px;
+  display: grid; place-items: center; font-weight: 700; color: #032619;
+  background: linear-gradient(160deg, #9af9d5, #2ee59d 50%, #0c9a64);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 8px 18px rgba(46,229,157,.3);
+}
+code, .mono { font-family: "Cascadia Code", "Cascadia Mono", Consolas, ui-monospace, monospace; font-size: .92em; }
+code { background: rgba(143,245,207,.08); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; color: var(--accent-2); }
+
+/* ---------- download ---------- */
+.dl {
+  display: grid; grid-template-columns: 1.15fr 1fr; gap: 0; border-radius: 26px; overflow: hidden;
+  border: 1px solid var(--line-strong); box-shadow: var(--shadow), 0 0 80px rgba(46,229,157,.08);
+  background: linear-gradient(135deg, rgba(20,52,39,.9), rgba(8,22,17,.95));
+}
+.dl-main { padding: 40px; position: relative; }
+.dl-main h2 { margin-top: 0; }
+.dl-file { margin: 22px 0 18px; display: flex; gap: 16px; align-items: center; padding: 16px; border-radius: 16px; background: rgba(0,0,0,.22); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+.dl-file img { width: 54px; height: 54px; filter: drop-shadow(0 6px 12px rgba(0,0,0,.4)); }
+.dl-file b { display: block; font-size: 15px; }
+.dl-file small { color: var(--muted); font-size: 13px; }
+.hash { margin-top: 16px; font-size: 12px; color: var(--faint); word-break: break-all; }
+.hash .mono { color: var(--muted); }
+.dl-side { padding: 40px; border-left: 1px solid var(--line); background: rgba(0,0,0,.14); }
+.dl-side h3 { margin: 0 0 12px; font-size: 15px; }
+.req { list-style: none; margin: 0 0 22px; padding: 0; font-size: 14px; color: var(--muted); }
+.req li { padding: 7px 0 7px 26px; position: relative; border-bottom: 1px solid var(--line); }
+.req li:last-child { border-bottom: 0; }
+.req li::before { content: ""; position: absolute; left: 2px; top: 13px; width: 12px; height: 7px; border-left: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg); }
+.alt-dl { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: rgba(14,34,26,.5); font-size: 14px; }
+.alt-dl small { display: block; color: var(--faint); font-size: 12px; }
+
+/* ---------- donate ---------- */
+.donate {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 28px; align-items: center;
+  padding: 34px 38px; border-radius: 24px;
+  background: radial-gradient(600px 200px at 0% 0%, rgba(255,120,170,.13), transparent 70%), linear-gradient(180deg, rgba(20,40,32,.8), rgba(10,24,19,.85));
+  border: 1px solid rgba(255,134,177,.22); box-shadow: var(--shadow);
+}
+.heart3d { width: 84px; height: 84px; display: grid; place-items: center; border-radius: 24px; background: linear-gradient(160deg, #ffa3c4, #f2447f 55%, #b91c55); box-shadow: inset 0 2px 0 rgba(255,255,255,.45), inset 0 -4px 0 rgba(0,0,0,.2), 0 18px 34px rgba(242,68,127,.35); animation: beat 2.4s ease-in-out infinite; }
+.heart3d svg { width: 40px; height: 40px; color: #fff; filter: drop-shadow(0 3px 4px rgba(0,0,0,.25)); }
+@keyframes beat { 0%,100% { transform: scale(1) } 12% { transform: scale(1.07) } 24% { transform: scale(1) } 36% { transform: scale(1.05) } }
+.donate h3 { margin: 0 0 6px; font-size: 21px; }
+.donate p { margin: 0; color: var(--muted); }
+.donate .mail { margin-top: 8px; font-size: 13px; color: var(--faint); }
+.donate .mail button { background: none; border: 0; color: var(--accent-2); cursor: pointer; font: inherit; padding: 0 0 0 6px; }
+
+/* ---------- faq ---------- */
+.faq { max-width: 860px; margin: 0 auto; display: grid; gap: 10px; }
+details { border-radius: 14px; border: 1px solid var(--line); background: rgba(14,34,26,.55); box-shadow: var(--hi); }
+summary { cursor: pointer; padding: 16px 20px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; color: var(--accent); font-size: 20px; line-height: 1; transition: transform .2s; }
+details[open] summary::after { transform: rotate(45deg); }
+details p { margin: 0; padding: 0 20px 18px; color: var(--muted); font-size: 14.5px; }
+
+/* ---------- footer ---------- */
+footer { margin-top: 110px; border-top: 1px solid var(--line); padding: 34px 0 44px; background: rgba(0,0,0,.18); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 18px 32px; align-items: center; justify-content: space-between; font-size: 13.5px; color: var(--faint); }
+footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
+footer .brand { font-size: 15px; }
+
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.in { opacity: 1; transform: none; }
+.toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); opacity: 0; background: #0f2a20; border: 1px solid var(--line-strong); padding: 10px 16px; border-radius: 12px; font-size: 14px; transition: all .25s; box-shadow: var(--shadow); pointer-events: none; z-index: 100; }
+.toast.show { opacity: 1; transform: translateX(-50%); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .reveal { opacity: 1; transform: none; }
+}
+@media (max-width: 1020px) {
+  .hero-grid, .gallery, .dl { grid-template-columns: 1fr; }
+  .features { grid-template-columns: repeat(2, 1fr); }
+  .langs { grid-template-columns: repeat(3, 1fr); }
+  .steps { grid-template-columns: 1fr; gap: 34px; }
+  .stats { grid-template-columns: repeat(3, 1fr); }
+  .dl-side { border-left: 0; border-top: 1px solid var(--line); }
+  .device { transform: rotateX(6deg); }
+  .nav nav a.hide-md { display: none; }
+}
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; }
+  .nav nav { display: none; }
+  .nav .cta-mini { margin-left: auto; }
+  .hero { padding-top: 40px; }
+  .features, .themes { grid-template-columns: 1fr; }
+  .langs { grid-template-columns: repeat(2, 1fr); }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stats .stat:last-child { grid-column: span 2; }
+  .floating-card { display: none; }
+  .compare { overflow-x: auto; }
+  .compare table { min-width: 620px; }
+  .donate { grid-template-columns: 1fr; text-align: center; justify-items: center; padding: 28px 22px; }
+  .dl-main, .dl-side { padding: 26px 20px; }
+  .honest { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
+    <symbol id="i-windows" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.4v7.1H3zM11.5 4.3 21 3v8.5h-9.5zM3 12.5h7.5v7.1L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14.5h4"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="i-screen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+    <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-feather" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 4.8a6 6 0 0 0-8.5 0L5 11.5V19h7.5l6.7-6.7a6 6 0 0 0 1-7.5z"/><path d="M16 8 2 22M17.5 15H9"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 20a6.5 6.5 0 0 0-3-5.5"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.5-1.4-1.8-1.4-3.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-3.9-4-7-9-7z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9s-1.3 6.2-3.8 9c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.7 4.5c2.1 0 3.6 1.2 5.3 3 1.7-1.8 3.2-3 5.3-3 3.7 0 5.8 3.8 4.3 7.2C19.5 16.4 12 21 12 21z"/></symbol>
+    <symbol id="i-heart-o" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.3-9-8.7C1.6 8.1 3.6 4.5 7 4.5c2 0 3.4 1.1 5 2.8 1.6-1.7 3-2.8 5-2.8 3.4 0 5.4 3.6 4 6.8-2 4.4-9 8.7-9 8.7z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  </defs>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="34" height="34">NexusTalk</a>
+    <nav aria-label="Hauptnavigation">
+      <a href="#funktionen">Funktionen</a>
+      <a href="#vergleich">Vergleich mit Discord</a>
+      <a href="#designs" class="hide-md">Designs</a>
+      <a href="#selbst-hosten" class="hide-md">Selbst hosten</a>
+      <a href="#faq" class="hide-md">FAQ</a>
+    </nav>
+    <a class="btn small primary cta-mini" href="#download"><svg><use href="#i-download"/></svg>Download</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero" style="padding-top:72px">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="logo3d"><img src="assets/logo.png" alt="NexusTalk Logo" width="120" height="120"></div>
+        <span class="eyebrow"><span class="dot"></span>Version 0.2.0 · kostenlos · MIT-Lizenz</span>
+        <h1>Deine Community.<br><em>Dein Server.</em></h1>
+        <p class="lead">NexusTalk ist eine schlanke Alternative zu Discord für Windows: Text, Sprache, Video und Bildschirmübertragung – auf einem Server, der dir gehört. Per Klick direkt in der App gestartet. Keine Cloud, keine Werbung, kein Tracking.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="download/NexusTalk_0.2.0_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
+          <a class="btn" href="#vergleich">Warum nicht Discord?</a>
+        </div>
+        <div class="hero-meta">
+          <span><svg><use href="#i-check"/></svg>Installer ca. <b data-size>4,8&nbsp;MB</b></span>
+          <span><svg><use href="#i-check"/></svg>Windows 10 &amp; 11 (x64)</span>
+          <span><svg><use href="#i-check"/></svg>Keine Registrierung bei Dritten</span>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="device" id="device">
+          <div class="bar"><i></i><i></i><i></i><span>NexusTalk – Cyber Crew</span></div>
+          <img src="assets/shots/emerald-de-chat.jpg" alt="NexusTalk Textkanal im Design Smaragd" width="2040" height="1230">
+        </div>
+        <div class="floating-card fc1"><span class="ic"><svg><use href="#i-mic"/></svg></span><div><b>Sprachverbindung</b><small>Opus · Rauschunterdrückung</small></div></div>
+        <div class="floating-card fc2"><span class="ic"><svg><use href="#i-lock"/></svg></span><div><b>TLS-verschlüsselt</b><small>Zertifikat per Fingerabdruck geprüft</small></div></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="stats reveal">
+        <div class="stat"><b>≈ 5 MB</b><span>Installer</span></div>
+        <div class="stat"><b>14 MB</b><span>RAM des Servers im Leerlauf</span></div>
+        <div class="stat"><b>15</b><span>Sprachen, per Flagge umschaltbar</span></div>
+        <div class="stat"><b>10</b><span>Designs in 3D-Optik</span></div>
+        <div class="stat"><b>0</b><span>Cloud-Dienste, Werbung, Tracker</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="funktionen">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="kicker">Funktionen</div>
+        <h2>Alles, was eine Gruppe braucht – nichts, was sie ausspioniert</h2>
+        <p>Für Freundeskreise, Gaming-Clans, Vereine und kleine Teams, die ihre Gespräche selbst in der Hand behalten wollen.</p>
+      </div>
+      <div class="grid features">
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-chat"/></svg></div><h3>Text-Chat mit Komfort</h3><p>Kanäle und Kategorien, Antworten, Reaktionen, angeheftete Nachrichten, Markdown, Spoiler, Dateien und Volltextsuche.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-mic"/></svg></div><h3>Sprache &amp; Video</h3><p>Sprachkanäle und Direktanrufe mit Opus, Echo- und Rauschunterdrückung, Push-to-talk – auch als globale Taste im Hintergrund.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-screen"/></svg></div><h3>Bildschirm teilen</h3><p>Ganzer Bildschirm oder einzelnes Fenster, bis 1440p mit 60 FPS, optional mit Systemton – ohne Abo-Grenze.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-server"/></svg></div><h3>Eigener Server per Klick</h3><p>Der Server steckt in der App: starten, Besitzerkonto anlegen, Einladungslink verschicken. Alternativ als schlanker Headless-Server.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-shield"/></svg></div><h3>Sicher ab Werk</h3><p>TLS-Verschlüsselung, Zertifikatsprüfung per Fingerabdruck, Argon2-Passwörter, Rate-Limits, Audit-Log und Einladungs-Registrierung.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-users"/></svg></div><h3>Rollen &amp; Rechte</h3><p>Feingranulare Rechte pro Rolle und pro Kanal, Moderation, Bann, Freigabe neuer Konten, Backups und Wiederherstellung.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-feather"/></svg></div><h3>Federleicht</h3><p>Rust und Tauri statt Electron: ≈ 5 MB Installer, Start in unter einer Sekunde, der Server braucht im Leerlauf rund 14 MB RAM.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-bolt"/></svg></div><h3>Durchdacht im Alltag</h3><p>Schnellwechsler (Strg+K), Tastenkürzel, Freunde &amp; Direktnachrichten, Auto-Abwesend, Benachrichtigungen, Autostart und Tray.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="vergleich">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="kicker">Vergleich</div>
+        <h2>NexusTalk oder Discord?</h2>
+        <p>Discord ist ein großartiger Dienst – aber ein Dienst. Bei NexusTalk gehört die Plattform dir.</p>
+      </div>
+      <div class="compare reveal">
+        <table>
+          <thead><tr><th></th><th class="nx"><img src="assets/logo.png" alt="">NexusTalk</th><th>Discord</th></tr></thead>
+          <tbody>
+            <tr><td>Wo liegen deine Daten?</td><td class="nx"><span class="y">✓</span>Auf deinem PC oder deinem Server</td><td><span class="n">✕</span>In der Cloud eines US-Unternehmens</td></tr>
+            <tr><td>Konto</td><td class="nx"><span class="y">✓</span>Pro Server, ohne E-Mail oder Telefonnummer</td><td><span class="m">!</span>Zentrales Konto, teils Telefon-Verifizierung</td></tr>
+            <tr><td>Werbung &amp; Upselling</td><td class="nx"><span class="y">✓</span>Keine – keine Abo-Stufen</td><td><span class="m">!</span>Nitro-Abo, Shop und Hinweise in der App</td></tr>
+            <tr><td>Tracking / Telemetrie</td><td class="nx"><span class="y">✓</span>Keine – die App sendet nichts nach Hause</td><td><span class="n">✕</span>Umfangreiche Nutzungsanalysen</td></tr>
+            <tr><td>Bildschirmübertragung</td><td class="nx"><span class="y">✓</span>Bis 1440p / 60 FPS für alle</td><td><span class="m">!</span>Höhere Qualität nur mit Nitro</td></tr>
+            <tr><td>Größe &amp; Ressourcen</td><td class="nx"><span class="y">✓</span>≈ 5 MB Installer, 16 MB installiert (Rust + WebView2)</td><td><span class="m">!</span>Electron-App, deutlich größer</td></tr>
+            <tr><td>Funktioniert ohne Internet</td><td class="nx"><span class="y">✓</span>Ja – im LAN, auf LAN-Partys, im Verein</td><td><span class="n">✕</span>Nein, immer über Discords Server</td></tr>
+            <tr><td>Regeln &amp; Moderation</td><td class="nx"><span class="y">✓</span>Du bestimmst – niemand sperrt deinen Server</td><td><span class="m">!</span>Nutzungsbedingungen der Plattform gelten</td></tr>
+            <tr><td>Quelloffen</td><td class="nx"><span class="y">✓</span>MIT-Lizenz, nachprüfbar</td><td><span class="n">✕</span>Proprietär</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="honest reveal">
+        <div class="ic"><svg><use href="#i-info"/></svg></div>
+        <div>
+          <h4>Ehrlich gesagt – wo Discord (noch) vorn liegt</h4>
+          <ul>
+            <li>Kein riesiges Ökosystem: keine Bots, keine Server-Suche, keine Mobil-App (bisher nur Windows-Client).</li>
+            <li>Sprachkanäle verbinden Teilnehmer direkt (Mesh) – ideal bis etwa 8 Personen mit Video; sehr große Kanäle sind nicht das Ziel.</li>
+            <li>Für Erreichbarkeit aus dem Internet musst du Ports freigeben oder einen Server mieten – dafür gehört alles dir.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="designs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="kicker">Designs</div>
+        <h2>Zehn Designs, eine Handschrift</h2>
+        <p>Feine Linien, Tiefe und Licht: Jedes Design hat eigene Farben, Schatten und Glanzkanten – vom grünen Standard „Smaragd“ bis zum OLED-tiefen „Obsidian“.</p>
+      </div>
+      <div class="gallery reveal">
+        <div class="shot-main"><img id="shot" src="assets/shots/emerald-de-chat.jpg" alt="NexusTalk Vorschau" width="2040" height="1230" loading="lazy"></div>
+        <div>
+          <div class="themes" id="themes"></div>
+          <p class="gal-note">Tipp: In den Einstellungen kann NexusTalk automatisch zwischen Hell und Dunkel wechseln – passend zu Windows.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sprachen">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="kicker">Sprachen</div>
+        <h2>Spricht 15 Sprachen</h2>
+        <p>Ein Klick auf die Landesflagge unten links in der App – sofort umgestellt, inklusive Rechts-nach-links für Arabisch.</p>
+      </div>
+      <div class="langs reveal" id="langs"></div>
+    </div>
+  </section>
+
+  <section id="selbst-hosten">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="kicker">Selbst hosten</div>
+        <h2>In drei Schritten zum eigenen Server</h2>
+        <p>Kein Terminal, keine Konfigurationsdateien – es sei denn, du willst.</p>
+      </div>
+      <div class="grid steps">
+        <div class="card step reveal"><h3>Installieren &amp; starten</h3><p>NexusTalk installieren, links auf das Server-Symbol klicken und „Server starten“ wählen. Standardmäßig nur auf diesem PC erreichbar.</p></div>
+        <div class="card step reveal"><h3>Besitzer werden</h3><p>Besitzerkonto anlegen, Kanäle und Rollen einrichten. Für Freunde im Netz „Lokales Netzwerk / Internet“ wählen und Ports freigeben.</p></div>
+        <div class="card step reveal"><h3>Einladen</h3><p>Einladungslink erzeugen und teilen. Er enthält Adresse und Zertifikats-Fingerabdruck – so verbinden sich alle sicher.</p></div>
+      </div>
+      <p class="reveal" style="text-align:center;color:var(--faint);font-size:13.5px;margin-top:22px">Profis nutzen den Headless-Server <code>nexustalk-server</code> mit <code>server.toml</code> – ideal für einen dauerhaft laufenden Rechner oder vServer.</p>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="wrap">
+      <div class="dl reveal">
+        <div class="dl-main">
+          <div class="kicker" style="font-size:12.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);font-weight:600">Download</div>
+          <h2>NexusTalk 0.2.0 für Windows</h2>
+          <p style="color:var(--muted);margin:0">Ein Installer für alles: Client und eingebauter Server. Kostenlos, ohne Werbung, ohne Konto bei Dritten.</p>
+          <div class="dl-file">
+            <img src="assets/logo.png" alt="">
+            <div style="flex:1"><b>NexusTalk_0.2.0_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>4,8 MB</span></small></div>
+          </div>
+          <a class="btn primary" href="download/NexusTalk_0.2.0_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
+          <div class="hash">SHA-256: <span class="mono" id="sha-client">9e3b3fa56e20e0c87f4abe0a67832777ef634e5e4ea7866211fd72e85aad918d</span></div>
+        </div>
+        <div class="dl-side">
+          <h3>Systemvoraussetzungen</h3>
+          <ul class="req">
+            <li>Windows 10 oder 11, 64 Bit</li>
+            <li>Microsoft WebView2 (in Windows 11 enthalten, unter Windows 10 meist vorinstalliert)</li>
+            <li>Mikrofon/Kamera optional</li>
+            <li>Für einen eigenen Server: freie Ports TCP 7878, UDP 3478 (+ Relay-Bereich)</li>
+          </ul>
+          <div class="alt-dl">
+            <div><b>Headless-Server für Windows</b><small>nexustalk-server.exe · <span id="srv-size">7,0 MB</span> · ohne Oberfläche</small></div>
+            <a class="btn small" href="download/nexustalk-server.exe" download><svg><use href="#i-download"/></svg>Server</a>
+          </div>
+          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">8a1325dce5aa97bedba4a5f09eb7c82dbda4e8948d4bf7ec8460927ebed3333f</span></p>
+          <p class="hash" style="margin-top:10px">Hinweis: Der Installer ist (noch) nicht code-signiert. Windows SmartScreen kann deshalb warnen – „Weitere Informationen“ → „Trotzdem ausführen“. Prüfe im Zweifel die Prüfsumme.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="spenden">
+    <div class="wrap">
+      <div class="donate reveal">
+        <div class="heart3d"><svg><use href="#i-heart"/></svg></div>
+        <div>
+          <h3>NexusTalk unterstützen</h3>
+          <p>NexusTalk ist kostenlos und werbefrei – und soll es bleiben. Wenn dir die App gefällt, freue ich mich über eine kleine Spende per PayPal.</p>
+          <div class="mail">PayPal: <span class="mono">r4pi@gmx.de</span><button type="button" id="copy-mail">kopieren</button></div>
+        </div>
+        <a class="btn heart" href="https://www.paypal.com/donate/?business=r4pi%40gmx.de&amp;item_name=NexusTalk&amp;currency_code=EUR" target="_blank" rel="noopener"><svg><use href="#i-heart-o"/></svg>Spenden</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="kicker">FAQ</div>
+        <h2>Häufige Fragen</h2>
+      </div>
+      <div class="faq reveal">
+        <details><summary>Ist NexusTalk wirklich kostenlos?</summary><p>Ja. Keine Abos, keine Premium-Stufen, keine Werbung. Der Quellcode steht unter der MIT-Lizenz. Freiwillige Spenden helfen bei der Weiterentwicklung.</p></details>
+        <details><summary>Brauche ich einen eigenen Server?</summary><p>Nein – du kannst dich auch mit dem Server eines Freundes verbinden. Wer selbst hosten möchte, startet den Server direkt in der App; ein separater Rechner ist nicht nötig.</p></details>
+        <details><summary>Können sich Freunde über das Internet verbinden?</summary><p>Ja. Wähle im Servermodus „Lokales Netzwerk / Internet“, gib die öffentliche Adresse an und leite im Router TCP 7878 und UDP 3478 (plus Relay-Bereich) an deinen PC weiter. Der eingebaute STUN/TURN-Dienst hilft bei schwierigen Netzen.</p></details>
+        <details><summary>Wie sicher ist das?</summary><p>Verbindungen sind per TLS verschlüsselt; selbstsignierte Zertifikate werden beim ersten Verbinden per Fingerabdruck bestätigt und danach bei jeder Verbindung geprüft. Passwörter werden mit Argon2 gespeichert und verlassen nie den gewählten Server.</p></details>
+        <details><summary>Gibt es NexusTalk für Mac, Linux oder Handy?</summary><p>Der Client ist derzeit für Windows (x64) gebaut. Der Headless-Server läuft auch unter Linux (aus dem Quellcode). Weitere Plattformen sind möglich, aber noch nicht verfügbar.</p></details>
+        <details><summary>Wie viele Personen passen in einen Sprachkanal?</summary><p>Teilnehmer werden direkt miteinander verbunden. Mit Video sind etwa 8 Personen pro Kanal empfehlenswert, nur mit Sprache auch mehr – abhängig von Bandbreite und Rechner.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="28" height="28" style="width:28px;height:28px">NexusTalk</a>
+    <div>© 2026 Christian Schiessl · Alle Rechte vorbehalten · MIT-Lizenz</div>
+    <div class="links">
+      <a href="https://cjs86.netlify.app" target="_blank" rel="noopener">cjs86.netlify.app</a>
+      <a href="https://cjs86.netlify.app/#software" target="_blank" rel="noopener">Weitere Software</a>
+      <a href="#spenden">Spenden</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  // --- 3D tilt of the hero device ---
+  const dev = document.getElementById("device");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (dev && !reduce && matchMedia("(min-width: 1021px)").matches) {
+    const stage = dev.parentElement;
+    stage.addEventListener("mousemove", (e) => {
+      const r = stage.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      dev.style.transform = `rotateY(${-14 + x * 12}deg) rotateX(${7 - y * 10}deg) rotateZ(1deg)`;
+    });
+    stage.addEventListener("mouseleave", () => { dev.style.transform = ""; });
+  }
+
+  // --- theme gallery ---
+  const THEMES = [
+    ["emerald", "Smaragd", "Standard, dunkel", ["#07140f", "#0b1a15", "#0f221b", "#2ee59d", "#8ff5cf"], "emerald-de-chat.jpg"],
+    ["jade", "Jade", "hell", ["#d8ece2", "#eaf6f0", "#fbfefc", "#0e9f68", "#34d399"], "jade-de-chat.jpg"],
+    ["midnight", "Mitternacht", "dunkel", ["#070b18", "#0b1122", "#0f172c", "#6b97ff", "#a9c2ff"], "midnight-de-chat.jpg"],
+    ["aurora", "Aurora", "dunkel", ["#0b0a1a", "#110f24", "#15132c", "#a78bfa", "#2dd4bf"], "aurora-de-settings.jpg"],
+    ["obsidian", "Obsidian", "OLED-schwarz", ["#000000", "#070707", "#0b0b0b", "#b6f23d", "#dcff8f"], null],
+    ["sakura", "Sakura", "hell", ["#f6dfe8", "#fcf0f5", "#fffbfd", "#e0558a", "#f78fb3"], "sakura-de-about.jpg"],
+    ["arctic", "Arktis", "hell", ["#dce8f2", "#edf4fa", "#fbfdff", "#1683e0", "#00b8d4"], null],
+    ["sunset", "Sonnenuntergang", "dunkel", ["#130b0d", "#1a0f13", "#201418", "#ff7a45", "#ff4d8d"], "sunset-de-voice.jpg"],
+    ["neon", "Neon", "dunkel", ["#05050c", "#090914", "#0d0d1b", "#00e5ff", "#ff2bd6"], "neon-en-chat.jpg"],
+    ["sandstone", "Sandstein", "hell", ["#e6dccc", "#f4ede2", "#fdfaf5", "#c0623b", "#d99b4a"], null],
+  ];
+  const themesEl = document.getElementById("themes");
+  const shot = document.getElementById("shot");
+  THEMES.forEach(([id, name, kind, sw, img], i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "theme" + (i === 0 ? " on" : "");
+    b.innerHTML = `<span class="swatch" style="--a:${sw[3]};--b:${sw[4]}"><i style="background:${sw[0]}"></i><i style="background:${sw[1]}"></i><i style="background:${sw[2]}"></i></span><span>${name}<small>${kind}</small></span>`;
+    b.addEventListener("click", () => {
+      themesEl.querySelectorAll(".theme").forEach((t) => t.classList.remove("on"));
+      b.classList.add("on");
+      if (img) {
+        shot.style.opacity = "0.25";
+        const pre = new Image();
+        pre.onload = () => { shot.src = pre.src; shot.style.opacity = "1"; };
+        pre.src = "assets/shots/" + img;
+      } else {
+        toast(`„${name}“ – probier es direkt in der App aus.`);
+      }
+    });
+    themesEl.appendChild(b);
+  });
+
+  // --- languages with flags (same artwork as in the app) ---
+  const star = (cx, cy, r, rot = -90) => {
+    const p = [];
+    for (let i = 0; i < 10; i++) {
+      const a = ((rot + i * 36) * Math.PI) / 180, rr = i % 2 ? r * 0.4 : r;
+      p.push((cx + rr * Math.cos(a)).toFixed(2) + "," + (cy + rr * Math.sin(a)).toFixed(2));
+    }
+    return p.join(" ");
+  };
+  const tri = (a, b, c) => `<rect width="30" height="6.67" fill="${a}"/><rect y="6.67" width="30" height="6.67" fill="${b}"/><rect y="13.33" width="30" height="6.67" fill="${c}"/>`;
+  const vtri = (a, b, c) => `<rect width="10" height="20" fill="${a}"/><rect x="10" width="10" height="20" fill="${b}"/><rect x="20" width="10" height="20" fill="${c}"/>`;
+  const F = {
+    de: tri("#000", "#dd0000", "#ffce00"),
+    gb: `<rect width="30" height="20" fill="#012169"/><path d="M0 0 30 20M30 0 0 20" stroke="#fff" stroke-width="4"/><path d="M0 0 30 20M30 0 0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0v20M0 10h30" stroke="#fff" stroke-width="6"/><path d="M15 0v20M0 10h30" stroke="#c8102e" stroke-width="3.4"/>`,
+    es: `<rect width="30" height="20" fill="#aa151b"/><rect y="5" width="30" height="10" fill="#f1bf00"/><rect x="6" y="7.5" width="3.4" height="5" rx=".6" fill="#aa151b" opacity=".85"/>`,
+    fr: vtri("#002395", "#fff", "#ed2939"),
+    it: vtri("#009246", "#fff", "#ce2b37"),
+    pt: `<rect width="30" height="20" fill="#da291c"/><rect width="12" height="20" fill="#046a38"/><circle cx="12" cy="10" r="4.4" fill="#ffe900"/><rect x="10.2" y="7.6" width="3.6" height="4.6" rx="1.2" fill="#da291c" stroke="#fff" stroke-width=".6"/>`,
+    nl: tri("#ae1c28", "#fff", "#21468b"),
+    pl: `<rect width="30" height="10" fill="#fff"/><rect y="10" width="30" height="10" fill="#dc143c"/>`,
+    tr: `<rect width="30" height="20" fill="#e30a17"/><circle cx="11" cy="10" r="5" fill="#fff"/><circle cx="12.3" cy="10" r="4" fill="#e30a17"/><polygon points="${star(17.6, 10, 2.4, 180)}" fill="#fff"/>`,
+    ru: tri("#fff", "#0039a6", "#d52b1e"),
+    sa: `<rect width="30" height="20" fill="#006c35"/><path d="M7 8.2c1.2-1.2 2 .8 3.2-.4s1.6.9 2.9-.3 1.7.8 3-.4 1.6.9 3-.3 1.5.8 3.9-.4" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round"/><path d="M8 13.4h13.5l1.6-.9" fill="none" stroke="#fff" stroke-width=".9" stroke-linecap="round"/>`,
+    in: tri("#ff9933", "#fff", "#138808") + `<circle cx="15" cy="10" r="2.6" fill="none" stroke="#000080" stroke-width=".6"/><circle cx="15" cy="10" r=".6" fill="#000080"/>`,
+    cn: `<rect width="30" height="20" fill="#ee1c25"/><polygon points="${star(5, 5, 3)}" fill="#ff0"/><polygon points="${star(10, 2, 1, -60)}" fill="#ff0"/><polygon points="${star(12, 4, 1, -80)}" fill="#ff0"/><polygon points="${star(12, 7, 1, -100)}" fill="#ff0"/><polygon points="${star(10, 9, 1, -120)}" fill="#ff0"/>`,
+    jp: `<rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/>`,
+    kr: `<rect width="30" height="20" fill="#fff"/><g transform="rotate(-33.7 15 10)"><path d="M10 10a5 5 0 0 1 10 0z" fill="#cd2e3a"/><path d="M10 10a5 5 0 0 0 10 0z" fill="#0047a0"/><circle cx="12.5" cy="10" r="2.5" fill="#cd2e3a"/><circle cx="17.5" cy="10" r="2.5" fill="#0047a0"/></g><g stroke="#000" stroke-width=".9"><path d="M4 4.2l2.4-1.6M4.6 5.1l2.4-1.6M5.2 6l2.4-1.6"/><path d="M22.6 2.6l2.4 1.6M23.2 3.5l2.4 1.6M23.8 4.4l2.4 1.6"/><path d="M4 15.8l2.4 1.6M4.6 14.9l2.4 1.6M5.2 14l2.4 1.6"/><path d="M22.6 17.4l2.4-1.6M23.2 16.5l2.4-1.6M23.8 15.6l2.4-1.6"/></g>`,
+  };
+  const LANGS = [["de", "Deutsch", "German"], ["gb", "English", "Englisch"], ["es", "Español", "Spanisch"], ["fr", "Français", "Französisch"], ["it", "Italiano", "Italienisch"],
+    ["pt", "Português", "Portugiesisch"], ["nl", "Nederlands", "Niederländisch"], ["pl", "Polski", "Polnisch"], ["tr", "Türkçe", "Türkisch"], ["ru", "Русский", "Russisch"],
+    ["sa", "العربية", "Arabisch"], ["in", "हिन्दी", "Hindi"], ["cn", "中文", "Chinesisch"], ["jp", "日本語", "Japanisch"], ["kr", "한국어", "Koreanisch"]];
+  const langsEl = document.getElementById("langs");
+  LANGS.forEach(([f, name, de]) => {
+    const d = document.createElement("div");
+    d.className = "lang";
+    d.innerHTML = `<svg viewBox="0 0 30 20" preserveAspectRatio="none" aria-hidden="true">${F[f]}</svg><span>${name}<small>${f === "de" ? "Standard" : de}</small></span>`;
+    langsEl.appendChild(d);
+  });
+
+  // --- reveal on scroll ---
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll(".reveal").forEach((el, i) => { el.style.transitionDelay = (i % 4) * 60 + "ms"; io.observe(el); });
+
+  // --- toast + copy ---
+  const t = document.getElementById("toast");
+  let tt;
+  function toast(msg) { t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2400); }
+  document.getElementById("copy-mail").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText("r4pi@gmx.de"); toast("E-Mail-Adresse kopiert"); } catch { toast("r4pi@gmx.de"); }
+  });
+})();
+</script>
+</body>
+</html>

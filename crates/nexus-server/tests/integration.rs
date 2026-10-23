@@ -701,3 +701,37 @@ async fn server_stats_and_logs_for_admins() {
     a.req("server.logs", json!({ "limit": 10 })).await.unwrap();
     ts.stop().await;
 }
+
+#[tokio::test]
+async fn reactions_and_pins() {
+    let (ts, ep, owner, member) = setup("react").await;
+    let (mut a, ready) = Client::connect(&ep, &owner).await;
+    let (mut b, ready_b) = Client::connect(&ep, &member).await;
+    let general = channel_id(&ready, "allgemein");
+    let idb = ready_b["me"]["id"].as_i64().unwrap();
+    let m = a.req("message.send", json!({ "channel_id": general, "content": "Abstimmung?" })).await.unwrap();
+    let mid = m["id"].clone();
+
+    b.req("reaction.add", json!({ "message_id": mid, "emoji": "👍" })).await.unwrap();
+    let ev = a.event("reaction.update").await;
+    assert_eq!((ev["emoji"].as_str(), ev["user_id"].as_i64(), ev["added"].as_bool()), (Some("👍"), Some(idb), Some(true)));
+    let again = b.req("reaction.add", json!({ "message_id": mid, "emoji": "👍" })).await.unwrap();
+    assert_eq!(again["changed"], false, "idempotent");
+    assert_eq!(code(&b.req("reaction.add", json!({ "message_id": mid, "emoji": "haha" })).await.unwrap_err()), "VALIDATION");
+    let h = a.req("message.history", json!({ "channel_id": general })).await.unwrap();
+    assert_eq!(h["messages"][0]["reactions"][0]["users"], json!([idb]));
+    b.req("reaction.remove", json!({ "message_id": mid, "emoji": "👍" })).await.unwrap();
+    let h = a.req("message.history", json!({ "channel_id": general })).await.unwrap();
+    assert!(h["messages"][0]["reactions"].as_array().unwrap().is_empty());
+
+    // Pinning is a moderation right in server channels.
+    assert_eq!(code(&b.req("message.pin", json!({ "message_id": mid, "pinned": true })).await.unwrap_err()), "PERMISSION_DENIED");
+    let p = a.req("message.pin", json!({ "message_id": mid, "pinned": true })).await.unwrap();
+    assert!(p["pinned_at"].is_i64());
+    let pins = b.req("message.pins", json!({ "channel_id": general })).await.unwrap();
+    assert_eq!(pins["messages"].as_array().unwrap().len(), 1);
+    a.req("message.pin", json!({ "message_id": mid, "pinned": false })).await.unwrap();
+    let pins = b.req("message.pins", json!({ "channel_id": general })).await.unwrap();
+    assert!(pins["messages"].as_array().unwrap().is_empty());
+    ts.stop().await;
+}

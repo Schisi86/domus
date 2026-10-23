@@ -89,6 +89,14 @@ pub struct Message {
     pub edited_at: Option<i64>,
     pub mentions: Vec<i64>,
     pub attachments: Vec<Attachment>,
+    pub reactions: Vec<Reaction>,
+    pub pinned_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Reaction {
+    pub emoji: String,
+    pub users: Vec<i64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -660,7 +668,7 @@ pub fn list_dms(c: &Connection, user_id: i64) -> ApiResult<Vec<DmChannel>> {
 // ---------------------------------------------------------------------------
 
 const MSG_SELECT: &str = "SELECT m.id, m.channel_id, m.author_id, m.content, m.reply_to, m.created_at, m.edited_at,
-    r.id, r.author_id, substr(r.content, 1, 160) FROM messages m LEFT JOIN messages r ON r.id = m.reply_to";
+    r.id, r.author_id, substr(r.content, 1, 160), m.pinned_at FROM messages m LEFT JOIN messages r ON r.id = m.reply_to";
 
 fn row_message(r: &Row) -> rusqlite::Result<Message> {
     let rid: Option<i64> = r.get(7)?;
@@ -678,6 +686,8 @@ fn row_message(r: &Row) -> rusqlite::Result<Message> {
         },
         mentions: Vec::new(),
         attachments: Vec::new(),
+        reactions: Vec::new(),
+        pinned_at: r.get(10)?,
     })
 }
 
@@ -718,7 +728,67 @@ fn hydrate(c: &Connection, msgs: &mut [Message]) -> ApiResult<()> {
             }
         }
     }
+    {
+        let mut st = c.prepare(&format!(
+            "SELECT message_id, emoji, user_id FROM reactions WHERE message_id IN ({ph}) ORDER BY created_at, emoji"
+        ))?;
+        let mut rows = st.query(rusqlite::params_from_iter(ids.iter()))?;
+        while let Some(r) = rows.next()? {
+            if let Some(i) = idx.get(&r.get::<_, i64>(0)?) {
+                let emoji: String = r.get(1)?;
+                let uid: i64 = r.get(2)?;
+                let list = &mut msgs[*i].reactions;
+                match list.iter_mut().find(|x| x.emoji == emoji) {
+                    Some(x) => x.users.push(uid),
+                    None => list.push(Reaction { emoji, users: vec![uid] }),
+                }
+            }
+        }
+    }
     Ok(())
+}
+
+/// Maximum distinct reactions per message.
+pub const MAX_REACTIONS: i64 = 20;
+
+/// Adds or removes a reaction. Returns false if nothing changed.
+pub fn set_reaction(c: &Connection, message_id: i64, user_id: i64, emoji: &str, add: bool) -> ApiResult<bool> {
+    if add {
+        let distinct: i64 = c.query_row(
+            "SELECT count(DISTINCT emoji) FROM reactions WHERE message_id=?1 AND emoji != ?2",
+            params![message_id, emoji],
+            |r| r.get(0),
+        )?;
+        if distinct >= MAX_REACTIONS {
+            return Err(ApiError::invalid(format!("Höchstens {MAX_REACTIONS} verschiedene Reaktionen pro Nachricht")));
+        }
+        Ok(c.execute(
+            "INSERT OR IGNORE INTO reactions (message_id, user_id, emoji, created_at) VALUES (?1, ?2, ?3, ?4)",
+            params![message_id, user_id, emoji, now_ms()],
+        )? > 0)
+    } else {
+        Ok(c.execute(
+            "DELETE FROM reactions WHERE message_id=?1 AND user_id=?2 AND emoji=?3",
+            params![message_id, user_id, emoji],
+        )? > 0)
+    }
+}
+
+pub fn set_pinned(c: &Connection, message_id: i64, pinned: bool) -> ApiResult<()> {
+    c.execute(
+        "UPDATE messages SET pinned_at = ?2 WHERE id=?1",
+        params![message_id, if pinned { Some(now_ms()) } else { None }],
+    )?;
+    Ok(())
+}
+
+pub fn pinned_messages(c: &Connection, channel_id: i64) -> ApiResult<Vec<Message>> {
+    let mut st = c.prepare(&format!(
+        "{MSG_SELECT} WHERE m.channel_id=?1 AND m.pinned_at IS NOT NULL ORDER BY m.pinned_at DESC LIMIT 50"
+    ))?;
+    let mut msgs = st.query_map(params![channel_id], row_message)?.collect::<Result<Vec<_>, _>>()?;
+    hydrate(c, &mut msgs)?;
+    Ok(msgs)
 }
 
 pub fn get_message(c: &Connection, id: i64) -> ApiResult<Option<Message>> {

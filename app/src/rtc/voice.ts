@@ -9,8 +9,8 @@ import { signal } from "@preact/signals";
 import { settings, toast, voiceHooks } from "../state/app";
 import type { ServerStore } from "../state/server";
 import type { VoiceMember } from "../types";
-import { errorText } from "../i18n";
-import { log } from "../platform";
+import { errorText, t } from "../i18n";
+import { isTauri, log } from "../platform";
 import { normalizeAddress } from "../net/transport";
 
 export type StreamKind = "mic" | "screen" | "camera";
@@ -24,9 +24,9 @@ export interface PeerStats {
 }
 
 export const SCREEN_PROFILES = {
-  eco: { label: "Energiesparend", width: 1280, height: 720, fps: 10, kbps: 900 },
-  balanced: { label: "Ausgewogen", width: 1920, height: 1080, fps: 30, kbps: 2500 },
-  high: { label: "Hohe Qualität", width: 2560, height: 1440, fps: 60, kbps: 6000 },
+  eco: { width: 1280, height: 720, fps: 10, kbps: 900 },
+  balanced: { width: 1920, height: 1080, fps: 30, kbps: 2500 },
+  high: { width: 2560, height: 1440, fps: 60, kbps: 6000 },
 } as const;
 
 function screenProfile() {
@@ -115,6 +115,7 @@ export class VoiceSession {
     voiceHooks.add(this.hook);
     window.addEventListener("keydown", this.keyDown);
     window.addEventListener("keyup", this.keyUp);
+    await this.registerGlobalPtt();
     await this.joinChannel(false);
     this.loops.push(setInterval(() => this.pollSpeaking(), 200));
     this.loops.push(setInterval(() => void this.pollStats(), 2000));
@@ -141,11 +142,11 @@ export class VoiceSession {
       const name = (e as DOMException)?.name;
       const msg =
         name === "NotAllowedError"
-          ? "Der Mikrofonzugriff wurde verweigert. Du kannst zuhören, aber nicht sprechen. (Windows: Einstellungen › Datenschutz › Mikrofon)"
+          ? t("voice.micDenied")
           : name === "NotFoundError" || name === "OverconstrainedError"
-            ? "Kein Mikrofon gefunden. Du kannst zuhören, aber nicht sprechen."
-            : `Mikrofon nicht verfügbar: ${String(e)}`;
-      toast("Ohne Mikrofon beigetreten", msg, "warn", 9000);
+            ? t("voice.micMissing")
+            : t("voice.micError", { detail: String(e) });
+      toast(t("voice.noMicJoined"), msg, "warn", 9000);
     }
     this.applyMicEnabled();
   }
@@ -199,6 +200,7 @@ export class VoiceSession {
     voiceHooks.delete(this.hook);
     window.removeEventListener("keydown", this.keyDown);
     window.removeEventListener("keyup", this.keyUp);
+    void this.unregisterGlobalPtt();
     this.loops.forEach(clearInterval);
     for (const p of this.peers.values()) p.close();
     this.peers.clear();
@@ -343,7 +345,7 @@ export class VoiceSession {
       if (kind !== "screen") peer.micTrackId = ev.track.id;
       el.srcObject = stream ?? new MediaStream([ev.track]);
       this.applyOutput(peer);
-      el.play().catch(() => toast("Audio blockiert", "Klicke einmal in das Fenster, um die Wiedergabe zu starten.", "warn"));
+      el.play().catch(() => toast(t("voice.audioBlocked"), t("voice.audioBlockedBody"), "warn"));
       return;
     }
     const target = kind === "screen" ? this.screens : this.cameras;
@@ -372,7 +374,7 @@ export class VoiceSession {
     else if (ev === "voice.state" && d.channel_id === this.channelId) {
       if (d.user_id === this.selfId) {
         if (d.left) {
-          toast("Sprachkanal verlassen", "Die Verbindung zum Sprachkanal wurde vom Server beendet.", "warn");
+          toast(t("voice.endedByServer"), t("voice.endedByServerBody"), "warn");
           void endVoice();
         }
         return;
@@ -389,13 +391,44 @@ export class VoiceSession {
     } else if (ev === "ready" && d.reconnect) {
       this.state.value = "reconnecting";
       this.joinChannel(true).catch((e) => {
-        toast("Sprachverbindung verloren", errorText(e), "error");
+        toast(t("voice.lost"), errorText(e), "error");
         void endVoice();
       });
     }
   }
 
   // ------------------------------------------------------------- controls
+
+  private globalKey: string | null = null;
+
+  /** Registers the system-wide push-to-talk key (desktop app only). */
+  async registerGlobalPtt() {
+    await this.unregisterGlobalPtt();
+    const st = settings.value;
+    if (!isTauri || !st.pushToTalk || !st.globalPtt || !st.globalPttKey) return;
+    try {
+      const gs = await import("@tauri-apps/plugin-global-shortcut");
+      await gs.register(st.globalPttKey, (ev) => {
+        this.pttDown.value = ev.state === "Pressed";
+        this.applyMicEnabled();
+      });
+      this.globalKey = st.globalPttKey;
+    } catch (e) {
+      toast(t("voice.globalPttFailed"), String(e), "warn");
+    }
+  }
+
+  async unregisterGlobalPtt() {
+    if (!this.globalKey) return;
+    const key = this.globalKey;
+    this.globalKey = null;
+    try {
+      const gs = await import("@tauri-apps/plugin-global-shortcut");
+      await gs.unregister(key);
+    } catch {
+      /* ignore */
+    }
+  }
 
   private onKey(e: KeyboardEvent, down: boolean) {
     const st = settings.value;
@@ -477,14 +510,14 @@ export class VoiceSession {
       } as DisplayMediaStreamOptions);
     } catch (e) {
       const name = (e as DOMException)?.name;
-      if (name !== "NotAllowedError" && name !== "AbortError") toast("Bildschirmübertragung nicht möglich", String(e), "error");
+      if (name !== "NotAllowedError" && name !== "AbortError") toast(t("voice.screenFailed"), String(e), "error");
       return;
     }
     try {
       await this.server.rpc("voice.update", { screen: true });
     } catch (e) {
       stream.getTracks().forEach((t) => t.stop());
-      toast("Bildschirmübertragung nicht erlaubt", errorText(e), "error");
+      toast(t("voice.screenDenied"), errorText(e), "error");
       return;
     }
     const video = stream.getVideoTracks()[0];
@@ -497,8 +530,8 @@ export class VoiceSession {
     this.screenHasAudio.value = stream.getAudioTracks().length > 0;
     if (st.screenAudio && !this.screenHasAudio.value) {
       toast(
-        "Ohne Systemton",
-        "Für diese Quelle stellt Windows keinen Ton bereit. Systemton ist meist nur bei „Gesamter Bildschirm“ mit aktivierter Option „Systemaudio teilen“ verfügbar.",
+        t("voice.noSystemAudio"),
+        t("voice.noSystemAudioBody"),
         "warn",
         10000,
       );
@@ -571,8 +604,8 @@ export class VoiceSession {
     } catch (e) {
       const name = (e as DOMException)?.name;
       toast(
-        "Kamera nicht verfügbar",
-        name === "NotFoundError" ? "Keine Kamera gefunden." : name === "NotAllowedError" ? "Kamerazugriff verweigert." : String(e),
+        t("voice.camUnavailable"),
+        name === "NotFoundError" ? t("voice.camMissing") : name === "NotAllowedError" ? t("voice.camDenied") : String(e),
         "error",
       );
       return;
@@ -581,7 +614,7 @@ export class VoiceSession {
       await this.server.rpc("voice.update", { video: true });
     } catch (e) {
       stream.getTracks().forEach((t) => t.stop());
-      toast("Kamera nicht erlaubt", errorText(e), "error");
+      toast(t("voice.camNotAllowed"), errorText(e), "error");
       return;
     }
     this.camera = stream;
@@ -706,7 +739,7 @@ export async function joinVoice(server: ServerStore, channelId: number) {
     if (cur) await endVoice();
     voice.value = await VoiceSession.join(server, channelId);
   } catch (e) {
-    toast("Beitritt fehlgeschlagen", errorText(e), "error");
+    toast(t("voice.joinFailed"), errorText(e), "error");
   } finally {
     voiceBusy.value = false;
   }

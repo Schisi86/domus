@@ -17,16 +17,18 @@ Einmalig für die Browsertests: `cd tests/e2e && npm install && npx playwright-c
 
 ## Ergebnisse
 
-### Rust – 60 Tests, alle bestanden
+Stand 0.2.0 (23.10.2026): Rust-Tests und Medien-E2E erneut ausgeführt. Desktop-E2E und Installer-Test stammen noch von 0.1.0 – beim 0.2.0-Lauf lief auf dem Testrechner eine installierte NexusTalk-Instanz, die der Single-Instance-Schutz bevorzugt hätte.
 
-**Unit-Tests (41, `nexus-server`)**
+### Rust – 62 Tests, alle bestanden
+
+**Unit-Tests (42, `nexus-server`)**
 * Authentifizierung: Argon2id-Hash/Verifikation, Salt, Token-Hashes.
 * Berechtigungen: Owner/Admin, Mitgliederrechte, Kanal-Overrides (verbergen, schreibgeschützt), Overrides können keine Serverrechte vergeben, DM-Isolation (auch für Admins), Rollenhierarchie/Rechteausweitung.
 * Nachrichtenverarbeitung & Datenbank: Lebenszyklus, Verlauf/Paging, Antworten, Erwähnungen, Lesestatus, FTS-Suche (inkl. Injection-Versuche), Einladungen (Ablauf, Nutzungen, Einmal-Code), Anhänge (nur Uploader, nur einmal), DMs, Konto-Löschung (Tombstone), Aufbewahrung, Migration/Idempotenz, FTS5 verfügbar.
 * Konfiguration: sichere Standards, ungültige Werte, ICE-URLs/Portbereiche, Roundtrip, beschädigte Datei.
-* Sonstiges: Eingabevalidierung (Benutzernamen, Passwörter, Steuerzeichen, Dateinamen/Pfadmanipulation), Bildsignaturen, Rate-Limiter, Hub/Präsenz, Trennen langsamer Clients, Erwähnungs-Parser, STUN-Antwort (inkl. UDP-Roundtrip), Backup-Namen, Datumsformat, Upload-Limit beim Streamen.
+* Sonstiges: Eingabevalidierung (Benutzernamen, Passwörter, Steuerzeichen, Dateinamen/Pfadmanipulation), Bildsignaturen, Rate-Limiter, Hub/Präsenz, Trennen langsamer Clients, Erwähnungs-Parser, Emoji-Validierung für Reaktionen, STUN-Antwort (inkl. UDP-Roundtrip), Backup-Namen, Datumsformat, Upload-Limit beim Streamen.
 
-**Integrationstests (15, echter Server + echter Client über HTTP/WebSocket)**
+**Integrationstests (16, echter Server + echter Client über HTTP/WebSocket)**
 
 | Test | Prüft |
 |---|---|
@@ -45,10 +47,11 @@ Einmalig für die Browsertests: `cd tests/e2e && npm install && npx playwright-c
 | `backup_and_restore` | Sicherung, Wiederherstellung per Neustart, Ungültige Namen |
 | `tls_certificate_pinning` | Unbekanntes Zertifikat → Fingerabdruck, falscher Pin → Abbruch, richtiger Pin → HTTP + WebSocket, Zertifikat bleibt nach Neustart |
 | `server_stats_and_logs_for_admins` | Status, Einstellungen, Logs |
+| `reactions_and_pins` | Reaktionen hinzufügen/entfernen (Ereignis an andere Clients, ungültige Emojis abgelehnt, Limit), Anheften nur mit Moderationsrecht, Liste angehefteter Nachrichten |
 
 **Weitere:** `nexus-net` (3: Adressparser, Fingerabdrücke, WS-URLs), Desktop-Crate (1: DPAPI-verschlüsselte Tokens, beschädigte Konfiguration).
 
-### Echtzeit-Medien – `tests/e2e/rtc.mjs`: 20/20 bestanden (3 Läufe in Folge)
+### Echtzeit-Medien – `tests/e2e/rtc.mjs`: 20/20 bestanden (0.1.0: 3 Läufe in Folge; 0.2.0: erneut 20/20)
 
 Echte Weboberfläche, echter Server, 3–4 Clients in Chromium mit virtuellem Mikrofon/Bildschirm:
 
@@ -67,7 +70,11 @@ Echte Weboberfläche, echter Server, 3–4 Clients in Chromium mit virtuellem Mi
 | Verlassen/erneuter Beitritt baut Medien neu auf | ✅ |
 | Gast ohne Bildschirmrecht wird serverseitig abgelehnt (mit Meldung) | ✅ |
 
-### Desktop-App (WebView2) – `tests/e2e/desktop.mjs`: 10/10 bestanden
+### Übersetzungen
+
+Alle 15 Sprachdateien enthalten exakt die 692 Schlüssel der deutschen Quelle (Skriptprüfung); TypeScript prüft die Schlüssel zusätzlich typsicher. Darstellung von Arabisch (RTL), Japanisch, Hindi und Russisch per Screenshot geprüft.
+
+### Desktop-App (WebView2) – `tests/e2e/desktop.mjs`: 10/10 bestanden (Version 0.1.0)
 
 Release-Build, gesteuert über das DevTools-Protokoll von WebView2:
 
@@ -103,6 +110,6 @@ Release-Build, gesteuert über das DevTools-Protokoll von WebView2:
 * **Webcam mit echter Kamera** (nur mit virtuellem Gerät im Browser geprüft).
 
 Ein bei den Tests gefundener und behobener Fehler: Nach einem *Server*-Neustart hat der zuerst zurückkehrende Client die Medienverbindungen zu noch nicht zurückgekehrten Teilnehmern geschlossen (leere Sprachbelegung nach Neustart). Bestehende Verbindungen erhalten jetzt beim Wiederbeitritt 25 s Schonfrist.
-* Push-to-Talk, Ausgabegerätewechsel (`setSinkId`), Benachrichtigungen (Windows-Toast), Autostart mit Windows, Tray-Verhalten: implementiert, **nicht automatisiert getestet**.
+* Globales Push-to-Talk, automatisch „Abwesend“, Tray-Menü-Sprache, Ausgabegerätewechsel (`setSinkId`), Benachrichtigungen (Windows-Toast), Autostart mit Windows, Tray-Verhalten: implementiert, **nicht automatisiert getestet**.
 * Linux-Headless-Server: Code ist plattformneutral, aber auf Linux nicht gebaut/getestet.
 * Lasttests über 100 Clients, Langzeitbetrieb (Tage), Speicherplatz-voll-Szenarien (Fehlerpfad implementiert, nicht provoziert).

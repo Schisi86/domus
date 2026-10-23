@@ -156,6 +156,19 @@ const MIGRATIONS: &[&str] = &[
         INSERT INTO messages_fts(rowid, content) VALUES (new.id, new.content);
     END;
     "#,
+    // v2: reactions and pinned messages
+    r#"
+    CREATE TABLE reactions (
+        message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        emoji TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (message_id, user_id, emoji)
+    );
+    CREATE INDEX reactions_message ON reactions(message_id);
+    ALTER TABLE messages ADD COLUMN pinned_at INTEGER;
+    CREATE INDEX messages_pinned ON messages(channel_id, pinned_at) WHERE pinned_at IS NOT NULL;
+    "#,
 ];
 
 pub const SCHEMA_VERSION: i64 = MIGRATIONS.len() as i64;

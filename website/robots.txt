@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://nexustalk-app.netlify.app/sitemap.xml

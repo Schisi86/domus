@@ -1,7 +1,7 @@
 // Middle column: channels of the active server (or DMs on the home screen),
 // the active voice connection and the user panel with audio controls.
 
-import { activeChannelId, activeServer, activeServerId, homeDm, isMuted, openDm, openModal, selectChannel, servers, settings, showMenu, updateSettings } from "../state/app";
+import { activeChannelId, activeServer, activeServerId, homeDm, isMuted, openDm, openModal, selectChannel, servers, settings, showMenu, toast, updateSettings } from "../state/app";
 import type { ServerStore } from "../state/server";
 import type { Channel } from "../types";
 import { has, P } from "../types";
@@ -12,30 +12,27 @@ import { ServerSettingsDialog } from "./dialogs/ServerSettings";
 import { InviteDialog } from "./dialogs/Invite";
 import { AddServerDialog } from "./dialogs/AddServer";
 import { UserSettingsDialog } from "./dialogs/UserSettings";
-import { errorText, PRESENCE_TEXT } from "../i18n";
-import { toast } from "../state/app";
+import { errorText, presenceText, t } from "../i18n";
 
 function ConnBanner({ server }: { server: ServerStore }) {
   const st = server.conn.state.value;
   if (st === "ready") return null;
   const text =
     st === "auth_failed"
-      ? server.conn.error.value ?? "Anmeldung abgelaufen."
+      ? (server.conn.error.value ?? t("conn.authExpired"))
       : st === "cert_untrusted" || st === "cert_mismatch"
-        ? "Zertifikatsproblem – Verbindung blockiert."
+        ? t("conn.certBlocked")
         : st === "connecting"
-          ? "Verbindung wird aufgebaut …"
-          : "Verbindung unterbrochen – neuer Versuch läuft …";
+          ? t("conn.connecting")
+          : t("conn.retrying");
   const fix = st === "auth_failed" || st.startsWith("cert");
   return (
     <div class={`conn-banner${fix ? " err" : ""}`} role="status">
       <span class="grow">{text}</span>
       {fix ? (
-        <button class="btn sm" onClick={() => openModal(<AddServerDialog reauth={server} />)}>
-          Beheben
-        </button>
+        <button class="btn sm" onClick={() => openModal(<AddServerDialog reauth={server} />)}>{t("conn.fix")}</button>
       ) : (
-        <button class="btn sm" onClick={() => server.conn.retryNow()}>Jetzt</button>
+        <button class="btn sm" onClick={() => server.conn.retryNow()}>{t("conn.now")}</button>
       )}
     </div>
   );
@@ -53,10 +50,10 @@ function VoiceUsers({ server, channel }: { server: ServerStore; channel: Channel
           <Avatar server={server} userId={m.user_id} name={server.memberName(m.user_id)} size={20} speaking={speaking.has(m.user_id)} />
           <span class="ellipsis">{server.memberName(m.user_id)}</span>
           <span class="flags">
-            {m.screen && <span class="live-badge" title="Teilt den Bildschirm">LIVE</span>}
-            {m.video && <Icon.Camera title="Kamera an" />}
-            {(m.muted || m.suppressed) && <Icon.MicOff title="Stummgeschaltet" />}
-            {m.deafened && <Icon.HeadphonesOff title="Ton aus" />}
+            {m.screen && <span class="live-badge" title={t("voice.sharingScreen")}>LIVE</span>}
+            {m.video && <Icon.Camera title={t("voice.cameraOn")} />}
+            {(m.muted || m.suppressed) && <Icon.MicOff title={t("voice.muted")} />}
+            {m.deafened && <Icon.HeadphonesOff title={t("voice.deafened")} />}
           </span>
         </div>
       ))}
@@ -73,28 +70,28 @@ function ChannelRow({ server, channel }: { server: ServerStore; channel: Channel
   const click = () => {
     selectChannel(channel.id);
     if (channel.kind === "voice") {
-      if (!has(channel.perms, P.CONNECT)) return toast("Kein Zutritt", "Dir fehlt die Berechtigung, diesem Sprachkanal beizutreten.", "warn");
+      if (!has(channel.perms, P.CONNECT)) return toast(t("chan.noAccess"), t("chan.noAccessBody"), "warn");
       void joinVoice(server, channel.id);
     }
   };
   const menu = (e: MouseEvent) =>
     showMenu(e, [
-      ...(channel.kind === "text" ? [{ label: "Als gelesen markieren", onClick: () => void server.ack(channel.id) }] : []),
+      ...(channel.kind === "text" ? [{ label: t("rail.markRead"), onClick: () => void server.ack(channel.id) }] : []),
       {
-        label: muted ? "Stummschaltung aufheben" : "Kanal stummschalten",
+        label: muted ? t("chan.unmute") : t("chan.mute"),
         onClick: () => updateSettings({ muted: { ...settings.value.muted, [`${server.id}:${channel.id}`]: !muted } }),
       },
-      { label: "Kanal-ID kopieren", onClick: () => copyText(String(channel.id)) },
+      { label: t("chan.copyId"), onClick: () => copyText(String(channel.id)) },
       ...(canManage
         ? [
             { separator: true, label: "" },
-            { label: "Kanal bearbeiten", onClick: () => openModal(<ChannelDialog server={server} channel={channel} />) },
+            { label: t("chan.edit"), onClick: () => openModal(<ChannelDialog server={server} channel={channel} />) },
             {
-              label: "Kanal löschen",
+              label: t("chan.delete"),
               danger: true,
               onClick: async () => {
-                if (await confirmDialog({ title: "Kanal löschen?", body: `#${channel.name} und alle Nachrichten darin werden endgültig gelöscht.`, confirm: "Löschen", danger: true })) {
-                  server.rpc("channel.delete", { channel_id: channel.id }).catch((err) => toast("Löschen fehlgeschlagen", errorText(err), "error"));
+                if (await confirmDialog({ title: t("chan.deleteTitle"), body: t("chan.deleteBody", { name: channel.name }), confirm: t("common.delete"), danger: true })) {
+                  server.rpc("channel.delete", { channel_id: channel.id }).catch((err) => toast(t("common.deleteFailed"), errorText(err), "error"));
                 }
               },
             },
@@ -113,7 +110,7 @@ function ChannelRow({ server, channel }: { server: ServerStore; channel: Channel
             <span
               class="icon-btn sm"
               role="button"
-              title="Kanal bearbeiten"
+              title={t("chan.edit")}
               onClick={(e) => {
                 e.stopPropagation();
                 openModal(<ChannelDialog server={server} channel={channel} />);
@@ -136,16 +133,16 @@ function ServerSidebar({ server }: { server: ServerStore }) {
   const canCreate = server.can(P.CREATE_CHANNELS);
   const headMenu = (e: MouseEvent) =>
     showMenu(e, [
-      ...(server.can(P.CREATE_INVITES) ? [{ label: "Personen einladen", onClick: () => openModal(<InviteDialog server={server} />) }] : []),
-      { label: "Servereinstellungen", onClick: () => openModal(<ServerSettingsDialog server={server} />) },
+      ...(server.can(P.CREATE_INVITES) ? [{ label: t("rail.invite"), onClick: () => openModal(<InviteDialog server={server} />) }] : []),
+      { label: t("rail.serverSettings"), onClick: () => openModal(<ServerSettingsDialog server={server} />) },
       ...(canCreate
         ? [
-            { label: "Kanal erstellen", onClick: () => openModal(<ChannelDialog server={server} />) },
-            { label: "Kategorie erstellen", onClick: () => openModal(<CategoryDialog server={server} />) },
+            { label: t("chan.create"), onClick: () => openModal(<ChannelDialog server={server} />) },
+            { label: t("cat.create"), onClick: () => openModal(<CategoryDialog server={server} />) },
           ]
         : []),
       {
-        label: isMuted(server.id) ? "Benachrichtigungen aktivieren" : "Server stummschalten",
+        label: isMuted(server.id) ? t("rail.unmute") : t("rail.mute"),
         onClick: () => updateSettings({ muted: { ...settings.value.muted, [server.id]: !isMuted(server.id) } }),
       },
     ]);
@@ -164,20 +161,23 @@ function ServerSidebar({ server }: { server: ServerStore }) {
           const list = chans.filter((c) => c.category_id === cat.id);
           return (
             <div class="cat" key={cat.id}>
-              <div class="cat-head" onContextMenu={(e) =>
-                server.can(P.MANAGE_CHANNELS) &&
-                showMenu(e, [
-                  { label: "Kategorie bearbeiten", onClick: () => openModal(<CategoryDialog server={server} category={cat} />) },
-                  {
-                    label: "Kategorie löschen",
-                    danger: true,
-                    onClick: () => server.rpc("category.delete", { category_id: cat.id }).catch((err) => toast("Fehler", errorText(err), "error")),
-                  },
-                ])
-              }>
+              <div
+                class="cat-head"
+                onContextMenu={(e) =>
+                  server.can(P.MANAGE_CHANNELS) &&
+                  showMenu(e, [
+                    { label: t("cat.edit"), onClick: () => openModal(<CategoryDialog server={server} category={cat} />) },
+                    {
+                      label: t("cat.delete"),
+                      danger: true,
+                      onClick: () => server.rpc("category.delete", { category_id: cat.id }).catch((err) => toast(t("common.error"), errorText(err), "error")),
+                    },
+                  ])
+                }
+              >
                 <span class="grow ellipsis">{cat.name}</span>
                 {canCreate && (
-                  <IconButton title="Kanal erstellen" onClick={() => openModal(<ChannelDialog server={server} categoryId={cat.id} />)}>
+                  <IconButton title={t("chan.create")} onClick={() => openModal(<ChannelDialog server={server} categoryId={cat.id} />)}>
                     <Icon.Plus />
                   </IconButton>
                 )}
@@ -188,29 +188,27 @@ function ServerSidebar({ server }: { server: ServerStore }) {
             </div>
           );
         })}
-        {server.conn.state.value === "ready" && !chans.length && <div class="faint small" style={{ padding: "12px" }}>Keine sichtbaren Kanäle.</div>}
+        {server.conn.state.value === "ready" && !chans.length && <div class="faint small" style={{ padding: "12px" }}>{t("chan.noneVisible")}</div>}
       </div>
     </>
   );
 }
 
 function HomeSidebar() {
-  const entries = servers.value.flatMap((s) =>
-    s.dms.value.map((d) => ({ s, d, last: d.last_message_id ?? 0 })),
-  );
+  const entries = servers.value.flatMap((s) => s.dms.value.map((d) => ({ s, d, last: d.last_message_id ?? 0 })));
   entries.sort((a, b) => b.last - a.last);
   const cur = homeDm.value;
   return (
     <>
       <div class="sidebar-head">
-        <span class="title">Direktnachrichten</span>
+        <span class="title">{t("home.dms")}</span>
       </div>
       <div class="sidebar-scroll">
         <button class={`chan${!cur ? " active" : ""}`} onClick={() => (homeDm.value = null)}>
           <Icon.Users />
-          <span class="name">Freunde</span>
+          <span class="name">{t("home.friends")}</span>
         </button>
-        <div class="cat-head" style={{ marginTop: "14px" }}>Unterhaltungen</div>
+        <div class="cat-head" style={{ marginTop: "14px" }}>{t("home.conversations")}</div>
         {entries.map(({ s, d }) => {
           const m = s.member(d.user_id);
           const active = cur?.serverId === s.id && cur.channelId === d.channel_id;
@@ -223,17 +221,15 @@ function HomeSidebar() {
                 <div class="ellipsis">{s.memberName(d.user_id)}</div>
                 <div class="faint xs ellipsis">{servers.value.length > 1 ? s.displayName() : (m?.status_text ?? "")}</div>
               </span>
-              {inCall && <Icon.Speaker size={16} title="Anruf aktiv" />}
+              {inCall && <Icon.Speaker size={16} title={t("home.callActive")} />}
             </button>
           );
         })}
-        {!entries.length && <div class="faint small" style={{ padding: "8px 10px" }}>Noch keine Direktnachrichten. Öffne ein Profil in der Mitgliederliste, um eine Unterhaltung zu beginnen.</div>}
+        {!entries.length && <div class="faint small" style={{ padding: "8px 10px" }}>{t("home.noDms")}</div>}
       </div>
     </>
   );
 }
-
-const QUALITY_TEXT = { good: "Sprachverbindung", ok: "Verbindung mäßig", bad: "Schlechte Verbindung", connecting: "Verbinde …", alone: "Sprachverbindung" };
 
 function VoicePanel() {
   const v = voice.value;
@@ -241,35 +237,36 @@ function VoicePanel() {
   const q = v.state.value === "reconnecting" ? "connecting" : v.overallQuality();
   const ch = v.server.channel(v.channelId);
   const dm = v.server.dm(v.channelId);
-  const where = ch ? `${ch.name} / ${v.server.displayName()}` : dm ? `Anruf mit ${v.server.memberName(dm.user_id)}` : "";
+  const where = ch ? `${ch.name} / ${v.server.displayName()}` : dm ? t("voice.callWith", { name: v.server.memberName(dm.user_id) }) : "";
   const stats = [...v.stats.value.values()];
   const rtts = stats.map((s) => s.rtt).filter((x): x is number => x !== null);
   const relay = stats.some((s) => s.relay);
-  const detail = rtts.length ? `${Math.max(...rtts)} ms${relay ? " · über Relay" : ""}` : v.peerIds().length ? "Verbindungsaufbau" : "Allein im Kanal";
+  const detail = rtts.length ? `${Math.max(...rtts)} ms${relay ? ` · ${t("voice.viaRelay")}` : ""}` : v.peerIds().length ? t("voice.establishing") : t("voice.alone");
+  const qText = { good: t("voice.q.good"), ok: t("voice.q.ok"), bad: t("voice.q.bad"), connecting: t("voice.q.connecting"), alone: t("voice.q.good") }[q];
   return (
     <div class="voice-panel">
       <div class="row">
         <div class="grow" style={{ minWidth: "0px" }}>
           <div class={`status ${q === "alone" ? "good" : q === "connecting" ? "ok" : q}`} title={detail}>
-            <Icon.Signal size={16} />
-            {QUALITY_TEXT[q]}
+            <Icon.Signal size={15} />
+            {qText}
           </div>
           <div class="faint xs ellipsis" title={where}>{where}</div>
           <div class="faint xs">{detail}</div>
         </div>
-        <IconButton title="Verbindung trennen" class="on-danger" onClick={() => void endVoice()}>
+        <IconButton title={t("voice.disconnect")} class="on-danger" onClick={() => void endVoice()}>
           <Icon.PhoneOff />
         </IconButton>
       </div>
       <div class="controls">
-        <button class={`btn${v.sharingScreen.value ? " on" : ""}`} title={v.sharingScreen.value ? "Übertragung beenden" : "Bildschirm übertragen"} onClick={() => (v.sharingScreen.value ? v.stopScreen() : v.startScreen())}>
+        <button class={`btn${v.sharingScreen.value ? " on" : ""}`} title={v.sharingScreen.value ? t("voice.stopShare") : t("voice.shareScreen")} onClick={() => (v.sharingScreen.value ? v.stopScreen() : v.startScreen())}>
           {v.sharingScreen.value ? <Icon.ScreenOff /> : <Icon.Screen />}
         </button>
-        <button class={`btn${v.cameraOn.value ? " on" : ""}`} title={v.cameraOn.value ? "Kamera aus" : "Kamera an"} onClick={() => (v.cameraOn.value ? v.stopCamera() : v.startCamera())}>
+        <button class={`btn${v.cameraOn.value ? " on" : ""}`} title={v.cameraOn.value ? t("voice.cameraOff") : t("voice.cameraOnAction")} onClick={() => (v.cameraOn.value ? v.stopCamera() : v.startCamera())}>
           {v.cameraOn.value ? <Icon.Camera /> : <Icon.CameraOff />}
         </button>
       </div>
-      {v.sharingScreen.value && <div class="faint xs" style={{ marginTop: "6px" }}>🔴 Dein Bildschirm wird übertragen{v.screenHasAudio.value ? " (mit Ton)" : ""}.</div>}
+      {v.sharingScreen.value && <div class="faint xs" style={{ marginTop: "6px" }}>🔴 {v.screenHasAudio.value ? t("voice.sharingWithAudio") : t("voice.sharingNow")}</div>}
     </div>
   );
 }
@@ -283,31 +280,31 @@ function UserPanel() {
   const presence = me?.presence ?? "online";
   return (
     <div class="user-panel">
-      <div class="who" onClick={() => openModal(<UserSettingsDialog />)} title="Profil & Einstellungen">
+      <div class="who" onClick={() => openModal(<UserSettingsDialog />)} title={t("user.profileSettings")}>
         {me && server ? (
           <>
             <Avatar server={server} userId={me.id} name={me.display_name || me.username} size={32} presence={presence === "invisible" ? "offline" : presence} speaking={v?.speaking.value.has(me.id)} />
             <div class="names">
               <div class="ellipsis" style={{ fontWeight: 600 }}>{me.display_name || me.username}</div>
-              <div class="faint xs ellipsis">{me.status_text || PRESENCE_TEXT[presence]}</div>
+              <div class="faint xs ellipsis">{me.status_text || presenceText(presence)}</div>
             </div>
           </>
         ) : (
-          <div class="faint small">Nicht angemeldet</div>
+          <div class="faint small">{t("user.notSignedIn")}</div>
         )}
       </div>
       <IconButton
-        title={!v ? "Mikrofon (nur im Sprachkanal)" : muted ? "Stummschaltung aufheben" : "Stummschalten"}
+        title={!v ? t("user.micOnlyInVoice") : muted ? t("voice.unmute") : t("voice.mute")}
         class={muted ? "on-danger" : ""}
         disabled={!v || voiceBusy.value}
         onClick={() => v && v.hasMic.value && void v.setMuted(!v.muted.value)}
       >
         {muted ? <Icon.MicOff /> : <Icon.Mic />}
       </IconButton>
-      <IconButton title={deaf ? "Ton einschalten" : "Ton ausschalten"} class={deaf ? "on-danger" : ""} disabled={!v} onClick={() => v && void v.setDeafened(!v.deafened.value)}>
+      <IconButton title={deaf ? t("voice.undeafen") : t("voice.deafen")} class={deaf ? "on-danger" : ""} disabled={!v} onClick={() => v && void v.setDeafened(!v.deafened.value)}>
         {deaf ? <Icon.HeadphonesOff /> : <Icon.Headphones />}
       </IconButton>
-      <IconButton title="Einstellungen" onClick={() => openModal(<UserSettingsDialog />)}>
+      <IconButton title={t("settings.title")} onClick={() => openModal(<UserSettingsDialog />)}>
         <Icon.Gear />
       </IconButton>
     </div>
@@ -317,7 +314,7 @@ function UserPanel() {
 export function Sidebar() {
   const server = activeServer.value;
   return (
-    <aside class="sidebar" aria-label="Kanäle">
+    <aside class="sidebar" aria-label={t("chan.channels")}>
       {activeServerId.value === null ? <HomeSidebar /> : server ? <ServerSidebar server={server} /> : null}
       <VoicePanel />
       <UserPanel />

@@ -242,6 +242,8 @@ export class ServerStore {
       edited_at: null,
       mentions: [],
       attachments: [],
+      reactions: [],
+      pinned_at: null,
       nonce,
       pending: true,
     };
@@ -402,6 +404,25 @@ export class ServerStore {
       case "message.deleted": {
         const l = this.logs.get(d.channel_id);
         if (l) l.messages.value = l.messages.value.filter((m) => m.id !== d.id);
+        break;
+      }
+      case "reaction.update": {
+        const l = this.logs.get(d.channel_id);
+        if (l) {
+          l.messages.value = l.messages.value.map((m) => {
+            if (m.id !== d.message_id) return m;
+            let rs = m.reactions.map((r) => ({ ...r, users: r.users.slice() }));
+            let r = rs.find((x) => x.emoji === d.emoji);
+            if (d.added) {
+              if (!r) rs.push((r = { emoji: d.emoji, users: [] }));
+              if (!r.users.includes(d.user_id)) r.users.push(d.user_id);
+            } else if (r) {
+              r.users = r.users.filter((u) => u !== d.user_id);
+              if (!r.users.length) rs = rs.filter((x) => x !== r);
+            }
+            return { ...m, reactions: rs };
+          });
+        }
         break;
       }
       case "typing":

@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.1.0)
+# Funktionsstand (Version 0.2.0)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -18,7 +18,7 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | 10 | Verbindung im Testnetz zuverlässig | 🟡 Loopback-Testnetz: zuverlässig inkl. Serverneustart. Echtes LAN/Internet offen |
 | 11 | Netzwerkfehler nachvollziehbar behandelt | ✅ Reconnect mit Backoff, Zertifikatsfehler, strukturierte Fehlercodes, Statusanzeigen |
 | 12 | Grundlegende Sicherheitsmaßnahmen | ✅ siehe SECURITY.md |
-| 13 | Wichtigste Funktionen getestet | ✅ 60 Rust-Tests, 20 Medien-E2E, 10 Desktop-E2E, Installer-Tests |
+| 13 | Wichtigste Funktionen getestet | ✅ 62 Rust-Tests, 20 Medien-E2E (0.2.0); 10 Desktop-E2E und Installer-Tests zuletzt mit 0.1.0 |
 | 14 | Funktionsstand dokumentiert | ✅ dieses Dokument |
 
 ## Funktionen im Detail
@@ -42,7 +42,9 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Ungelesen-Markierungen, Erwähnungszähler, Tippanzeige | ✅ |
 | Benachrichtigungen (DM, Erwähnung, Anruf, Verbindung), pro Server/Kanal stummschaltbar | 🟡 implementiert, Windows-Toast nicht automatisiert getestet |
 | Volltextsuche mit Sprung zur Nachricht | ✅ |
-| Rich-Embeds, Markdown über Code/Links hinaus, Reaktionen, Threads, angeheftete Nachrichten | ⬜ |
+| Reaktionen (Emoji-Auswahl, Schnellreaktionen), angeheftete Nachrichten | ✅ Server-Integrationstest; UI im Browser geprüft |
+| Markdown (fett, kursiv, unterstrichen, durchgestrichen, Spoiler, Zitate, Listen, Code), Formatierungs-Tastenkürzel | ✅ UI im Browser geprüft |
+| Rich-Embeds, Threads | ⬜ |
 
 ### Sprache / Video / Bildschirm
 | Funktion | Stand |
@@ -50,7 +52,7 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Beitreten/Verlassen, Mikrofon, Lautsprecher, Stumm, Ton aus, Sprecheranzeige | ✅ |
 | Lautstärke pro Benutzer, Geräteauswahl Ein/Aus, Qualitätsanzeige | 🟡 implementiert; Lautstärke/Gerätewechsel nicht automatisiert getestet |
 | Wiederverbindung nach Netzwerkproblemen (ICE-Restart, Grace-Period) | ✅ (Serverneustart-Szenario) |
-| Push-to-Talk | 🟡 nur bei aktivem Fenster (keine globale Tastenkombination) |
+| Push-to-Talk | ✅ im Fenster; 🟡 globale Taste im Hintergrund (tauri-plugin-global-shortcut) implementiert, nicht automatisiert getestet |
 | Echo-/Rauschunterdrückung, AGC | ✅ über WebRTC-Engine, abschaltbar |
 | Webcam | ✅ Browser-E2E (virtuelle Kamera); 🟡 echte Kamera nicht getestet |
 | Bildschirm: Monitor/Fenster (Systemdialog), Beenden, Anzeige bei anderen, Profile, FPS/Auflösung/Bitrate, Anzeige wer überträgt, Vollbild | ✅ / 🟡 (siehe Kriterium 9) |
@@ -62,7 +64,7 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Funktion | Stand |
 |---|---|
 | Registrierung (geschlossen/Einladung/Freischaltung/offen), Anmeldung, Abmeldung, Argon2id, Sitzungen | ✅ |
-| Avatar, Statusmeldung, Online/Abwesend/Nicht stören/Unsichtbar | ✅ (Avatar-Upload über API getestet; Abwesend wird nicht automatisch bei Inaktivität gesetzt) |
+| Avatar, Statusmeldung, Online/Abwesend/Nicht stören/Unsichtbar | ✅ (Avatar-Upload über API getestet); 🟡 automatisch „Abwesend“ nach einstellbarer Inaktivität implementiert, nicht automatisiert getestet |
 | DMs, Direktanrufe, Freunde, Blockieren | ✅ |
 | Rollen Inhaber/Admin/Moderator/Mitglied/Gast, anpassbar, Kanal-Overrides | ✅ |
 | Konto löschen, Aufbewahrungsfristen | ✅ |
@@ -77,12 +79,21 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
 
+### Oberfläche (neu in 0.2.0)
+| Funktion | Stand |
+|---|---|
+| 15 Sprachen (de, en, es, fr, it, pt, nl, pl, tr, ru, ar mit RTL, hi, zh, ja, ko), Umschaltung über die Landesflagge, Systemsprache | ✅ alle 692 Schlüssel vollständig (automatisch geprüft); Übersetzungen maschinell erstellt, nicht muttersprachlich lektoriert |
+| 10 Designs (Smaragd als Standard), optional hell/dunkel nach Windows | ✅ Screenshots aller Hauptansichten |
+| Neues 3D-Logo, Über-Dialog mit Copyright, Homepage und Spenden-Button | ✅ |
+| Schnellwechsler (Strg+K), Tastenkürzel-Übersicht (Strg+/), Kanalwechsel (Alt+↑/↓), Benachrichtigungston | ✅ UI im Browser geprüft |
+| Tray-Menü in der gewählten Sprache | 🟡 implementiert, nicht automatisiert getestet |
+
 ## Bekannte Einschränkungen
 
 1. **Mesh-Topologie**: Upload-Bedarf wächst mit der Teilnehmerzahl, besonders bei Bildschirmübertragung (jeder Empfänger bekommt einen eigenen Encoder-Stream).
 2. **P2P-Rechte**: Sprech-/Video-/Bildschirmrechte sind serverseitig für den Zustand erzwungen, ein manipulierter Client könnte aber Medien direkt an Peers senden (siehe SECURITY.md).
 3. **IP-Sichtbarkeit** zwischen Teilnehmern bei direkten Medienverbindungen.
-4. **Push-to-Talk** nur bei fokussiertem Fenster.
+4. **Globales Push-to-Talk** belegt die Taste systemweit, solange es aktiv ist.
 5. Server sind voneinander unabhängig (keine Föderation): Konten und DMs gelten pro Server.
 6. Dateien werden nicht in Backups der Datenbank aufgenommen (Ordner `uploads/` separat sichern).
 7. Medien-Leistungswerte wurden in Headless-Chromium gemessen, nicht in der WebView2-App.
@@ -91,10 +102,10 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 
 1. Test mit zwei physischen PCs im LAN und über Internet inkl. TURN; Ergebnisse in TESTING.md ergänzen.
 2. Manueller Durchlauf der Bildschirmübertragung (Monitor, Fenster, Systemton) in der Desktop-App.
-3. Globales Push-to-Talk (tauri-plugin-global-shortcut, Pressed/Released).
-4. Automatischer Status „Abwesend“ bei Inaktivität.
+3. Muttersprachliche Durchsicht der Übersetzungen.
+4. Desktop-E2E und Installer-Test mit 0.2.0 wiederholen.
 5. Signierter Auto-Updater mit selbst gehosteter Update-Quelle; Code-Signatur.
 6. Optionale SFU für größere Sprachkanäle und vollständige Rechte-Durchsetzung.
 7. Option „Nur über Relay verbinden“ (IP-Schutz).
-8. Reaktionen, angeheftete Nachrichten, erweitertes Markdown.
+8. Threads und Link-Vorschauen.
 9. Linux-Build des Headless-Servers in CI.

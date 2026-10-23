@@ -2,15 +2,16 @@
 
 Schlanke, selbst hostbare Kommunikationssoftware für Text, Sprache, Video und Bildschirmübertragung – Windows-Desktop-App mit integriertem Servermodus und eigenständigem Headless-Server. Keine Cloud, keine externe Registrierung, kein zentraler Anbieter.
 
-> Projektname „NexusTalk“ ist ein Platzhalter.
+© 2026 Christian Schiessl · [cjs86.netlify.app](https://cjs86.netlify.app) · Projektseite & Download: [nexustalk-app.netlify.app](https://nexustalk-app.netlify.app) · [Spenden per PayPal](https://www.paypal.com/donate/?business=r4pi%40gmx.de&item_name=NexusTalk&currency_code=EUR) (r4pi@gmx.de)
 
 ## Funktionsumfang (Kurzfassung)
 
 * **Server & Kanäle:** Kategorien, Text- und Sprachkanäle, Rollen (Inhaber, Administrator, Moderator, Mitglied, Gast – anpassbar) mit Kanal-Overrides, Einladungen, Freischaltung, Sperren, Audit-Protokoll, Serverprotokoll, Ressourcenanzeige, Backups/Wiederherstellung.
-* **Text:** Echtzeit, Verlauf mit Nachladen, Antworten, Erwähnungen, Bearbeiten/Löschen, Mehrzeiler, Code, Links, Dateianhänge mit Fortschritt und Bildvorschau, Ungelesen-/Erwähnungszähler, Tippanzeige, Volltextsuche, Benachrichtigungen.
-* **Sprache/Video:** WebRTC-Mesh mit Opus, Echo-/Rauschunterdrückung, Stumm/Ton aus, Push-to-Talk, Sprecheranzeige, Lautstärke pro Benutzer, Geräteauswahl, Qualitätsanzeige (RTT, Verlust, Relay), automatische Wiederverbindung, Webcam.
+* **Text:** Echtzeit, Verlauf mit Nachladen, Antworten, Erwähnungen, Reaktionen, angeheftete Nachrichten, Markdown inkl. Spoiler, Emoji-Auswahl, Bearbeiten/Löschen, Mehrzeiler, Code, Links, Dateianhänge mit Fortschritt und Bildvorschau, Ungelesen-/Erwähnungszähler, Tippanzeige, Volltextsuche, Benachrichtigungen.
+* **Sprache/Video:** WebRTC-Mesh mit Opus, Echo-/Rauschunterdrückung, Stumm/Ton aus, Push-to-Talk (auch global im Hintergrund), Sprecheranzeige, Lautstärke pro Benutzer, Geräteauswahl, Qualitätsanzeige (RTT, Verlust, Relay), automatische Wiederverbindung, Webcam.
 * **Bildschirm:** Monitor oder Fenster (Systemdialog), Profile Energiesparend/Ausgewogen/Hohe Qualität/Manuell, Systemton getrennt vom Mikrofon, Anzeige wer überträgt, Vollbild.
 * **Benutzer:** Registrierung nach Serverrichtlinie, Argon2id-Passwörter, Avatare, Status (Online/Abwesend/Nicht stören/Unsichtbar), Statusmeldung, DMs und Direktanrufe, Freunde, Blockieren, Konto löschen.
+* **Oberfläche:** 15 Sprachen (per Landesflagge umschaltbar, Arabisch von rechts nach links), 10 Designs mit Tiefeneffekt, Schnellwechsler (Strg+K), Tastenkürzel, automatisch „Abwesend“, Benachrichtigungston.
 * **Windows:** NSIS-/MSI-Installer, Startmenü, Tray-Betrieb, Autostart, Single-Instance, DPAPI-geschützte Sitzungstoken, Fehlerprotokolle.
 
 Den genauen, geprüften Stand (inkl. offener Punkte) beschreibt **[docs/STATUS.md](docs/STATUS.md)**.
@@ -40,7 +41,8 @@ crates/nexus-server   Server (Bibliothek + Headless-Binary), Unit- & Integration
 crates/nexus-net      Client-Netzwerk mit TLS-Pinning
 app/src-tauri         Desktop-Shell (Tauri 2, Rust)
 app/src               Oberfläche (Preact + Signals, TypeScript)
-tests/e2e             WebRTC-Ende-zu-Ende-Tests (Playwright, echte UI)
+tests/e2e             WebRTC-Ende-zu-Ende-Tests, Desktop-Test, Screenshots (Playwright, echte UI)
+website               Projektseite (nexustalk-app.netlify.app)
 tests/bench           Ressourcen-Benchmarks (Server, Medien)
 scripts               Desktop-Benchmark (PowerShell)
 docs                  Dokumentation
@@ -48,4 +50,4 @@ docs                  Dokumentation
 
 ## Lizenz
 
-MIT
+MIT – siehe [LICENSE](LICENSE). © 2026 Christian Schiessl

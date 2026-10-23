@@ -6,11 +6,18 @@ import type { ComponentChild } from "preact";
 import { loadConfig, log, notify, requestAttention, saveConfig, type StoredConfig } from "../platform";
 import type { Message, SavedServer } from "../types";
 import { ServerStore } from "./server";
+import { detectLang, setLang, t } from "../i18n";
+import { applyTheme } from "../themes";
+import { playChime } from "../sound";
 
 // ------------------------------------------------------------- settings
 
 export interface Settings {
-  theme: "dark" | "light" | "system";
+  /** "" = follow the system language */
+  language: string;
+  /** one of THEMES (themes.ts) */
+  theme: string;
+  followSystemTheme: boolean;
   scale: number;
   inputDevice: string;
   outputDevice: string;
@@ -20,7 +27,14 @@ export interface Settings {
   autoGainControl: boolean;
   pushToTalk: boolean;
   pttKey: string;
+  /** Push-to-talk also works while NexusTalk is in the background (desktop app). */
+  globalPtt: boolean;
+  globalPttKey: string;
   notifications: boolean;
+  notifySound: boolean;
+  autoAway: boolean;
+  autoAwayMinutes: number;
+  recentEmojis: string[];
   notifyDMs: boolean;
   notifyMentions: boolean;
   notifyAll: boolean;
@@ -37,7 +51,9 @@ export interface Settings {
 }
 
 export const defaultSettings: Settings = {
-  theme: "dark",
+  language: "",
+  theme: "emerald",
+  followSystemTheme: false,
   scale: 1,
   inputDevice: "",
   outputDevice: "",
@@ -47,7 +63,13 @@ export const defaultSettings: Settings = {
   autoGainControl: true,
   pushToTalk: false,
   pttKey: "KeyV",
+  globalPtt: false,
+  globalPttKey: "F8",
   notifications: true,
+  notifySound: true,
+  autoAway: true,
+  autoAwayMinutes: 10,
+  recentEmojis: [],
   notifyDMs: true,
   notifyMentions: true,
   notifyAll: false,
@@ -67,6 +89,8 @@ export const minimizeToTray = signal(true);
 
 export function updateSettings(patch: Partial<Settings>) {
   settings.value = { ...settings.value, ...patch };
+  if ("theme" in patch || "followSystemTheme" in patch) applyTheme(settings.value.theme, settings.value.followSystemTheme);
+  if ("language" in patch) void setLang(settings.value.language || detectLang());
   schedulePersist();
 }
 
@@ -170,7 +194,7 @@ export function isMuted(serverId: string, channelId?: number) {
 function onServerEvent(store: ServerStore, ev: string, d: any) {
   if (ev === "message.created") maybeNotifyMessage(store, d.message as Message);
   if (ev === "voice.state") maybeNotifyCall(store, d);
-  if (ev === "ready" && d.reconnect) toast("Verbindung wiederhergestellt", store.displayName(), "ok");
+  if (ev === "ready" && d.reconnect) toast(t("toast.reconnected"), store.displayName(), "ok");
   if (ev === "ready" && activeServerId.value === store.id && (activeChannelId.value === null || !store.channel(activeChannelId.value))) {
     selectServer(store.id);
   }
@@ -194,8 +218,9 @@ function maybeNotifyMessage(store: ServerStore, m: Message) {
   const relevant = (isDm && s.notifyDMs) || (mentioned && s.notifyMentions) || (s.notifyAll && !isMuted(store.id, m.channel_id));
   if (!relevant) return;
   const author = store.memberName(m.author_id);
-  const where = isDm ? "Direktnachricht" : `#${store.channel(m.channel_id)?.name ?? ""} · ${store.displayName()}`;
-  const text = m.content.length > 140 ? m.content.slice(0, 140) + "…" : m.content || "📎 Anhang";
+  const where = isDm ? t("notify.dm") : `#${store.channel(m.channel_id)?.name ?? ""} · ${store.displayName()}`;
+  const text = m.content.length > 140 ? m.content.slice(0, 140) + "…" : m.content || `📎 ${t("notify.attachment")}`;
+  if (s.notifySound) playChime();
   void notify(`${author} (${where})`, text);
   void requestAttention();
 }
@@ -209,8 +234,9 @@ function maybeNotifyCall(store: ServerStore, v: any) {
   // Only the first participant joining a DM call counts as a ring.
   if (store.voiceMembers(v.channel_id).length !== 1) return;
   const name = store.memberName(v.user_id);
-  toast("Eingehender Anruf", `${name} ruft dich an. Öffne die Direktnachricht, um beizutreten.`, "info", 12000);
-  void notify("Eingehender Anruf", `${name} ruft dich an (${store.displayName()})`);
+  toast(t("notify.call"), t("notify.callBody", { name }), "info", 12000);
+  if (s.notifySound) playChime(true);
+  void notify(t("notify.call"), t("notify.callBody", { name }));
   void requestAttention();
 }
 
@@ -277,13 +303,23 @@ export async function persistNow() {
     await saveConfig(cfg);
   } catch (e) {
     log("error", `saving config failed: ${e}`);
-    toast("Einstellungen konnten nicht gespeichert werden", String(e), "error");
+    toast(t("toast.saveFailed"), String(e), "error");
   }
 }
 
 export async function initApp() {
   const { config, warning } = await loadConfig();
-  settings.value = { ...defaultSettings, ...(config.settings as Partial<Settings>) };
+  const stored = config.settings as Partial<Settings>;
+  // Migrate the old dark/light/system setting of version 0.1.
+  if (stored.theme === "dark") stored.theme = "emerald";
+  if (stored.theme === "light") stored.theme = "jade";
+  if (stored.theme === "system") {
+    stored.theme = "emerald";
+    stored.followSystemTheme = true;
+  }
+  settings.value = { ...defaultSettings, ...stored };
+  applyTheme(settings.value.theme, settings.value.followSystemTheme);
+  await setLang(settings.value.language || detectLang());
   hostAutostart.value = config.host_autostart;
   minimizeToTray.value = config.minimize_to_tray;
   for (const s of config.servers) {
@@ -293,7 +329,8 @@ export async function initApp() {
     store.conn.start();
   }
   loaded = true;
-  if (warning) toast("Konfiguration zurückgesetzt", warning, "warn", 12000);
+  if (warning) toast(t("toast.configReset"), warning, "warn", 12000);
+  initAutoAway();
   window.addEventListener("focus", () => (windowFocused.value = true));
   window.addEventListener("blur", () => (windowFocused.value = false));
   const first = servers.value[0];
@@ -306,5 +343,44 @@ export async function initApp() {
       }
     });
     setTimeout(() => stop(), 15000);
+  }
+}
+
+// ------------------------------------------------------------- automatic "away"
+
+let lastActivity = Date.now();
+let autoAwayActive = false;
+
+function initAutoAway() {
+  const mark = () => {
+    lastActivity = Date.now();
+    if (autoAwayActive) {
+      autoAwayActive = false;
+      setAllPresence("online");
+    }
+  };
+  for (const ev of ["mousemove", "keydown", "mousedown", "wheel"]) window.addEventListener(ev, mark, { passive: true });
+  window.addEventListener("focus", mark);
+  // One cheap check per minute.
+  setInterval(() => {
+    const s = settings.value;
+    if (!s.autoAway || autoAwayActive || windowFocused.value) return;
+    if (Date.now() - lastActivity < s.autoAwayMinutes * 60_000) return;
+    autoAwayActive = true;
+    setAllPresence("idle");
+  }, 60_000);
+}
+
+/** Switches between online and idle on every server where the user chose "online". */
+function setAllPresence(p: "online" | "idle") {
+  for (const s of servers.value) {
+    const cur = s.me.value?.presence ?? "online";
+    if (!s.conn.ready || (cur !== "online" && cur !== "idle")) continue;
+    s.rpc("user.presence", { presence: p }).then(
+      () => {
+        if (s.me.value) s.me.value = { ...s.me.value, presence: p };
+      },
+      () => {},
+    );
   }
 }

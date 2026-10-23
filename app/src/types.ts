@@ -91,6 +91,8 @@ export interface Message {
   edited_at: number | null;
   mentions: number[];
   attachments: Attachment[];
+  reactions: { emoji: string; users: number[] }[];
+  pinned_at: number | null;
   // client-side only
   nonce?: string;
   pending?: boolean;

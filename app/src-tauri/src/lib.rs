@@ -38,6 +38,17 @@ struct Flags {
     background: bool,
 }
 
+/// Tray menu entries, kept to relabel them when the UI language changes.
+struct TrayItems(std::sync::Mutex<Option<(MenuItem<tauri::Wry>, MenuItem<tauri::Wry>)>>);
+
+#[tauri::command]
+fn set_tray_labels(items: State<'_, TrayItems>, open: String, quit: String) {
+    if let Some((o, q)) = items.0.lock().unwrap_or_else(|p| p.into_inner()).as_ref() {
+        let _ = o.set_text(open);
+        let _ = q.set_text(quit);
+    }
+}
+
 #[tauri::command]
 fn app_info(flags: State<'_, Flags>) -> AppInfo {
     let dir = app_dir();
@@ -97,6 +108,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, "open", "NexusTalk öffnen", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Beenden", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&open, &PredefinedMenuItem::separator(app)?, &quit])?;
+    *app.state::<TrayItems>().0.lock().unwrap_or_else(|p| p.into_inner()) = Some((open.clone(), quit.clone()));
     let mut tb = TrayIconBuilder::with_id("main")
         .tooltip("NexusTalk")
         .menu(&menu)
@@ -135,6 +147,7 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| show_main(app)))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
@@ -144,11 +157,13 @@ pub fn run() {
         .manage(host::HostState::new(dir.join("server")))
         .manage(store)
         .manage(Flags { background })
+        .manage(TrayItems(std::sync::Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             app_info,
             client_log,
             open_folder,
             quit_app,
+            set_tray_labels,
             net::net_http,
             net::net_bytes,
             net::net_upload,

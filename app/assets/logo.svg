@@ -1,10 +1,80 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#6E56F8"/>
-      <stop offset="1" stop-color="#14B8A6"/>
+    <!-- tile faces -->
+    <linearGradient id="face" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5ff2b0"/>
+      <stop offset="0.45" stop-color="#16c47f"/>
+      <stop offset="1" stop-color="#047a4d"/>
     </linearGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#03563a"/>
+      <stop offset="1" stop-color="#012a1c"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9fff0" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#7bf5c4" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#012a1c" stop-opacity="0.6"/>
+    </linearGradient>
+    <radialGradient id="gloss" cx="0.35" cy="0.12" r="0.75">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.55" r="0.5">
+      <stop offset="0" stop-color="#b6ffe0" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#b6ffe0" stop-opacity="0"/>
+    </radialGradient>
+    <!-- letter -->
+    <linearGradient id="letter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#e9fff6"/>
+      <stop offset="1" stop-color="#b9f7dc"/>
+    </linearGradient>
+    <linearGradient id="extrude" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#056b45"/>
+      <stop offset="1" stop-color="#013522"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="22"/>
+      <feOffset dy="26" result="b"/>
+      <feFlood flood-color="#00140c" flood-opacity="0.55"/>
+      <feComposite in2="b" operator="in"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+      <feOffset dy="8" result="b"/>
+      <feFlood flood-color="#00180e" flood-opacity="0.5"/>
+      <feComposite in2="b" operator="in"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <path id="n" d="M318 704V320h96l196 248V320h96v384h-94L414 456v248z"/>
   </defs>
-  <rect x="64" y="64" width="896" height="896" rx="224" fill="url(#g)"/>
-  <path d="M300 724V300h92l240 300V300h92v424h-92L392 424v300z" fill="#fff"/>
+
+  <g filter="url(#shadow)">
+    <!-- thickness of the tile -->
+    <rect x="84" y="120" width="856" height="840" rx="210" fill="url(#side)"/>
+    <!-- top face -->
+    <rect x="84" y="72" width="856" height="840" rx="210" fill="url(#face)"/>
+    <rect x="84" y="72" width="856" height="840" rx="210" fill="url(#glow)"/>
+    <rect x="84" y="72" width="856" height="840" rx="210" fill="url(#gloss)"/>
+    <rect x="90" y="78" width="844" height="828" rx="204" fill="none" stroke="url(#rim)" stroke-width="10"/>
+  </g>
+
+  <!-- sound waves -->
+  <g fill="none" stroke-linecap="round" stroke="#eafff6" opacity="0.9">
+    <path d="M748 262a120 120 0 0 1 0 150" stroke-width="22" opacity="0.55"/>
+    <path d="M800 222a184 184 0 0 1 0 230" stroke-width="18" opacity="0.32"/>
+  </g>
+
+  <!-- extruded letter: stacked depth layers + face -->
+  <g filter="url(#soft)">
+    <use href="#n" transform="translate(18 26)" fill="url(#extrude)"/>
+    <use href="#n" transform="translate(14 20)" fill="url(#extrude)"/>
+    <use href="#n" transform="translate(10 14)" fill="url(#extrude)"/>
+    <use href="#n" transform="translate(6 8)" fill="#06804f"/>
+    <use href="#n" transform="translate(3 4)" fill="#0aa064"/>
+    <use href="#n" fill="url(#letter)"/>
+    <use href="#n" fill="none" stroke="#ffffff" stroke-opacity="0.65" stroke-width="3"/>
+  </g>
 </svg>

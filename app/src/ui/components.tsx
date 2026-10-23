@@ -6,6 +6,7 @@ import { closeModal, contextMenu, dismissToast, lightbox, openModal, toasts } fr
 import type { ServerStore } from "../state/server";
 import { transport } from "../net/transport";
 import * as Icon from "./icons";
+import { t } from "../i18n";
 
 // ------------------------------------------------------------- media cache
 
@@ -126,9 +127,9 @@ export function confirmDialog(opts: { title: string; body: ComponentChildren; co
         onClose={() => done(false)}
         footer={
           <>
-            <button class="btn ghost" onClick={() => done(false)}>Abbrechen</button>
+            <button class="btn ghost" onClick={() => done(false)}>{t("common.cancel")}</button>
             <button class={`btn ${opts.danger ? "danger" : "primary"}`} onClick={() => done(true)} autoFocus>
-              {opts.confirm ?? "Bestätigen"}
+              {opts.confirm ?? t("common.confirm")}
             </button>
           </>
         }
@@ -165,8 +166,8 @@ export function promptDialog(opts: { title: string; label: string; body?: Compon
         onClose={() => done(null)}
         footer={
           <>
-            <button class="btn ghost" onClick={() => done(null)}>Abbrechen</button>
-            <button class={`btn ${opts.danger ? "danger" : "primary"}`} onClick={() => done(value)}>{opts.confirm ?? "OK"}</button>
+            <button class="btn ghost" onClick={() => done(null)}>{t("common.cancel")}</button>
+            <button class={`btn ${opts.danger ? "danger" : "primary"}`} onClick={() => done(value)}>{opts.confirm ?? t("common.ok")}</button>
           </>
         }
       >
@@ -216,7 +217,7 @@ export function IconButton(
 }
 
 export function Spinner() {
-  return <div class="spinner" role="status" aria-label="Lädt" />;
+  return <div class="spinner" role="status" aria-label={t("common.loading")} />;
 }
 
 export function ProgressBar(props: { value: number }) {
@@ -308,10 +309,52 @@ export function EmptyState(props: { title: string; children?: ComponentChildren;
   return (
     <div class="empty">
       <div class="inner">
-        {props.icon ?? <div class="logo-mark">N</div>}
+        {props.icon ?? <LogoMark />}
         <h2>{props.title}</h2>
         {props.children}
       </div>
+    </div>
+  );
+}
+
+/** The 3D app logo. */
+export function LogoMark({ size }: { size?: number }) {
+  return (
+    <div class="logo-mark" style={size ? { width: `${size}px`, height: `${size}px` } : undefined}>
+      <img src="/logo.png" alt="NexusTalk" draggable={false} />
+    </div>
+  );
+}
+
+/** Small anchored popover (emoji picker, language picker). Closes on outside click / Esc. */
+export function Popover(props: { anchor: DOMRect; onClose: () => void; children: ComponentChildren; align?: "above" | "below" }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const a = props.anchor;
+    let top = props.align === "below" ? a.bottom + 6 : a.top - r.height - 6;
+    if (top < 8) top = a.bottom + 6;
+    if (top + r.height > window.innerHeight - 8) top = window.innerHeight - r.height - 8;
+    let left = a.left;
+    if (left + r.width > window.innerWidth - 8) left = window.innerWidth - r.width - 8;
+    setPos({ left: Math.max(8, left), top: Math.max(8, top) });
+  }, [props.anchor]);
+  useEffect(() => {
+    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && props.onClose();
+    const k = (e: KeyboardEvent) => e.key === "Escape" && props.onClose();
+    setTimeout(() => window.addEventListener("mousedown", close), 0);
+    window.addEventListener("keydown", k);
+    return () => {
+      window.removeEventListener("mousedown", close);
+      window.removeEventListener("keydown", k);
+    };
+  }, []);
+  return (
+    <div ref={ref} class="popover" style={{ left: `${pos?.left ?? -9999}px`, top: `${pos?.top ?? -9999}px` }}>
+      {props.children}
     </div>
   );
 }

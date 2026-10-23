@@ -249,6 +249,92 @@ pub async fn typing(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     Ok(json!({}))
 }
 
+/// Accepts a single emoji (or short emoji sequence); rejects plain text.
+pub fn valid_emoji(e: &str) -> bool {
+    !e.is_empty()
+        && e.len() <= 32
+        && e.chars().all(|c| !c.is_whitespace() && !c.is_control())
+        && e.chars().any(|c| !c.is_ascii())
+        && e.chars().count() <= 8
+}
+
+#[derive(Deserialize)]
+struct ReactionReq {
+    message_id: i64,
+    emoji: String,
+}
+
+async fn react(ctx: &mut Ctx, d: Value, add: bool) -> ApiResult<Value> {
+    let r: ReactionReq = parse(d)?;
+    if !valid_emoji(&r.emoji) {
+        return Err(ApiError::invalid("Ungültiges Emoji"));
+    }
+    ctx.take_message_token()?;
+    let id = r.message_id;
+    let msg = ctx.st.db.call(move |c| store::get_message(c, id)).await?.ok_or_else(|| ApiError::not_found("Nachricht"))?;
+    ctx.require_in(msg.channel_id, SEND_MESSAGES)?;
+    let (uid, emoji) = (ctx.uid, r.emoji.clone());
+    let changed = ctx.st.db.call(move |c| store::set_reaction(c, id, uid, &emoji, add)).await?;
+    if changed {
+        let ev = hub::event(
+            "reaction.update",
+            &json!({ "message_id": id, "channel_id": msg.channel_id, "emoji": r.emoji, "user_id": ctx.uid, "added": add }),
+        );
+        ctx.st.broadcast_channel(msg.channel_id, &ev);
+    }
+    Ok(json!({ "changed": changed }))
+}
+
+pub async fn reaction_add(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    react(ctx, d, true).await
+}
+
+pub async fn reaction_remove(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    react(ctx, d, false).await
+}
+
+#[derive(Deserialize)]
+struct PinReq {
+    message_id: i64,
+    pinned: bool,
+}
+
+pub async fn pin(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: PinReq = parse(d)?;
+    let id = r.message_id;
+    let msg = ctx.st.db.call(move |c| store::get_message(c, id)).await?.ok_or_else(|| ApiError::not_found("Nachricht"))?;
+    // In DMs both participants may pin; elsewhere it is a moderation right.
+    if dm_partner(ctx, msg.channel_id).is_some() {
+        ctx.require_in(msg.channel_id, VIEW_CHANNEL)?;
+    } else {
+        ctx.require_in(msg.channel_id, MANAGE_MESSAGES)?;
+    }
+    let pinned = r.pinned;
+    let updated = ctx
+        .st
+        .db
+        .call(move |c| {
+            store::set_pinned(c, id, pinned)?;
+            store::get_message(c, id)
+        })
+        .await?
+        .ok_or_else(ApiError::internal)?;
+    ctx.st.broadcast_channel(updated.channel_id, &hub::event("message.updated", &updated));
+    Ok(json!(updated))
+}
+
+#[derive(Deserialize)]
+struct PinsReq {
+    channel_id: i64,
+}
+
+pub async fn pins(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: PinsReq = parse(d)?;
+    ctx.require_in(r.channel_id, VIEW_CHANNEL)?;
+    let msgs = ctx.st.db.call(move |c| store::pinned_messages(c, r.channel_id)).await?;
+    Ok(json!({ "messages": msgs }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -260,5 +346,16 @@ mod tests {
         assert_eq!(parse_mentions("@Anna @anna @a"), vec!["Anna"]);
         assert_eq!(parse_mentions("(@max_1)"), vec!["max_1"]);
         assert_eq!(parse_mentions(&"@xx ".repeat(50)).len(), 1);
+    }
+
+    #[test]
+    fn emoji_validation() {
+        assert!(valid_emoji("👍"));
+        assert!(valid_emoji("👨‍👩‍👧"));
+        assert!(valid_emoji("❤️"));
+        assert!(!valid_emoji("lol"));
+        assert!(!valid_emoji(""));
+        assert!(!valid_emoji("👍 👍"));
+        assert!(!valid_emoji(&"😀".repeat(9)));
     }
 }

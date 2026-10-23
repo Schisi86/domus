@@ -267,6 +267,10 @@ async fn dispatch(ctx: &mut Ctx, op: &str, d: Value) -> ApiResult<Value> {
         "message.search" => ops_chat::search(ctx, d).await,
         "channel.ack" => ops_chat::ack(ctx, d).await,
         "typing" => ops_chat::typing(ctx, d).await,
+        "reaction.add" => ops_chat::reaction_add(ctx, d).await,
+        "reaction.remove" => ops_chat::reaction_remove(ctx, d).await,
+        "message.pin" => ops_chat::pin(ctx, d).await,
+        "message.pins" => ops_chat::pins(ctx, d).await,
         // structure & administration
         "channel.create" => ops_admin::channel_create(ctx, d).await,
         "channel.update" => ops_admin::channel_update(ctx, d).await,
