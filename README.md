@@ -6,11 +6,12 @@ Schlanke, selbst hostbare Kommunikationssoftware für Text, Sprache, Video und B
 
 ## Funktionsumfang (Kurzfassung)
 
+* **Server hosten:** eigene Schaltfläche unten links, mehrere Server gleichzeitig auf eigenen Ports (automatisch gewählt), alles voreingestellt (TLS, Einladungspflicht, Autostart), dauerhafter Einladungslink je Server, Erreichbarkeit „Nur dieser PC“ / „Freunde einladen“ per Klick.
 * **Server & Kanäle:** Kategorien, Text- und Sprachkanäle, Rollen (Inhaber, Administrator, Moderator, Mitglied, Gast – anpassbar) mit Kanal-Overrides, Einladungen, Freischaltung, Sperren, Audit-Protokoll, Serverprotokoll, Ressourcenanzeige, Backups/Wiederherstellung.
 * **Text:** Echtzeit, Verlauf mit Nachladen, Antworten, Erwähnungen, Reaktionen, angeheftete Nachrichten, Markdown inkl. Spoiler, Emoji-Auswahl, Bearbeiten/Löschen, Mehrzeiler, Code, Links, Dateianhänge mit Fortschritt und Bildvorschau, Ungelesen-/Erwähnungszähler, Tippanzeige, Volltextsuche, Benachrichtigungen.
 * **Sprache/Video:** WebRTC-Mesh mit Opus, Echo-/Rauschunterdrückung, Stumm/Ton aus, Push-to-Talk (auch global im Hintergrund), Sprecheranzeige, Lautstärke pro Benutzer, Geräteauswahl, Qualitätsanzeige (RTT, Verlust, Relay), automatische Wiederverbindung, Webcam.
-* **Bildschirm:** Monitor oder Fenster (Systemdialog), Profile Energiesparend/Ausgewogen/Hohe Qualität/Manuell, Systemton getrennt vom Mikrofon, Anzeige wer überträgt, Vollbild.
-* **Benutzer:** Registrierung nach Serverrichtlinie, Argon2id-Passwörter, Avatare, Status (Online/Abwesend/Nicht stören/Unsichtbar), Statusmeldung, DMs und Direktanrufe, Freunde, Blockieren, Konto löschen.
+* **Bildschirm:** Monitor oder Fenster (Systemdialog); vor dem Start ein Menü mit Schnellwahl, Auflösung (720p–4K/Original), Bildrate (5–60 FPS), „Optimiert für“ (Text/Bewegung) und Bitrate – auch während der Übertragung änderbar; Systemton getrennt vom Mikrofon, Anzeige wer überträgt, Vollbild.
+* **Benutzer:** Registrierung nach Serverrichtlinie, Argon2id-Passwörter, Avatare und Serverbilder mit quadratischem Zuschnitt, Status (Online/Abwesend/Nicht stören/Unsichtbar), Statusmeldung, DMs und Direktanrufe, Freunde, Blockieren, Konto löschen.
 * **Oberfläche:** 15 Sprachen (per Landesflagge umschaltbar, Arabisch von rechts nach links), 10 Designs mit Tiefeneffekt, Schnellwechsler (Strg+K), Tastenkürzel, automatisch „Abwesend“, Benachrichtigungston.
 * **Windows:** NSIS-/MSI-Installer, Startmenü, Tray-Betrieb, Autostart, Single-Instance, DPAPI-geschützte Sitzungstoken, Fehlerprotokolle.
 
@@ -19,7 +20,7 @@ Den genauen, geprüften Stand (inkl. offener Punkte) beschreibt **[docs/STATUS.m
 ## Schnellstart
 
 * **Benutzer:** Installer ausführen → „Server hinzufügen“ → Adresse oder Einladungslink eingeben.
-* **Eigener Server:** Server-Symbol in der linken Leiste → „Server starten“ → Inhaberkonto anlegen → einladen.
+* **Eigener Server:** grüne Server-Schaltfläche unten links → Namen vergeben → „Erstellen & starten“ → Passwort für das Inhaberkonto → Einladungslink kopieren. Weitere Server über „Neuer Server“.
 * **Dedizierter Server:** `nexustalk-server --data <ordner>` (Windows/Linux), siehe [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Dokumentation

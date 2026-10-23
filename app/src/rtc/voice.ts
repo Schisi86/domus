@@ -6,7 +6,7 @@
 // or remove tracks (screen, camera) at any time without glare problems.
 
 import { signal } from "@preact/signals";
-import { settings, toast, voiceHooks } from "../state/app";
+import { settings, toast, voiceHooks, type ScreenOpts, type ScreenRes } from "../state/app";
 import type { ServerStore } from "../state/server";
 import type { VoiceMember } from "../types";
 import { errorText, t } from "../i18n";
@@ -23,15 +23,30 @@ export interface PeerStats {
   quality: "good" | "ok" | "bad" | "connecting";
 }
 
-export const SCREEN_PROFILES = {
-  eco: { width: 1280, height: 720, fps: 10, kbps: 900 },
-  balanced: { width: 1920, height: 1080, fps: 30, kbps: 2500 },
-  high: { width: 2560, height: 1440, fps: 60, kbps: 6000 },
-} as const;
+export const SCREEN_RES: Record<ScreenRes, [number, number]> = {
+  "720": [1280, 720],
+  "1080": [1920, 1080],
+  "1440": [2560, 1440],
+  "2160": [3840, 2160],
+  // "Original": no downscaling (capped at 4K); bitrate estimated for 1440p.
+  source: [3840, 2160],
+};
+export const SCREEN_FPS = [5, 15, 30, 60];
+
+/** Capture constraints and encoder limits for the chosen screen options. */
+export function screenParams(o: ScreenOpts = settings.value.screen) {
+  const [width, height] = SCREEN_RES[o.res] ?? SCREEN_RES["1080"];
+  const fps = Math.max(1, Math.min(60, o.fps));
+  const motion = o.content === "motion" || (o.content === "auto" && fps >= 30);
+  // Bits per pixel and frame: fluid content needs more than mostly static text.
+  const [ew, eh] = o.res === "source" ? SCREEN_RES["1440"] : [width, height];
+  const auto = Math.round((ew * eh * fps * (motion ? 0.06 : 0.04)) / 1000 / 100) * 100;
+  const kbps = o.kbps > 0 ? o.kbps : Math.max(500, Math.min(16000, auto));
+  return { width, height, fps, kbps, motion };
+}
 
 function screenProfile() {
-  const s = settings.value;
-  return s.screenProfile === "manual" ? s.screenManual : SCREEN_PROFILES[s.screenProfile];
+  return screenParams();
 }
 
 interface SignalData {
@@ -522,7 +537,7 @@ export class VoiceSession {
     }
     const video = stream.getVideoTracks()[0];
     if (video) {
-      video.contentHint = prof.fps >= 30 ? "motion" : "detail";
+      video.contentHint = prof.motion ? "motion" : "detail";
       video.onended = () => void this.stopScreen();
     }
     this.screen = stream;
@@ -561,7 +576,7 @@ export class VoiceSession {
     const prof = screenProfile();
     const v = this.screen?.getVideoTracks()[0];
     if (!v) return;
-    v.contentHint = prof.fps >= 30 ? "motion" : "detail";
+    v.contentHint = prof.motion ? "motion" : "detail";
     await v.applyConstraints({ frameRate: { ideal: prof.fps, max: prof.fps }, width: { max: prof.width }, height: { max: prof.height } }).catch(() => {});
     for (const p of this.peers.values()) await this.tuneSenders(p);
   }
@@ -579,7 +594,7 @@ export class VoiceSession {
         enc.maxBitrate = prof.kbps * 1000;
         enc.maxFramerate = prof.fps;
         (params as RTCRtpSendParameters & { degradationPreference?: string }).degradationPreference =
-          prof.fps >= 30 ? "maintain-framerate" : "maintain-resolution";
+          prof.motion ? "maintain-framerate" : "maintain-resolution";
       } else {
         enc.maxBitrate = 600_000;
         enc.maxFramerate = 24;

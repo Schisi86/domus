@@ -43,11 +43,34 @@ export interface Settings {
   muted: Record<string, boolean>;
   /** `${serverId}:${userId}` → 0..1 */
   userVolume: Record<string, number>;
-  screenProfile: "eco" | "balanced" | "high" | "manual";
-  screenManual: { width: number; height: number; fps: number; kbps: number };
+  /** Screen share: chosen in the menu before (or while) sharing. */
+  screen: ScreenOpts;
   screenAudio: boolean;
   showMembers: boolean;
   lastChannel: Record<string, number>;
+}
+
+export type ScreenRes = "720" | "1080" | "1440" | "2160" | "source";
+export interface ScreenOpts {
+  res: ScreenRes;
+  fps: number;
+  /** What is shared: decides between sharp text and fluid motion. */
+  content: "auto" | "detail" | "motion";
+  /** Upper bitrate limit in kbit/s; 0 = automatic. */
+  kbps: number;
+}
+
+/** Converts the quality profiles of version 0.2 into the new options. */
+function migrateScreen(old: { screenProfile?: string; screenManual?: { height: number; fps: number; kbps: number } }): ScreenOpts | undefined {
+  if (!old.screenProfile) return undefined;
+  if (old.screenProfile === "eco") return { res: "720", fps: 15, content: "detail", kbps: 0 };
+  if (old.screenProfile === "high") return { res: "1440", fps: 60, content: "auto", kbps: 0 };
+  if (old.screenProfile === "manual" && old.screenManual) {
+    const h = old.screenManual.height;
+    const res: ScreenRes = h <= 720 ? "720" : h <= 1080 ? "1080" : h <= 1440 ? "1440" : "2160";
+    return { res, fps: Math.max(5, Math.min(60, old.screenManual.fps)), content: "auto", kbps: old.screenManual.kbps };
+  }
+  return { res: "1080", fps: 30, content: "auto", kbps: 0 };
 }
 
 export const defaultSettings: Settings = {
@@ -76,8 +99,7 @@ export const defaultSettings: Settings = {
   notifyVoiceJoin: true,
   muted: {},
   userVolume: {},
-  screenProfile: "balanced",
-  screenManual: { width: 1920, height: 1080, fps: 30, kbps: 3000 },
+  screen: { res: "1080", fps: 30, content: "auto", kbps: 0 },
   screenAudio: true,
   showMembers: true,
   lastChannel: {},
@@ -265,6 +287,11 @@ export function dismissToast(id: number) {
 export const modal = signal<ComponentChild | null>(null);
 export const openModal = (c: ComponentChild) => (modal.value = c);
 export const closeModal = () => (modal.value = null);
+/** Second layer above `modal` for confirmations, prompts and the image cropper,
+ *  so the window underneath stays open. */
+export const dialog = signal<ComponentChild | null>(null);
+export const openDialog = (c: ComponentChild) => (dialog.value = c);
+export const closeDialog = () => (dialog.value = null);
 
 export interface MenuItem {
   label: string;
@@ -317,12 +344,20 @@ export async function initApp() {
     stored.theme = "emerald";
     stored.followSystemTheme = true;
   }
+  if (!stored.screen) {
+    const migrated = migrateScreen(stored as never);
+    if (migrated) stored.screen = migrated;
+  }
+  delete (stored as Record<string, unknown>).screenProfile;
+  delete (stored as Record<string, unknown>).screenManual;
   settings.value = { ...defaultSettings, ...stored };
   applyTheme(settings.value.theme, settings.value.followSystemTheme);
   await setLang(settings.value.language || detectLang());
   hostAutostart.value = config.host_autostart;
   minimizeToTray.value = config.minimize_to_tray;
   for (const s of config.servers) {
+    // Entries of the single hosted server of version 0.2 belong to host "main".
+    if (s.hosted && !s.host_id) s.host_id = "main";
     const store = new ServerStore(s, onServerEvent);
     servers.value = [...servers.value, store];
     watchSaved(store);

@@ -27,6 +27,9 @@ pub struct SavedServer {
     pub token_enc: Option<String>,
     #[serde(default)]
     pub hosted: bool,
+    /// Which of this app's hosted servers the entry belongs to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub host_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

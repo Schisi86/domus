@@ -1,14 +1,15 @@
 // Voice channel view: participant tiles, screen shares, cameras, controls.
 
 import { useState } from "preact/hooks";
-import { openModal, settings, updateSettings } from "../state/app";
+import { openModal, settings } from "../state/app";
 import type { ServerStore } from "../state/server";
 import type { Channel } from "../types";
 import { has, P } from "../types";
-import { t, type Key } from "../i18n";
+import { t } from "../i18n";
 import { Avatar, EmptyState, IconButton, Icon } from "./components";
 import { VideoTile } from "./Chat";
-import { endVoice, joinVoice, SCREEN_PROFILES, voice, voiceBusy } from "../rtc/voice";
+import { endVoice, joinVoice, voice, voiceBusy } from "../rtc/voice";
+import { ScreenQualityChip, ScreenShareControl } from "./ScreenShare";
 import { UserSettingsDialog } from "./dialogs/UserSettings";
 
 export function VoiceView({ server, channel }: { server: ServerStore; channel: Channel }) {
@@ -37,7 +38,6 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
   const focused = focus ? screens.find(([uid]) => `s${uid}` === focus) : undefined;
   const canShare = has(channel.perms, P.SCREEN_SHARE);
   const canVideo = has(channel.perms, P.VIDEO);
-  const profile = settings.value.screenProfile;
 
   const participantTile = (uid: number) => {
     const m = members.find((x) => x.user_id === uid);
@@ -103,23 +103,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
       <header class="main-head" style={{ background: "transparent" }}>
         <div class="chan-title"><Icon.Speaker /> {channel.name}</div>
         <div class="grow faint small">{v.state.value === "reconnecting" ? t("voice.restoring") : t("voice.participants", { n: members.length })}</div>
-        {v.sharingScreen.value && (
-          <select
-            class="select"
-            style={{ width: "200px", height: "28px" }}
-            value={profile}
-            title={t("screen.quality")}
-            onChange={(e) => {
-              updateSettings({ screenProfile: (e.target as HTMLSelectElement).value as typeof profile });
-              void v.applyScreenProfile();
-            }}
-          >
-            {Object.entries(SCREEN_PROFILES).map(([k, p]) => (
-              <option value={k} key={k}>{t(`screen.${k}` as Key)} ({p.height}p, {p.fps} FPS)</option>
-            ))}
-            <option value="manual">{t("screen.manual")}</option>
-          </select>
-        )}
+        {v.sharingScreen.value && <ScreenQualityChip v={v} />}
       </header>
       {focused ? (
         <div class="voice-grid has-focus">
@@ -154,9 +138,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
         <button class={`round-btn${v.cameraOn.value ? " on" : ""}`} title={!canVideo ? t("common.noPermission") : v.cameraOn.value ? t("voice.cameraOff") : t("voice.cameraOnAction")} disabled={!canVideo} onClick={() => void (v.cameraOn.value ? v.stopCamera() : v.startCamera())}>
           {v.cameraOn.value ? <Icon.Camera /> : <Icon.CameraOff />}
         </button>
-        <button class={`round-btn${v.sharingScreen.value ? " on" : ""}`} title={!canShare ? t("common.noPermission") : v.sharingScreen.value ? t("voice.stopShare") : t("voice.shareScreenLong")} disabled={!canShare} onClick={() => void (v.sharingScreen.value ? v.stopScreen() : v.startScreen())}>
-          {v.sharingScreen.value ? <Icon.ScreenOff /> : <Icon.Screen />}
-        </button>
+        <ScreenShareControl v={v} variant="round" disabled={!canShare} />
         <button class="round-btn" title={t("settings.voice")} onClick={() => openModal(<UserSettingsDialog tab="voice" />)}>
           <Icon.Gear />
         </button>

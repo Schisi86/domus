@@ -13,6 +13,7 @@ import { InviteDialog } from "./dialogs/Invite";
 import { AddServerDialog } from "./dialogs/AddServer";
 import { UserSettingsDialog } from "./dialogs/UserSettings";
 import { errorText, presenceText, t } from "../i18n";
+import { ScreenShareControl } from "./ScreenShare";
 
 function ConnBanner({ server }: { server: ServerStore }) {
   const st = server.conn.state.value;
@@ -259,9 +260,7 @@ function VoicePanel() {
         </IconButton>
       </div>
       <div class="controls">
-        <button class={`btn${v.sharingScreen.value ? " on" : ""}`} title={v.sharingScreen.value ? t("voice.stopShare") : t("voice.shareScreen")} onClick={() => (v.sharingScreen.value ? v.stopScreen() : v.startScreen())}>
-          {v.sharingScreen.value ? <Icon.ScreenOff /> : <Icon.Screen />}
-        </button>
+        <ScreenShareControl v={v} variant="panel" />
         <button class={`btn${v.cameraOn.value ? " on" : ""}`} title={v.cameraOn.value ? t("voice.cameraOff") : t("voice.cameraOnAction")} onClick={() => (v.cameraOn.value ? v.stopCamera() : v.startCamera())}>
           {v.cameraOn.value ? <Icon.Camera /> : <Icon.CameraOff />}
         </button>

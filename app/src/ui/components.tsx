@@ -2,7 +2,7 @@
 
 import type { ButtonHTMLAttributes, ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { closeModal, contextMenu, dismissToast, lightbox, openModal, toasts } from "../state/app";
+import { closeDialog, closeModal, contextMenu, dialog, dismissToast, lightbox, openDialog, toasts } from "../state/app";
 import type { ServerStore } from "../state/server";
 import { transport } from "../net/transport";
 import * as Icon from "./icons";
@@ -86,16 +86,17 @@ function hashCode(s: string) {
 
 // ------------------------------------------------------------- modal
 
-export function Modal(props: { title?: string; sub?: ComponentChildren; children: ComponentChildren; footer?: ComponentChildren; onClose?: () => void; wide?: boolean }) {
-  const close = props.onClose ?? closeModal;
+export function Modal(props: { title?: string; sub?: ComponentChildren; children: ComponentChildren; footer?: ComponentChildren; onClose?: () => void; wide?: boolean; layer?: "dialog"; class?: string }) {
+  const close = props.onClose ?? (props.layer ? closeDialog : closeModal);
   useEffect(() => {
-    const k = (e: KeyboardEvent) => e.key === "Escape" && close();
+    // Escape closes only the topmost layer.
+    const k = (e: KeyboardEvent) => e.key === "Escape" && (props.layer || !dialog.value) && close();
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
   }, [close]);
   return (
     <div class="overlay" onMouseDown={(e) => e.target === e.currentTarget && close()}>
-      <div class={`modal${props.wide ? " wide" : ""}`} role="dialog" aria-modal="true" aria-label={props.title}>
+      <div class={`modal${props.wide ? " wide" : ""}${props.class ? ` ${props.class}` : ""}`} role="dialog" aria-modal="true" aria-label={props.title}>
         {props.wide ? (
           props.children
         ) : (
@@ -118,11 +119,12 @@ export function Modal(props: { title?: string; sub?: ComponentChildren; children
 export function confirmDialog(opts: { title: string; body: ComponentChildren; confirm?: string; danger?: boolean }): Promise<boolean> {
   return new Promise((resolve) => {
     const done = (v: boolean) => {
-      closeModal();
+      closeDialog();
       resolve(v);
     };
-    openModal(
+    openDialog(
       <Modal
+        layer="dialog"
         title={opts.title}
         onClose={() => done(false)}
         footer={
@@ -157,11 +159,12 @@ export function promptDialog(opts: { title: string; label: string; body?: Compon
   return new Promise((resolve) => {
     let value = "";
     const done = (v: string | null) => {
-      closeModal();
+      closeDialog();
       resolve(v);
     };
-    openModal(
+    openDialog(
       <Modal
+        layer="dialog"
         title={opts.title}
         onClose={() => done(null)}
         footer={

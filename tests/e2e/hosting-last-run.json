@@ -1,0 +1,75 @@
+{
+  "at": "2026-10-23T17:16:12.661Z",
+  "results": [
+    {
+      "name": "hosting button sits at the bottom of the rail",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "first visit shows the create form with a preset name",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "server A: owner created with prefilled name",
+      "ok": true,
+      "detail": "CeeJay"
+    },
+    {
+      "name": "server A: permanent invite link shown",
+      "ok": true,
+      "detail": "nexustalk://127.0.0.1:7878/9P4ZYS2T#fp=D6943F9D419DA4AD967F96F174E3E8C06A79374031CAAE12937A88F6BD4593E2"
+    },
+    {
+      "name": "server B: invite link shown",
+      "ok": true,
+      "detail": "nexustalk://127.0.0.1:7879/4TQZB4PX#fp=029A0F1B205D4DC7CD2C3ECE308E987A8091962410077DB340032D6FCFC92174"
+    },
+    {
+      "name": "both servers use different ports",
+      "ok": true,
+      "detail": "7878 / 7879"
+    },
+    {
+      "name": "both servers run at the same time",
+      "ok": true,
+      "detail": "Testserver A:7878:true, Testserver B:7879:true"
+    },
+    {
+      "name": "rail badge counts running servers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "both servers appear in the server list",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "registry stores both servers",
+      "ok": true,
+      "detail": "server, servers/s3810187fc4d4"
+    },
+    {
+      "name": "invite link stays the same when reopened",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "servers can be removed again",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "data folders are deleted",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "client entries are removed too",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

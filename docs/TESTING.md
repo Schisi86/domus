@@ -11,6 +11,10 @@ npm --prefix app run typecheck                           # TypeScript
 cargo build -p nexus-server && node tests/e2e/rtc.mjs
 # Echte Desktop-App über WebView2-DevTools (siehe Kopf von tests/e2e/desktop.mjs)
 node tests/e2e/desktop.mjs
+# Bildschirm-Menü und Bildzuschnitt (UI-Devserver muss laufen)
+node tests/e2e/features.mjs
+# Hosting-Zentrale in der echten App (Testbuild mit eigener Kennung, siehe Kopf von tests/e2e/hosting.mjs)
+node tests/e2e/hosting.mjs
 ```
 
 Einmalig für die Browsertests: `cd tests/e2e && npm install && npx playwright-core install chromium-headless-shell`.
@@ -19,7 +23,7 @@ Einmalig für die Browsertests: `cd tests/e2e && npm install && npx playwright-c
 
 Stand 0.2.0 (23.10.2026): Rust-Tests und Medien-E2E erneut ausgeführt. Desktop-E2E und Installer-Test stammen noch von 0.1.0 – beim 0.2.0-Lauf lief auf dem Testrechner eine installierte NexusTalk-Instanz, die der Single-Instance-Schutz bevorzugt hätte.
 
-### Rust – 62 Tests, alle bestanden
+### Rust – 65 Tests, alle bestanden
 
 **Unit-Tests (42, `nexus-server`)**
 * Authentifizierung: Argon2id-Hash/Verifikation, Salt, Token-Hashes.
@@ -49,7 +53,7 @@ Stand 0.2.0 (23.10.2026): Rust-Tests und Medien-E2E erneut ausgeführt. Desktop-
 | `server_stats_and_logs_for_admins` | Status, Einstellungen, Logs |
 | `reactions_and_pins` | Reaktionen hinzufügen/entfernen (Ereignis an andere Clients, ungültige Emojis abgelehnt, Limit), Anheften nur mit Moderationsrecht, Liste angehefteter Nachrichten |
 
-**Weitere:** `nexus-net` (3: Adressparser, Fingerabdrücke, WS-URLs), Desktop-Crate (1: DPAPI-verschlüsselte Tokens, beschädigte Konfiguration).
+**Weitere:** `nexus-net` (3: Adressparser, Fingerabdrücke, WS-URLs), Desktop-Crate (4: DPAPI-verschlüsselte Tokens/beschädigte Konfiguration; Übernahme des bisherigen Serverordners; getrennte Ports, Ordner und Relay-Bereiche für neue Server inkl. Konfliktprüfung; zwei eingebettete Server gleichzeitig starten und entfernen).
 
 ### Echtzeit-Medien – `tests/e2e/rtc.mjs`: 20/20 bestanden (0.1.0: 3 Läufe in Folge; 0.2.0: erneut 20/20)
 
@@ -70,9 +74,17 @@ Echte Weboberfläche, echter Server, 3–4 Clients in Chromium mit virtuellem Mi
 | Verlassen/erneuter Beitritt baut Medien neu auf | ✅ |
 | Gast ohne Bildschirmrecht wird serverseitig abgelehnt (mit Meldung) | ✅ |
 
+### Hosting-Zentrale (Desktop-App) – `tests/e2e/hosting.mjs`: 14/14 bestanden
+
+Echte Desktop-App (Testbuild mit eigener App-Kennung, Datenordner per `APPDATA` in ein Temp-Verzeichnis umgeleitet – eine installierte NexusTalk bleibt unberührt), gesteuert über WebView2-DevTools: Schaltfläche unten links, Erstformular mit vorausgefülltem Namen, zwei Server nacheinander erstellt (Ports 7878/7879), Inhaber jeweils mit vorausgefülltem Benutzernamen angelegt, dauerhafte Einladungslinks angezeigt und beim erneuten Öffnen unverändert, beide Server gleichzeitig aktiv, Zähler in der Leiste, Registry `hosts.json`, Entfernen inkl. Datenordner und Client-Eintrag.
+
+### Bildschirm-Menü und Bildzuschnitt – `tests/e2e/features.mjs`: 13/13 bestanden
+
+Browser-UI mit virtueller Bildschirmquelle: Menü öffnet sich statt sofort zu übertragen, 6 Schnellwahlen / 5 Auflösungen / 4 Bildraten / 3 Inhaltsarten, Markierung der Auswahl, gewählte Grenzen am Track (`getConstraints`: 1280×720, 15 FPS, `contentHint` detail), Änderung während der Übertragung (1080p60, motion), Anzeige im Kopfbereich, Stoppen. Ein 900×400-Bild wird im Zuschneide-Dialog über den geöffneten Servereinstellungen bearbeitet und als 512×512-WebP gespeichert (vom Server zurückgeladen und vermessen).
+
 ### Übersetzungen
 
-Alle 15 Sprachdateien enthalten exakt die 692 Schlüssel der deutschen Quelle (Skriptprüfung); TypeScript prüft die Schlüssel zusätzlich typsicher. Darstellung von Arabisch (RTL), Japanisch, Hindi und Russisch per Screenshot geprüft.
+Alle 15 Sprachdateien enthalten exakt die 752 Schlüssel der deutschen Quelle (Skriptprüfung); TypeScript prüft die Schlüssel zusätzlich typsicher. Darstellung von Arabisch (RTL), Japanisch, Hindi und Russisch per Screenshot geprüft.
 
 ### Desktop-App (WebView2) – `tests/e2e/desktop.mjs`: 10/10 bestanden (Version 0.1.0)
 

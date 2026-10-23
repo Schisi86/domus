@@ -76,3 +76,8 @@ export const Keyboard = I(<><rect x="2" y="5" width="20" height="14" rx="2" /><p
 export const ExternalLink = I(<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3" />);
 export const Bold = I(<path d="M6 4h8a4 4 0 0 1 0 8H6zM6 12h9a4 4 0 0 1 0 8H6z" />);
 export const Italic = I(<path d="M19 4h-9M14 20H5M15 4 9 20" />);
+export const Play = I(<path d="M7 4.5v15l12-7.5z" />);
+export const Stop = I(<rect x="6" y="6" width="12" height="12" rx="2" />);
+export const Link = I(<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />);
+export const Sliders = I(<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />);
+export const Laptop = I(<><rect x="4" y="4" width="16" height="11" rx="1.5" /><path d="M2 19h20" /></>);

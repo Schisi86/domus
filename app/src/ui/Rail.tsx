@@ -1,9 +1,11 @@
-// Left server rail: home, servers, add/host, donation and language switcher.
+// Left server rail: home, servers, add, hosting, donation and language switcher.
 
 import { activeServerId, isMuted, openModal, removeServer, selectServer, servers, settings, showMenu, updateSettings } from "../state/app";
 import type { ServerStore } from "../state/server";
 import { transport } from "../net/transport";
 import { t } from "../i18n";
+import { hosts, runningHosts } from "../state/hosting";
+import { isTauri } from "../platform";
 import { confirmDialog, initials, useBlobUrl, Icon } from "./components";
 import { AddServerDialog } from "./dialogs/AddServer";
 import { HostDialog } from "./dialogs/Host";
@@ -72,6 +74,21 @@ function ServerButton({ s }: { s: ServerStore }) {
   );
 }
 
+/** Prominent entry to the hosting center; shows how many hosted servers run. */
+function HostButton() {
+  const n = runningHosts.value;
+  const total = hosts.value.length;
+  const tip = n > 0 ? t("hc.runningTip", { n }) : t("hc.title");
+  return (
+    <div class={`rail-item${n > 0 ? " hosting" : ""}`}>
+      <button class="rail-btn host" title={tip} aria-label={tip} onClick={() => openModal(<HostDialog />)}>
+        <Icon.ServerIcon size={19} class="" />
+      </button>
+      {isTauri && total > 0 && <span class={`rail-host-badge${n > 0 ? " on" : ""}`}>{n > 0 ? n : "0"}</span>}
+    </div>
+  );
+}
+
 export function Rail() {
   const home = activeServerId.value === null;
   const hb = homeBadge();
@@ -93,12 +110,8 @@ export function Rail() {
           <Icon.Plus size={20} class="" />
         </button>
       </div>
-      <div class="rail-item">
-        <button class="rail-btn add" title={t("rail.host")} aria-label={t("rail.host")} onClick={() => openModal(<HostDialog />)}>
-          <Icon.ServerIcon size={18} class="" />
-        </button>
-      </div>
       <div class="spacer" />
+      <HostButton />
       <div class="rail-item">
         <button class="rail-btn heart" title={t("about.donate")} aria-label={t("about.donate")} onClick={() => openModal(<AboutDialog />)}>
           <Icon.Heart size={18} class="" />

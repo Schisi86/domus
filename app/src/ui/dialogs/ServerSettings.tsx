@@ -9,6 +9,7 @@ import { has, P } from "../../types";
 import { errorText, fmtBytes, fmtDuration, fmtStamp, permDesc, permName, PERMISSIONS, presenceText, regMode, t } from "../../i18n";
 import { transport } from "../../net/transport";
 import { Field, IconButton, Icon, Modal, Spinner, Toggle, confirmDialog } from "../components";
+import { pickAndCropImage } from "../ImageCrop";
 import { InviteDialog } from "./Invite";
 
 type Tab = "overview" | "roles" | "members" | "audit" | "logs" | "status" | "backups";
@@ -52,19 +53,12 @@ function Overview({ server }: { server: ServerStore }) {
       setBusy(false);
     }
   };
-  const uploadIcon = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/png,image/jpeg,image/gif,image/webp";
-    input.onchange = async () => {
-      const f = input.files?.[0];
-      if (!f) return;
-      if (f.size > 2 * 1024 * 1024) return toast(t("common.imageTooLarge"), t("common.max2mb"), "warn");
-      const r = await transport.upload(server.target(), "/api/v1/icon", server.token, f).catch((e) => ({ status: 0, body: { error: e } }));
-      if (r.status === 200) toast(t("srv.iconUpdated"), undefined, "ok");
-      else toast(t("common.uploadFailed"), errorText(r.body?.error), "error");
-    };
-    input.click();
+  const uploadIcon = async () => {
+    const img = await pickAndCropImage();
+    if (!img) return;
+    const r = await transport.upload(server.target(), "/api/v1/icon", server.token, img).catch((e) => ({ status: 0, body: { error: e } }));
+    if (r.status === 200) toast(t("srv.iconUpdated"), undefined, "ok");
+    else toast(t("common.uploadFailed"), errorText(r.body?.error), "error");
   };
   const cfg = data.config;
   return (
@@ -81,7 +75,7 @@ function Overview({ server }: { server: ServerStore }) {
         </div>
         <div class="col" style={{ alignItems: "center" }}>
           <div class="label">{t("srv.icon")}</div>
-          <button class="btn outline" onClick={uploadIcon}>{info.icon ? t("common.change") : t("common.upload")}</button>
+          <button class="btn outline" onClick={() => void uploadIcon()}>{info.icon ? t("common.change") : t("common.upload")}</button>
         </div>
       </div>
       <Field label={t("srv.registration")} hint={t("srv.registrationHint")}>

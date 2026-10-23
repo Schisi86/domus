@@ -2,7 +2,7 @@
 //!
 //! The UI lives in `app/src` (Preact). This crate provides:
 //! * `net`   – pinned-TLS networking for the UI (HTTP, WebSocket, files)
-//! * `host`  – the embedded server ("Servermodus")
+//! * `host`  – the embedded servers ("Servermodus", several at once)
 //! * `store` – client configuration with DPAPI-encrypted session tokens
 //! * tray icon, single instance, autostart, media permission handling
 
@@ -32,6 +32,8 @@ struct AppInfo {
     data_dir: String,
     log_dir: String,
     background: bool,
+    /// Windows account name, used to prefill the owner name of a new server.
+    user_name: String,
 }
 
 struct Flags {
@@ -57,6 +59,7 @@ fn app_info(flags: State<'_, Flags>) -> AppInfo {
         data_dir: dir.display().to_string(),
         log_dir: dir.join("logs").display().to_string(),
         background: flags.background,
+        user_name: std::env::var("USERNAME").or_else(|_| std::env::var("USER")).unwrap_or_default(),
     }
 }
 
@@ -91,8 +94,7 @@ async fn quit_app(app: AppHandle) {
 }
 
 async fn shutdown_and_exit(app: &AppHandle) {
-    let host = app.state::<host::HostState>();
-    host.stop().await;
+    app.state::<host::HostManager>().stop_all().await;
     app.exit(0);
 }
 
@@ -154,7 +156,7 @@ pub fn run() {
             Some(vec!["--background"]),
         ))
         .manage(net::NetState::default())
-        .manage(host::HostState::new(dir.join("server")))
+        .manage(host::HostManager::load(dir.clone(), initial.host_autostart))
         .manage(store)
         .manage(Flags { background })
         .manage(TrayItems(std::sync::Mutex::new(None)))
@@ -171,7 +173,12 @@ pub fn run() {
             net::ws_open,
             net::ws_send,
             net::ws_close,
+            host::host_list,
             host::host_status,
+            host::host_create,
+            host::host_remove,
+            host::host_rename,
+            host::host_set_autostart,
             host::host_config,
             host::host_config_save,
             host::host_config_reset,
@@ -197,24 +204,24 @@ pub fn run() {
                 })
                 .build()?;
             build_tray(app.handle())?;
-            if initial.host_autostart {
-                let handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    let host = handle.state::<host::HostState>();
-                    if let Err(e) = host.start().await {
-                        tracing::error!("Server-Autostart fehlgeschlagen: {e}");
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let hosts = handle.state::<host::HostManager>();
+                for id in hosts.autostart_ids() {
+                    if let Err(e) = async { hosts.get(&id)?.start().await }.await {
+                        tracing::error!(host = %id, "Server-Autostart fehlgeschlagen: {e}");
                     }
-                });
-            }
+                }
+            });
             Ok(())
         })
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 let app = window.app_handle();
-                let host_running = app.state::<host::HostState>().is_running();
+                let host_running = app.state::<host::HostManager>().any_running();
                 let to_tray = app.state::<store::ConfigStore>().load().0.minimize_to_tray;
                 if host_running || to_tray {
-                    // Keep running in the tray (the server must stay reachable).
+                    // Keep running in the tray (hosted servers must stay reachable).
                     api.prevent_close();
                     let _ = window.hide();
                 } else {

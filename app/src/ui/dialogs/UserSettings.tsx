@@ -8,7 +8,9 @@ import { errorText, lang, LANGS, presenceText, t, type Key } from "../../i18n";
 import { transport } from "../../net/transport";
 import { appInfo, autostart, isTauri, openFolder, quitApp, type AppInfo } from "../../platform";
 import { Avatar, Field, IconButton, Icon, LogoMark, Modal, Toggle, confirmDialog, promptDialog } from "../components";
-import { SCREEN_PROFILES, voice } from "../../rtc/voice";
+import { pickAndCropImage } from "../ImageCrop";
+import { voice } from "../../rtc/voice";
+import { ScreenOptions } from "../ScreenShare";
 import { THEMES } from "../../themes";
 import { Flag } from "../flags";
 import { DonateCard } from "./About";
@@ -35,19 +37,12 @@ function Account() {
 
   const saveProfile = () => server.rpc("user.update", { display_name: display, status_text: status }).then(() => toast(t("settings.profileSaved"), undefined, "ok"), (e) => toast(t("common.error"), errorText(e), "error"));
   const setPresence = (p: string) => server.rpc("user.presence", { presence: p }).then(() => (server.me.value = { ...me, presence: p as never }), (e) => toast(t("common.error"), errorText(e), "error"));
-  const avatar = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/png,image/jpeg,image/gif,image/webp";
-    input.onchange = async () => {
-      const f = input.files?.[0];
-      if (!f) return;
-      if (f.size > 2 * 1024 * 1024) return toast(t("common.imageTooLarge"), t("common.max2mb"), "warn");
-      const r = await transport.upload(server.target(), "/api/v1/avatar", server.token, f).catch((e) => ({ status: 0, body: { error: e } }));
-      if (r.status === 200) toast(t("settings.avatarUpdated"), undefined, "ok");
-      else toast(t("common.uploadFailed"), errorText(r.body?.error), "error");
-    };
-    input.click();
+  const avatar = async () => {
+    const img = await pickAndCropImage({ round: true });
+    if (!img) return;
+    const r = await transport.upload(server.target(), "/api/v1/avatar", server.token, img).catch((e) => ({ status: 0, body: { error: e } }));
+    if (r.status === 200) toast(t("settings.avatarUpdated"), undefined, "ok");
+    else toast(t("common.uploadFailed"), errorText(r.body?.error), "error");
   };
   const changePw = async () => {
     try {
@@ -97,7 +92,7 @@ function Account() {
           <div style={{ fontWeight: 650, fontSize: "var(--fs-lg)" }}>{me.display_name || me.username}</div>
           <div class="faint selectable">@{me.username}</div>
         </div>
-        <button class="btn outline" onClick={avatar}>{t("settings.changeAvatar")}</button>
+        <button class="btn outline" onClick={() => void avatar()}>{t("settings.changeAvatar")}</button>
         {me.avatar && <button class="btn ghost" onClick={() => transport.http(server.target(), "DELETE", "/api/v1/avatar", server.token)}>{t("common.remove")}</button>}
       </div>
       <Field label={t("settings.presence")}>
@@ -269,42 +264,14 @@ function Voice() {
 }
 
 function Screen() {
-  const s = settings.value;
   const v = voice.value;
-  const set = (patch: Partial<Settings>) => {
-    updateSettings(patch);
-    if (v?.sharingScreen.value) void v.applyScreenProfile();
-  };
-  const m = s.screenManual;
   return (
     <>
       <h2>{t("screen.title")}</h2>
-      <Field label={t("screen.quality")}>
-        <div class="col" style={{ gap: "6px" }}>
-          {(Object.keys(SCREEN_PROFILES) as (keyof typeof SCREEN_PROFILES)[]).map((k) => {
-            const p = SCREEN_PROFILES[k];
-            return (
-              <label class="checkbox" key={k}>
-                <input type="radio" name="prof" checked={s.screenProfile === k} onChange={() => set({ screenProfile: k })} />
-                <span><b>{t(`screen.${k}` as Key)}</b> <span class="faint small">{t("screen.profileInfo", { w: p.width, h: p.height, fps: p.fps, mbit: (p.kbps / 1000).toFixed(1) })}</span></span>
-              </label>
-            );
-          })}
-          <label class="checkbox">
-            <input type="radio" name="prof" checked={s.screenProfile === "manual"} onChange={() => set({ screenProfile: "manual" })} />
-            <span><b>{t("screen.manual")}</b></span>
-          </label>
-        </div>
-      </Field>
-      {s.screenProfile === "manual" && (
-        <div class="row wrap" style={{ gap: "10px" }}>
-          <Field label={t("screen.width")}><input class="input" type="number" min={320} max={3840} value={m.width} onChange={(e) => set({ screenManual: { ...m, width: Number((e.target as HTMLInputElement).value) } })} /></Field>
-          <Field label={t("screen.height")}><input class="input" type="number" min={240} max={2160} value={m.height} onChange={(e) => set({ screenManual: { ...m, height: Number((e.target as HTMLInputElement).value) } })} /></Field>
-          <Field label="FPS"><input class="input" type="number" min={1} max={60} value={m.fps} onChange={(e) => set({ screenManual: { ...m, fps: Number((e.target as HTMLInputElement).value) } })} /></Field>
-          <Field label="kbit/s"><input class="input" type="number" min={200} max={20000} value={m.kbps} onChange={(e) => set({ screenManual: { ...m, kbps: Number((e.target as HTMLInputElement).value) } })} /></Field>
-        </div>
-      )}
-      <Toggle checked={s.screenAudio} onChange={(x) => set({ screenAudio: x })} label={t("screen.audio")} desc={t("screen.audioDesc")} />
+      <div class="col" style={{ gap: "12px", maxWidth: "460px" }}>
+        <ScreenOptions viewers={v ? v.peerIds().length : undefined} />
+        {v?.sharingScreen.value && <button class="btn primary" onClick={() => void v.applyScreenProfile()}>{t("sc.apply")}</button>}
+      </div>
       <div class="notice">{t("screen.notice")}</div>
     </>
   );

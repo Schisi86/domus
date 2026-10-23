@@ -86,6 +86,7 @@ export interface AppInfo {
   data_dir: string;
   log_dir: string;
   background: boolean;
+  user_name: string;
 }
 
 export async function appInfo(): Promise<AppInfo | null> {

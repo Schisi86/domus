@@ -1,0 +1,70 @@
+{
+  "at": "2026-10-23T17:16:47.066Z",
+  "results": [
+    {
+      "name": "share button opens the options menu",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "menu offers presets, resolutions, frame rates and content types",
+      "ok": true,
+      "detail": "{\"presets\":6,\"chips\":[5,4,3]}"
+    },
+    {
+      "name": "nothing is shared before confirming",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "menu highlights the chosen options",
+      "ok": true,
+      "detail": "720p|15 FPS|Automatisch"
+    },
+    {
+      "name": "sharing starts from the menu",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "chosen limits applied to the capture (720p, 15 FPS, detail)",
+      "ok": true,
+      "detail": "{\"frameRate\":{\"max\":15,\"ideal\":15},\"height\":{\"max\":720},\"width\":{\"max\":1280}} → 1280×720@15 (≤ 0,6 Mbit/s)"
+    },
+    {
+      "name": "quality can be changed while sharing (1080p60, motion)",
+      "ok": true,
+      "detail": "{\"frameRate\":{\"max\":60,\"ideal\":60},\"height\":{\"max\":1080},\"width\":{\"max\":1920}}"
+    },
+    {
+      "name": "header shows the current quality",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "share button stops the share",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a cropper opens for the picked image",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "server settings stay open underneath",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "icon is stored as a 512×512 square",
+      "ok": true,
+      "detail": "{\"w\":512,\"h\":512,\"t\":\"image/webp\"}"
+    },
+    {
+      "name": "settings dialog still open after cropping",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

@@ -79,6 +79,18 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
 
+### Hosting, Bildschirm, Bilder (neu nach 0.2.0)
+| Funktion | Stand |
+|---|---|
+| Hosting-Zentrale über eigene Schaltfläche unten links, Statusanzeige (Anzahl laufender Server) | ✅ Desktop-E2E |
+| Mehrere Server gleichzeitig, Ports/Ordner automatisch (TCP 7878+n, UDP 3478+n, Relay-Bereiche getrennt), Konfliktprüfung | ✅ Rust-Unit-Tests + Desktop-E2E (2 Server parallel) |
+| Inhaberkonto mit vorausgefülltem Namen, dauerhafter Einladungslink je Server, neuer Link per Klick | ✅ Desktop-E2E |
+| Erreichbarkeit per Klick umschalten (mit Neustart), Server umbenennen, entfernen (inkl. Daten) | ✅ Entfernen per Desktop-E2E; Umschalten auf „Freunde einladen“ nicht automatisiert (Windows-Firewall-Abfrage) |
+| Übernahme des bisherigen einzelnen Servers (Ordner `server`) | ✅ Unit-Test |
+| Bildschirm-Menü vor dem Start: Schnellwahl, Auflösung, Bildrate, Inhalt, Bitrate, Systemton, Upload-Schätzung je Zuschauerzahl | ✅ Browser-E2E (Werte am aufgenommenen Track geprüft) |
+| Qualität während der Übertragung ändern | ✅ Browser-E2E |
+| Server- und Profilbilder quadratisch zuschneiden (Ziehen, Zoom, Vorschau), Ergebnis 512×512 WebP | ✅ Browser-E2E |
+
 ### Oberfläche (neu in 0.2.0)
 | Funktion | Stand |
 |---|---|

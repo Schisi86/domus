@@ -1,7 +1,7 @@
 // Root layout: server rail | floating shell (sidebar, main content, member list).
 
 import { useEffect } from "preact/hooks";
-import { activeChannelId, activeServer, activeServerId, contextMenu, homeDm, modal, openChannel, openModal, selectChannel, settings } from "../state/app";
+import { activeChannelId, activeServer, activeServerId, contextMenu, dialog, homeDm, modal, openChannel, openModal, selectChannel, settings } from "../state/app";
 import { ContextMenu, EmptyState, Lightbox, Toasts } from "./components";
 import { Rail } from "./Rail";
 import { Sidebar } from "./Sidebar";
@@ -113,6 +113,7 @@ export function App() {
         </main>
       </div>
       {modal.value}
+      {dialog.value}
       {contextMenu.value && <ContextMenu />}
       <Lightbox />
       <Toasts />

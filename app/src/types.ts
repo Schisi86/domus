@@ -167,6 +167,8 @@ export interface SavedServer {
   username: string;
   token?: string | null;
   hosted?: boolean;
+  /** Id of the hosted server (desktop app) this entry belongs to. */
+  host_id?: string | null;
 }
 
 export interface ApiErr {

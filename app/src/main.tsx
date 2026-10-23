@@ -2,6 +2,7 @@ import { render } from "preact";
 import "./styles.css";
 import { App } from "./ui/App";
 import { initApp } from "./state/app";
+import { startHostPolling } from "./state/hosting";
 import { isTauri, log } from "./platform";
 import { voice } from "./rtc/voice";
 import { servers, updateSettings } from "./state/app";
@@ -19,5 +20,6 @@ window.addEventListener("unhandledrejection", (e) => {
 
 void initApp().finally(() => {
   render(<App />, document.getElementById("app")!);
+  startHostPolling();
   log("info", "ui ready");
 });
