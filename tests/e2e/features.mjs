@@ -56,7 +56,7 @@ try {
   const token = reg.token;
 
   browser = await chromium.launch({ headless: true, args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
-  const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } });
+  const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 }, deviceScaleFactor: SHOTS ? 1.5 : 1 });
   await ctx.grantPermissions(["microphone", "camera"], { origin: UI });
   const cfg = { servers: [{ id: "srv", address: ADDR, fingerprint: null, name: "E2E", username: "alice", token }], settings: { notifications: false, language: "de" } };
   await ctx.addInitScript(([k, v]) => localStorage.setItem(k, v), ["nexustalk.config.feat", JSON.stringify(cfg)]);

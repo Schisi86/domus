@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NexusTalk – selbst hostbare Discord-Alternative für Windows</title>
-<meta name="description" content="NexusTalk: schlanke, selbst hostbare Kommunikationsplattform mit Text, Sprache, Video und Bildschirmübertragung. Eigener Server per Klick, keine Cloud, keine Werbung, 15 Sprachen, 10 Designs. Von Christian Schiessl.">
+<meta name="description" content="NexusTalk: schlanke, selbst hostbare Kommunikationsplattform mit Text, Sprache, Video und Bildschirmübertragung. Mehrere eigene Server per Klick, keine Cloud, keine Werbung, 15 Sprachen, 10 Designs. Von Christian Schiessl.">
 <meta name="author" content="Christian Schiessl">
 <meta name="theme-color" content="#06140f">
 <link rel="icon" type="image/png" href="favicon.png">
@@ -22,9 +22,9 @@
   "name": "NexusTalk",
   "operatingSystem": "Windows 10, Windows 11 (x64)",
   "applicationCategory": "CommunicationApplication",
-  "softwareVersion": "0.2.0",
+  "softwareVersion": "0.3.0",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-  "downloadUrl": "https://nexustalk-app.netlify.app/download/NexusTalk_0.2.0_x64-setup.exe",
+  "downloadUrl": "https://nexustalk-app.netlify.app/download/NexusTalk_0.3.0_x64-setup.exe",
   "image": "https://nexustalk-app.netlify.app/assets/logo.png",
   "screenshot": "https://nexustalk-app.netlify.app/assets/shots/emerald-de-chat.jpg",
   "license": "https://opensource.org/licenses/MIT",
@@ -351,6 +351,20 @@ footer .brand { font-size: 15px; }
 .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); opacity: 0; background: #0f2a20; border: 1px solid var(--line-strong); padding: 10px 16px; border-radius: 12px; font-size: 14px; transition: all .25s; box-shadow: var(--shadow); pointer-events: none; z-index: 100; }
 .toast.show { opacity: 1; transform: translateX(-50%); }
 
+/* ---------- showcase (new in 0.3.0) ---------- */
+.showcase { display: grid; grid-template-columns: 0.9fr 1.3fr; gap: 44px; align-items: center; margin-bottom: 56px; }
+.showcase.rev { grid-template-columns: 1.3fr 0.9fr; }
+.showcase.rev .show-text { order: 2; }
+.show-num { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; font-weight: 700; color: #032619; background: linear-gradient(160deg, #9af9d5, #2ee59d 50%, #0c9a64); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 8px 18px rgba(46,229,157,.3); }
+.show-text h3 { font-size: 24px; letter-spacing: -.4px; margin: 14px 0 10px; }
+.show-text p { color: var(--muted); margin: 0 0 12px; }
+.ticks { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; font-size: 14.5px; }
+.ticks li { position: relative; padding-left: 26px; }
+.ticks li::before { content: ""; position: absolute; left: 2px; top: 7px; width: 12px; height: 7px; border-left: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg); }
+.show-img { border-radius: 16px; overflow: hidden; border: 1px solid var(--line-strong); box-shadow: var(--shadow); background: #07140f; transform: perspective(1600px) rotateY(-5deg) rotateX(2deg); transition: transform .5s cubic-bezier(.2,.7,.2,1); }
+.showcase.rev .show-img { transform: perspective(1600px) rotateY(5deg) rotateX(2deg); }
+.show-img:hover, .showcase.rev .show-img:hover { transform: none; }
+@media (max-width: 1020px) { .showcase, .showcase.rev { grid-template-columns: 1fr; gap: 22px; } .showcase.rev .show-text { order: 0; } .show-img, .showcase.rev .show-img { transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
@@ -413,6 +427,7 @@ footer .brand { font-size: 15px; }
     <nav aria-label="Hauptnavigation">
       <a href="#funktionen">Funktionen</a>
       <a href="#vergleich">Vergleich mit Discord</a>
+      <a href="#neu" class="hide-md">Neu</a>
       <a href="#designs" class="hide-md">Designs</a>
       <a href="#selbst-hosten" class="hide-md">Selbst hosten</a>
       <a href="#faq" class="hide-md">FAQ</a>
@@ -426,11 +441,11 @@ footer .brand { font-size: 15px; }
     <div class="wrap hero-grid">
       <div>
         <div class="logo3d"><img src="assets/logo.png" alt="NexusTalk Logo" width="120" height="120"></div>
-        <span class="eyebrow"><span class="dot"></span>Version 0.2.0 · kostenlos · MIT-Lizenz</span>
+        <span class="eyebrow"><span class="dot"></span>Neu in 0.3.0: mehrere Server hosten · kostenlos · MIT</span>
         <h1>Deine Community.<br><em>Dein Server.</em></h1>
         <p class="lead">NexusTalk ist eine schlanke Alternative zu Discord für Windows: Text, Sprache, Video und Bildschirmübertragung – auf einem Server, der dir gehört. Per Klick direkt in der App gestartet. Keine Cloud, keine Werbung, kein Tracking.</p>
         <div class="hero-actions">
-          <a class="btn primary" href="download/NexusTalk_0.2.0_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
+          <a class="btn primary" href="download/NexusTalk_0.3.0_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
           <a class="btn" href="#vergleich">Warum nicht Discord?</a>
         </div>
         <div class="hero-meta">
@@ -469,12 +484,47 @@ footer .brand { font-size: 15px; }
       <div class="grid features">
         <div class="card reveal"><div class="ficon"><svg><use href="#i-chat"/></svg></div><h3>Text-Chat mit Komfort</h3><p>Kanäle und Kategorien, Antworten, Reaktionen, angeheftete Nachrichten, Markdown, Spoiler, Dateien und Volltextsuche.</p></div>
         <div class="card reveal"><div class="ficon"><svg><use href="#i-mic"/></svg></div><h3>Sprache &amp; Video</h3><p>Sprachkanäle und Direktanrufe mit Opus, Echo- und Rauschunterdrückung, Push-to-talk – auch als globale Taste im Hintergrund.</p></div>
-        <div class="card reveal"><div class="ficon"><svg><use href="#i-screen"/></svg></div><h3>Bildschirm teilen</h3><p>Ganzer Bildschirm oder einzelnes Fenster, bis 1440p mit 60 FPS, optional mit Systemton – ohne Abo-Grenze.</p></div>
-        <div class="card reveal"><div class="ficon"><svg><use href="#i-server"/></svg></div><h3>Eigener Server per Klick</h3><p>Der Server steckt in der App: starten, Besitzerkonto anlegen, Einladungslink verschicken. Alternativ als schlanker Headless-Server.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-screen"/></svg></div><h3>Bildschirm teilen</h3><p>Vor dem Start Auflösung (720p bis 4K) und Bildrate (5–60 FPS) wählen, optional mit Systemton – ohne Abo-Grenze.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-server"/></svg></div><h3>Eigene Server per Klick</h3><p>Der Server steckt in der App – auch mehrere gleichzeitig, jeder auf eigenen Ports und mit eigenem dauerhaften Einladungslink.</p></div>
         <div class="card reveal"><div class="ficon"><svg><use href="#i-shield"/></svg></div><h3>Sicher ab Werk</h3><p>TLS-Verschlüsselung, Zertifikatsprüfung per Fingerabdruck, Argon2-Passwörter, Rate-Limits, Audit-Log und Einladungs-Registrierung.</p></div>
         <div class="card reveal"><div class="ficon"><svg><use href="#i-users"/></svg></div><h3>Rollen &amp; Rechte</h3><p>Feingranulare Rechte pro Rolle und pro Kanal, Moderation, Bann, Freigabe neuer Konten, Backups und Wiederherstellung.</p></div>
         <div class="card reveal"><div class="ficon"><svg><use href="#i-feather"/></svg></div><h3>Federleicht</h3><p>Rust und Tauri statt Electron: ≈ 5 MB Installer, Start in unter einer Sekunde, der Server braucht im Leerlauf rund 14 MB RAM.</p></div>
         <div class="card reveal"><div class="ficon"><svg><use href="#i-bolt"/></svg></div><h3>Durchdacht im Alltag</h3><p>Schnellwechsler (Strg+K), Tastenkürzel, Freunde &amp; Direktnachrichten, Auto-Abwesend, Benachrichtigungen, Autostart und Tray.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="neu">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="kicker">Neu in 0.3.0</div>
+        <h2>Hosten so einfach wie Chatten</h2>
+        <p>Die grüne Schaltfläche unten links öffnet deine Hosting-Zentrale. Name eingeben, „Erstellen &amp; starten“, Link kopieren – fertig.</p>
+      </div>
+      <div class="showcase reveal">
+        <div class="show-text">
+          <span class="show-num">1</span>
+          <h3>Mehrere Server, null Konfiguration</h3>
+          <p>Jeder Server bekommt automatisch freie Ports, einen eigenen Datenordner, TLS-Verschlüsselung und Registrierung nur mit Einladung. Er startet mit NexusTalk und läuft im Hintergrund weiter.</p>
+          <ul class="ticks"><li>Prominenter, dauerhafter Einladungslink je Server</li><li>„Nur dieser PC“ oder „Freunde einladen“ per Klick</li><li>Starten, stoppen, umbenennen, entfernen an einem Ort</li></ul>
+        </div>
+        <div class="show-img"><img src="assets/shots/host-two.jpg" alt="NexusTalk Hosting-Zentrale mit zwei Servern und Einladungslink" width="1770" height="1140" loading="lazy"></div>
+      </div>
+      <div class="showcase rev reveal">
+        <div class="show-text">
+          <span class="show-num">2</span>
+          <h3>Bildschirm in deiner Qualität</h3>
+          <p>Bevor die Übertragung startet, wählst du in einem kompakten Menü Schnellwahl, Auflösung, Bildrate, „Optimiert für Text oder Bewegung“ und Bitrate. NexusTalk zeigt dir, wie viel Upload du bei deiner Zuschauerzahl brauchst – und du kannst alles live nachjustieren.</p>
+        </div>
+        <div class="show-img"><img src="assets/shots/screen-menu.jpg" alt="Menü für die Bildschirmübertragung mit Auflösung und Bildrate" width="2040" height="1290" loading="lazy"></div>
+      </div>
+      <div class="showcase reveal">
+        <div class="show-text">
+          <span class="show-num">3</span>
+          <h3>Serverbilder ohne Verzerrung</h3>
+          <p>Server- und Profilbilder schneidest du vor dem Hochladen quadratisch zu: Ausschnitt verschieben, zoomen, Vorschau prüfen. Gespeichert wird ein sauberes 512×512-Bild.</p>
+        </div>
+        <div class="show-img"><img src="assets/shots/crop.jpg" alt="Dialog zum quadratischen Zuschneiden eines Serverbilds" width="2040" height="1290" loading="lazy"></div>
       </div>
     </div>
   </section>
@@ -552,9 +602,9 @@ footer .brand { font-size: 15px; }
         <p>Kein Terminal, keine Konfigurationsdateien – es sei denn, du willst.</p>
       </div>
       <div class="grid steps">
-        <div class="card step reveal"><h3>Installieren &amp; starten</h3><p>NexusTalk installieren, links auf das Server-Symbol klicken und „Server starten“ wählen. Standardmäßig nur auf diesem PC erreichbar.</p></div>
-        <div class="card step reveal"><h3>Besitzer werden</h3><p>Besitzerkonto anlegen, Kanäle und Rollen einrichten. Für Freunde im Netz „Lokales Netzwerk / Internet“ wählen und Ports freigeben.</p></div>
-        <div class="card step reveal"><h3>Einladen</h3><p>Einladungslink erzeugen und teilen. Er enthält Adresse und Zertifikats-Fingerabdruck – so verbinden sich alle sicher.</p></div>
+        <div class="card step reveal"><h3>Server erstellen</h3><p>NexusTalk installieren, die grüne Server-Schaltfläche unten links anklicken, Namen eingeben und „Erstellen &amp; starten“ – Ports, Verschlüsselung und Autostart sind voreingestellt.</p></div>
+        <div class="card step reveal"><h3>Besitzer werden</h3><p>Passwort für dein Inhaberkonto festlegen – der Name ist schon ausgefüllt. Kanäle und Rollen kannst du jederzeit anpassen.</p></div>
+        <div class="card step reveal"><h3>Link teilen</h3><p>Den dauerhaften Einladungslink mit einem Klick kopieren und verschicken. Er enthält Adresse und Zertifikats-Fingerabdruck – so verbinden sich alle sicher.</p></div>
       </div>
       <p class="reveal" style="text-align:center;color:var(--faint);font-size:13.5px;margin-top:22px">Profis nutzen den Headless-Server <code>nexustalk-server</code> mit <code>server.toml</code> – ideal für einen dauerhaft laufenden Rechner oder vServer.</p>
     </div>
@@ -565,14 +615,14 @@ footer .brand { font-size: 15px; }
       <div class="dl reveal">
         <div class="dl-main">
           <div class="kicker" style="font-size:12.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);font-weight:600">Download</div>
-          <h2>NexusTalk 0.2.0 für Windows</h2>
+          <h2>NexusTalk 0.3.0 für Windows</h2>
           <p style="color:var(--muted);margin:0">Ein Installer für alles: Client und eingebauter Server. Kostenlos, ohne Werbung, ohne Konto bei Dritten.</p>
           <div class="dl-file">
             <img src="assets/logo.png" alt="">
-            <div style="flex:1"><b>NexusTalk_0.2.0_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>4,8 MB</span></small></div>
+            <div style="flex:1"><b>NexusTalk_0.3.0_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>4,8 MB</span></small></div>
           </div>
-          <a class="btn primary" href="download/NexusTalk_0.2.0_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
-          <div class="hash">SHA-256: <span class="mono" id="sha-client">9e3b3fa56e20e0c87f4abe0a67832777ef634e5e4ea7866211fd72e85aad918d</span></div>
+          <a class="btn primary" href="download/NexusTalk_0.3.0_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
+          <div class="hash">SHA-256: <span class="mono" id="sha-client">2a13b129e7a4489c1a4474bad71bf3e9e62aeb4cba37c15d9b7ceeab0f70d24c</span></div>
         </div>
         <div class="dl-side">
           <h3>Systemvoraussetzungen</h3>
@@ -586,7 +636,7 @@ footer .brand { font-size: 15px; }
             <div><b>Headless-Server für Windows</b><small>nexustalk-server.exe · <span id="srv-size">7,0 MB</span> · ohne Oberfläche</small></div>
             <a class="btn small" href="download/nexustalk-server.exe" download><svg><use href="#i-download"/></svg>Server</a>
           </div>
-          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">8a1325dce5aa97bedba4a5f09eb7c82dbda4e8948d4bf7ec8460927ebed3333f</span></p>
+          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">622d92d2ff61ba346454dd6e7dee59a995ede71b3b40a5fece0c7cdc38fc183d</span></p>
           <p class="hash" style="margin-top:10px">Hinweis: Der Installer ist (noch) nicht code-signiert. Windows SmartScreen kann deshalb warnen – „Weitere Informationen“ → „Trotzdem ausführen“. Prüfe im Zweifel die Prüfsumme.</p>
         </div>
       </div>
@@ -616,7 +666,8 @@ footer .brand { font-size: 15px; }
       <div class="faq reveal">
         <details><summary>Ist NexusTalk wirklich kostenlos?</summary><p>Ja. Keine Abos, keine Premium-Stufen, keine Werbung. Der Quellcode steht unter der MIT-Lizenz. Freiwillige Spenden helfen bei der Weiterentwicklung.</p></details>
         <details><summary>Brauche ich einen eigenen Server?</summary><p>Nein – du kannst dich auch mit dem Server eines Freundes verbinden. Wer selbst hosten möchte, startet den Server direkt in der App; ein separater Rechner ist nicht nötig.</p></details>
-        <details><summary>Können sich Freunde über das Internet verbinden?</summary><p>Ja. Wähle im Servermodus „Lokales Netzwerk / Internet“, gib die öffentliche Adresse an und leite im Router TCP 7878 und UDP 3478 (plus Relay-Bereich) an deinen PC weiter. Der eingebaute STUN/TURN-Dienst hilft bei schwierigen Netzen.</p></details>
+        <details><summary>Kann ich mehrere Server hosten?</summary><p>Ja. In der Hosting-Zentrale legst du über „Neuer Server“ beliebig viele Server an. Jeder läuft auf eigenen Ports (7878, 7879, …), hat einen eigenen Datenordner und einen eigenen Einladungslink.</p></details>
+        <details><summary>Können sich Freunde über das Internet verbinden?</summary><p>Ja. Wähle beim Server „Freunde einladen“, trage in den erweiterten Einstellungen die öffentliche Adresse ein und leite im Router den angezeigten TCP- und UDP-Port an deinen PC weiter. Der eingebaute STUN/TURN-Dienst hilft bei schwierigen Netzen.</p></details>
         <details><summary>Wie sicher ist das?</summary><p>Verbindungen sind per TLS verschlüsselt; selbstsignierte Zertifikate werden beim ersten Verbinden per Fingerabdruck bestätigt und danach bei jeder Verbindung geprüft. Passwörter werden mit Argon2 gespeichert und verlassen nie den gewählten Server.</p></details>
         <details><summary>Gibt es NexusTalk für Mac, Linux oder Handy?</summary><p>Der Client ist derzeit für Windows (x64) gebaut. Der Headless-Server läuft auch unter Linux (aus dem Quellcode). Weitere Plattformen sind möglich, aber noch nicht verfügbar.</p></details>
         <details><summary>Wie viele Personen passen in einen Sprachkanal?</summary><p>Teilnehmer werden direkt miteinander verbunden. Mit Video sind etwa 8 Personen pro Kanal empfehlenswert, nur mit Sprache auch mehr – abhängig von Bandbreite und Rechner.</p></details>

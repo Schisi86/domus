@@ -48,7 +48,16 @@ const app = spawn(EXE, [], {
   stdio: "ignore",
 });
 let browser;
-const shot = async (page, name) => SHOTS && page.screenshot({ path: join(SHOTS, name) });
+/** Website screenshots: rendered at 1.5× via DevTools, without toasts. */
+async function shot(page, name) {
+  if (!SHOTS) return;
+  await page.evaluate(() => document.querySelector(".toasts")?.setAttribute("style", "display:none"));
+  const cdp = await page.context().newCDPSession(page);
+  const { width, height } = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+  const r = await cdp.send("Page.captureScreenshot", { format: "png", clip: { x: 0, y: 0, width, height, scale: 1.5 } });
+  writeFileSync(join(SHOTS, name), Buffer.from(r.data, "base64"));
+  await page.evaluate(() => document.querySelector(".toasts")?.removeAttribute("style"));
+}
 
 try {
   browser = await waitFor(() => chromium.connectOverCDP(`http://127.0.0.1:${CDP}`), 30000);
@@ -115,6 +124,7 @@ try {
     return t?.startsWith("nexustalk://") ? t : null;
   });
   check("invite link stays the same when reopened", again === a.link);
+  await shot(page, "host-two.png");
 
   // ------------------------------------------------------------ remove
   for (const name of ["Testserver B", "Testserver A"]) {

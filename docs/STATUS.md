@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.2.0)
+# Funktionsstand (Version 0.3.0)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -79,7 +79,7 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
 
-### Hosting, Bildschirm, Bilder (neu nach 0.2.0)
+### Hosting, Bildschirm, Bilder (neu in 0.3.0)
 | Funktion | Stand |
 |---|---|
 | Hosting-Zentrale über eigene Schaltfläche unten links, Statusanzeige (Anzahl laufender Server) | ✅ Desktop-E2E |
