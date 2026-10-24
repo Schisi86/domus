@@ -1,2 +1,2 @@
-c5a9e9039f3303083eac21c9afe5d66698f6fb34faa10558761754808a163cf6  NexusTalk_0.4.0_x64-setup.exe
-2e08e45e03d15d0b5cc424df66306cd69155e7ce6b4fbbaec4e6669d61008b85  nexustalk-server.exe
+349f914f9a5a05bccfbfc46c66e59fcf3c5cc13f11a9e2810cae553a776e119a  NexusTalk_0.4.1_x64-setup.exe
+0c03daf1ea676d71ed4db080782dc894b2cb5c41ed011f7f5fc43cee8c6ef716  nexustalk-server.exe
