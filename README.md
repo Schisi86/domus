@@ -6,7 +6,7 @@ Schlanke, selbst hostbare Kommunikationssoftware für Text, Sprache, Video und B
 
 ## Funktionsumfang (Kurzfassung)
 
-* **Server hosten:** eigene Schaltfläche unten links, mehrere Server gleichzeitig auf eigenen Ports (automatisch gewählt), alles voreingestellt (TLS, Einladungspflicht, Autostart), dauerhafter Einladungslink je Server, Erreichbarkeit „Nur dieser PC“ / „Freunde einladen“ per Klick.
+* **Server hosten:** eigene Schaltfläche unten links, Windows-Firewall-Freigabe per Klick, automatische Router-Weiterleitung per UPnP mit Verbindungs-Check, mehrere Server gleichzeitig auf eigenen Ports (automatisch gewählt), alles voreingestellt (TLS, Einladungspflicht, Autostart), dauerhafter Einladungslink je Server, Erreichbarkeit „Nur dieser PC“ / „Freunde einladen“ per Klick.
 * **Server & Kanäle:** Kategorien, Text- und Sprachkanäle, Rollen (Inhaber, Administrator, Moderator, Mitglied, Gast – anpassbar) mit Kanal-Overrides, Einladungen, Freischaltung, Sperren, Audit-Protokoll, Serverprotokoll, Ressourcenanzeige, Backups/Wiederherstellung.
 * **Text:** Echtzeit, Verlauf mit Nachladen, Antworten, Erwähnungen, Reaktionen, angeheftete Nachrichten, Markdown inkl. Spoiler, Emoji-Auswahl, Bearbeiten/Löschen, Mehrzeiler, Code, Links, Dateianhänge mit Fortschritt und Bildvorschau, Ungelesen-/Erwähnungszähler, Tippanzeige, Volltextsuche, Benachrichtigungen.
 * **Sprache/Video:** WebRTC-Mesh mit Opus, Echo-/Rauschunterdrückung, Stumm/Ton aus, Push-to-Talk (auch global im Hintergrund), Sprecheranzeige, Lautstärke pro Benutzer, Geräteauswahl, Qualitätsanzeige (RTT, Verlust, Relay), automatische Wiederverbindung, Webcam.

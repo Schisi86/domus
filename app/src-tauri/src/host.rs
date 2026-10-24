@@ -15,6 +15,8 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use tokio::sync::oneshot;
 
+use crate::reach::{self, UpnpStatus};
+
 /// Id of the server that lives in the legacy `server` folder (version 0.1/0.2).
 pub const MAIN_ID: &str = "main";
 
@@ -42,6 +44,8 @@ pub struct HostStatus {
     pub udp_port: u16,
     pub tls: bool,
     pub public_host: String,
+    /// Router port forwarding (only while running and reachable from the network).
+    pub upnp: Option<UpnpStatus>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -67,6 +71,32 @@ struct Live {
     setup_code: Option<String>,
     error: Option<String>,
     exposed: bool,
+    upnp: Option<UpnpStatus>,
+}
+
+/// Forwarded ports of a running server: TCP plus the STUN/TURN UDP port.
+fn upnp_ports(cfg: &Config) -> (u16, Option<u16>) {
+    (cfg.port, (cfg.media.stun_enabled || cfg.media.turn_enabled).then_some(cfg.media.udp_port))
+}
+
+/// Asks the router to forward the ports and renews the lease until aborted.
+fn spawn_upnp(live: Arc<Mutex<Live>>, cfg: &Config) -> tauri::async_runtime::JoinHandle<()> {
+    let (port, udp) = upnp_ports(cfg);
+    tauri::async_runtime::spawn(async move {
+        loop {
+            let st = match nexus_server::media::primary_local_ip() {
+                Some(IpAddr::V4(v4)) => reach::upnp_map(v4, port, udp).await,
+                _ => UpnpStatus { error: Some("Keine lokale IPv4-Adresse".into()), ..Default::default() },
+            };
+            if st.mapped {
+                tracing::info!(port, external = ?st.external_ip, cgnat = st.cgnat, "Router-Weiterleitung per UPnP eingerichtet");
+            } else {
+                tracing::warn!(port, error = ?st.error, "Router-Weiterleitung per UPnP nicht möglich");
+            }
+            lock(&live).upnp = Some(st);
+            tokio::time::sleep(reach::RENEW_EVERY).await;
+        }
+    })
 }
 
 /// One embedded server.
@@ -118,6 +148,7 @@ impl HostInstance {
             udp_port: cfg.as_ref().map(|c| c.media.udp_port).unwrap_or_default(),
             tls: cfg.as_ref().is_some_and(|c| c.tls.enabled),
             public_host: cfg.map(|c| c.public_host).unwrap_or_default(),
+            upnp: if live.running { live.upnp.clone() } else { None },
         }
     }
 
@@ -165,14 +196,25 @@ impl HostInstance {
                     st.fingerprint = server.tls_fingerprint.clone();
                     st.setup_code = server.setup_code.clone();
                     st.exposed = cfg.is_exposed();
+                    st.upnp = None;
                 }
                 if let Some(f) = first.take() {
                     let _ = f.send(Ok(()));
                 }
+                // Reachable from the network: open the router ports as well.
+                let upnp = cfg.is_exposed().then(|| spawn_upnp(live.clone(), &cfg));
                 let stop = tokio::select! {
                     _ = &mut stop_rx => true,
                     _ = server.restart_requested() => false,
                 };
+                if let Some(task) = upnp {
+                    task.abort();
+                    let (port, udp) = upnp_ports(&cfg);
+                    if lock(&live).upnp.as_ref().is_some_and(|u| u.mapped) {
+                        reach::upnp_unmap(port, udp).await;
+                    }
+                    lock(&live).upnp = None;
+                }
                 server.shutdown().await;
                 if stop {
                     let mut st = lock(&live);

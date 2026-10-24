@@ -4,7 +4,7 @@ import { activeServerId, isMuted, openModal, removeServer, selectServer, servers
 import type { ServerStore } from "../state/server";
 import { transport } from "../net/transport";
 import { t } from "../i18n";
-import { hosts, runningHosts } from "../state/hosting";
+import { hosts, reachProblem, runningHosts } from "../state/hosting";
 import { isTauri } from "../platform";
 import { confirmDialog, initials, useBlobUrl, Icon } from "./components";
 import { AddServerDialog } from "./dialogs/AddServer";
@@ -76,13 +76,14 @@ function ServerButton({ s }: { s: ServerStore }) {
 function HostButton() {
   const n = runningHosts.value;
   const total = hosts.value.length;
-  const tip = n > 0 ? t("hc.runningTip", { n }) : t("hc.title");
+  const warn = reachProblem.value;
+  const tip = warn ? t("rc.notReachable") : n > 0 ? t("hc.runningTip", { n }) : t("hc.title");
   return (
     <div class={`rail-item${n > 0 ? " hosting" : ""}`}>
       <button class="rail-btn host" title={tip} aria-label={tip} onClick={() => openModal(<HostDialog />)}>
         <Icon.ServerIcon size={19} class="" />
       </button>
-      {isTauri && total > 0 && <span class={`rail-host-badge${n > 0 ? " on" : ""}`}>{n > 0 ? n : "0"}</span>}
+      {isTauri && total > 0 && <span class={`rail-host-badge${warn ? " warn" : n > 0 ? " on" : ""}`}>{warn ? "!" : n}</span>}
     </div>
   );
 }

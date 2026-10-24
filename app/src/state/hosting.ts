@@ -23,6 +23,22 @@ export interface HostStatus {
   udp_port: number;
   tls: boolean;
   public_host: string;
+  upnp: UpnpStatus | null;
+}
+
+export interface UpnpStatus {
+  mapped: boolean;
+  external_ip: string | null;
+  cgnat: boolean;
+  error: string | null;
+}
+
+export interface FirewallStatus {
+  supported: boolean;
+  allow: number;
+  block: number;
+  network: string;
+  error: string | null;
 }
 
 export interface HostConfig {
@@ -45,6 +61,28 @@ export interface HostConfig {
 }
 
 export const hosts = signal<HostStatus[]>([]);
+/** Windows Firewall state for NexusTalk (null = not checked yet). */
+export const firewall = signal<FirewallStatus | null>(null);
+export const firewallOk = (f: FirewallStatus | null) => !f || !f.supported || (f.allow > 0 && f.block === 0);
+
+export async function checkFirewall() {
+  if (!isTauri) return null;
+  firewall.value = await tauriInvoke<FirewallStatus>("firewall_check").catch(() => null);
+  return firewall.value;
+}
+
+/** Adds the firewall rule (Windows asks for administrator rights once). */
+export async function openFirewall(): Promise<"ok" | "cancelled" | string> {
+  try {
+    firewall.value = await tauriInvoke<FirewallStatus>("firewall_open");
+    return firewallOk(firewall.value) ? "ok" : "still blocked";
+  } catch (e) {
+    return String(e) === "cancelled" ? "cancelled" : String(e);
+  }
+}
+
+/** Server reachable from the network but the firewall would drop connections. */
+export const reachProblem = computed(() => hosts.value.some((h) => h.running && h.exposed) && !firewallOk(firewall.value));
 export const runningHosts = computed(() => hosts.value.filter((h) => h.running).length);
 
 export async function refreshHosts() {
@@ -59,7 +97,9 @@ export async function refreshHosts() {
 let timer: ReturnType<typeof setInterval> | null = null;
 export function startHostPolling() {
   if (!isTauri || timer) return;
-  void refreshHosts();
+  void refreshHosts().then(() => {
+    if (hosts.value.some((h) => h.exposed)) void checkFirewall();
+  });
   timer = setInterval(() => void refreshHosts(), 4000);
 }
 

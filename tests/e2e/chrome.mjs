@@ -96,6 +96,24 @@ try {
     await shot(page, `desk-${th}.jpg`);
   }
 
+  // Reachability helpers.
+  const fw = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke("firewall_check"));
+  check("firewall status can be read without admin rights", fw.supported === true && !fw.error && typeof fw.allow === "number", JSON.stringify(fw));
+  await page.locator(".rail .rail-btn.add").click();
+  await page.locator(".modal input.input").fill("127.0.0.1:7998");
+  await page.locator(".modal .btn.primary").click();
+  const help = await waitFor(() => page.locator(".modal .notice.warn").textContent({ timeout: 500 }), 20000);
+  check("connecting to a PC without server explains the cause", /läuft kein NexusTalk-Server/.test(help ?? ""), help ?? "");
+  // No answer at all (what a blocking firewall looks like from outside).
+  await page.locator(".modal input.input").fill("10.255.255.1:7878");
+  await page.locator(".modal .btn.primary").click();
+  const help2 = await waitFor(async () => {
+    const tx = await page.locator(".modal .notice.warn").textContent({ timeout: 500 });
+    return /antwortet nicht/.test(tx ?? "") ? tx : null;
+  }, 30000);
+  check("an unanswered connection points to firewall and server mode", /Firewall freigeben/.test(help2 ?? ""), help2 ?? "");
+  await page.keyboard.press("Escape");
+
   // Settings: close button stays visible while scrolling.
   await page.locator(".user-panel .who").click();
   await page.waitForSelector(".pane-nav");

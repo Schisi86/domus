@@ -8,6 +8,7 @@
 
 mod host;
 mod net;
+mod reach;
 mod store;
 
 use std::path::PathBuf;
@@ -186,6 +187,8 @@ pub fn run() {
             host::host_stop,
             host::host_restart,
             host::host_setup_done,
+            reach::firewall_check,
+            reach::firewall_open,
             store::config_load,
             store::config_save,
         ])

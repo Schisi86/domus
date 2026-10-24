@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.4.0)
+# Funktionsstand (Version 0.4.1)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -78,6 +78,15 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Fehlerprotokolle (Client + Server, rotierend) | ✅ |
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
+
+### Erreichbarkeit für andere (neu in 0.4.1)
+| Funktion | Stand |
+|---|---|
+| Windows-Firewall: Status-Prüfung (ohne Adminrechte) und Freigabe per Klick mit einer UAC-Bestätigung; automatisch beim Wechsel auf „Freunde einladen“; entfernt auch Sperr-Regeln aus einem weggeklickten Firewall-Dialog | ✅ Status-Abfrage und Skript-Syntax getestet; 🟡 die Freigabe selbst (Admin-Aktion) und der Zugriff von einem zweiten PC wurden nicht automatisiert getestet |
+| Verbindungs-Check im Hosting: Server läuft, Firewall, Heimnetz-Adresse, Internet (UPnP) | ✅ visuell geprüft |
+| Router-Weiterleitung per UPnP (TCP + UDP, stündlich erneuert, beim Stoppen entfernt), öffentliche IP, Erkennung von DS-Lite/CGNAT, zweiter Einladungslink „Über das Internet“ | 🟡 implementiert; der Router des Entwicklungs-PCs antwortet nicht auf UPnP, daher nicht mit echtem Router getestet |
+| Hinweise beim Verbinden: „keine Antwort“ (Firewall/Servermodus) vs. „PC erreichbar, aber kein Server auf dem Port“ | ✅ Desktop-E2E |
+| Hinweis-Symbol am Hosting-Knopf, wenn ein freigegebener Server läuft, die Firewall aber blockiert | ✅ |
 
 ### Fensterrahmen, Designs, Sounds (neu in 0.4.0)
 | Funktion | Stand |

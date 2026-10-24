@@ -16,6 +16,16 @@ function fmtFp(fp: string) {
   return fp.match(/.{1,2}/g)?.join(":") ?? fp;
 }
 
+/** Explains the usual reasons when a server cannot be reached. */
+function connectHelp(address: string, e: unknown): string | null {
+  if (!isNetError(e) || (e.kind !== "timeout" && e.kind !== "connect")) return null;
+  const n = normalizeAddress(address);
+  const port = n?.base.split(":").pop() ?? "7878";
+  const local = !!n && /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|localhost|127\.)/.test(n.host);
+  if (e.kind === "connect" && /refused|verweigert|10061|actively/i.test(e.message)) return t("add.helpRefused", { port });
+  return local ? t("add.helpTimeout") : `${t("add.helpTimeout")} ${t("add.helpInternet")}`;
+}
+
 export function deviceName() {
   return isTauri ? "NexusTalk Desktop (Windows)" : `Browser (${navigator.userAgent.includes("Edg") ? "Edge" : "Web"})`;
 }
@@ -35,11 +45,13 @@ export function AddServerDialog({ reauth, prefill }: { reauth?: ServerStore; pre
   const [invite, setInvite] = useState(prefill?.invite ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [help, setHelp] = useState<string | null>(null);
   const [pendingNote, setPendingNote] = useState(false);
 
   const probe = async (addr: string, fp: string | null) => {
     setBusy(true);
     setError(null);
+    setHelp(null);
     try {
       const r = await transport.http<ServerInfo>({ address: addr, fingerprint: fp }, "GET", "/api/v1/info");
       if (r.status !== 200 || !r.body?.name) throw { kind: "connect", message: t("add.notNexus", { status: r.status }) } satisfies NetError;
@@ -49,7 +61,10 @@ export function AddServerDialog({ reauth, prefill }: { reauth?: ServerStore; pre
       if (isNetError(e) && (e.kind === "untrusted" || e.kind === "mismatch")) {
         setCertErr(e);
         setStep("cert");
-      } else setError(errorText(e));
+      } else {
+        setError(errorText(e));
+        setHelp(connectHelp(addr, e));
+      }
     } finally {
       setBusy(false);
     }
@@ -150,6 +165,7 @@ export function AddServerDialog({ reauth, prefill }: { reauth?: ServerStore; pre
         <Field label={t("add.addressLabel")} hint={t("add.addressHint")} error={error}>
           <input class="input" autoFocus value={address} onInput={(e) => setAddress((e.target as HTMLInputElement).value)} onKeyDown={(e) => e.key === "Enter" && void submitAddress()} placeholder={t("add.address")} />
         </Field>
+        {help && <div class="notice warn small">{help}</div>}
         <div class="faint xs">{t("add.defaults")}</div>
       </Modal>
     );

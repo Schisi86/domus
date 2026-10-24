@@ -201,6 +201,11 @@ impl Endpoint {
         if text.contains("TimedOut") || text.contains("timed out") {
             return NetError::Timeout;
         }
+        // The top-level message ("error sending request") hides the cause; the
+        // UI explains "PC reachable, but no server on that port" for this one.
+        if text.contains("ConnectionRefused") || text.contains("10061") || text.contains("Connection refused") {
+            return NetError::Connect(format!("connection refused: {msg}"));
+        }
         NetError::Connect(msg)
     }
 

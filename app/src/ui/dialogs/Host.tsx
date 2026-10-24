@@ -4,11 +4,11 @@
 
 import { useEffect, useState } from "preact/hooks";
 import { addServer, closeModal, removeServer, selectServer, servers, toast } from "../../state/app";
-import { clientFor, hostName, hosts, localAddress, refreshHosts, whenReady, type HostConfig, type HostStatus } from "../../state/hosting";
+import { checkFirewall, clientFor, firewall, firewallOk, hostName, hosts, localAddress, openFirewall, refreshHosts, whenReady, type HostConfig, type HostStatus } from "../../state/hosting";
 import type { ServerStore } from "../../state/server";
 import type { Invite, InviteLinkInfo } from "../../types";
 import { errorText, t } from "../../i18n";
-import { transport } from "../../net/transport";
+import { inviteLink, transport } from "../../net/transport";
 import { appInfo, isTauri, tauriInvoke } from "../../platform";
 import { Field, IconButton, Icon, Modal, Spinner, Toggle, confirmDialog, copyText, initials, promptDialog, useBlobUrl } from "../components";
 import { deviceName } from "./AddServer";
@@ -29,6 +29,81 @@ function ExposureWarning({ cfg }: { cfg: Pick<HostConfig, "port" | "media"> }) {
         {cfg.media.turn_enabled && <li><b>UDP {cfg.media.relay_port_min}–{cfg.media.relay_port_max}</b> – {t("host.portRelay")}</li>}
       </ul>
       <div>{t("host.firewallText")}</div>
+    </div>
+  );
+}
+
+/** Makes sure the Windows Firewall lets friends in; asks for admin rights once. */
+async function ensureFirewall(): Promise<boolean> {
+  const st = await checkFirewall();
+  if (firewallOk(st)) return true;
+  const r = await openFirewall();
+  if (r === "ok") toast(t("rc.fwOpened"), undefined, "ok");
+  else if (r === "cancelled") toast(t("rc.fwCancelled"), t("rc.fwBlockedDesc"), "warn", 9000);
+  else toast(t("rc.fwFailed"), r, "error", 9000);
+  return r === "ok";
+}
+
+function FirewallButton() {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      class="btn primary sm"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        await ensureFirewall();
+        setBusy(false);
+      }}
+    >
+      {busy ? <Spinner /> : <Icon.Shield size={14} />} {t("rc.fwOpen")}
+    </button>
+  );
+}
+
+/** What others need to reach this server – and whether it is in place. */
+function ReachCheck({ h }: { h: HostStatus }) {
+  useEffect(() => {
+    void checkFirewall();
+  }, [h.id, h.exposed]);
+  const fw = firewall.value;
+  const fwOk = firewallOk(fw);
+  const u = h.upnp;
+  const lanAddr = `${h.public_host || h.lan_ip || "?"}:${h.port}`;
+  const Row = ({ ok, warn, children }: { ok: boolean; warn?: boolean; children: preact.ComponentChildren }) => (
+    <div class={`reach-row${ok ? " ok" : warn ? " warn" : " bad"}`}>
+      <span class="reach-dot">{ok ? "✓" : "!"}</span>
+      <div class="grow">{children}</div>
+    </div>
+  );
+  return (
+    <div class="card col reach-check">
+      <div class="label" style={{ margin: "0px" }}>{t("rc.title")}</div>
+      <Row ok={h.running}>{h.running ? t("rc.running") : t("rc.stopped")}</Row>
+      {fw === null ? (
+        <div class="row faint small"><Spinner /> {t("rc.fwChecking")}</div>
+      ) : (
+        <Row ok={fwOk}>
+          <div>{fwOk ? t("rc.fwOk") : t("rc.fwBlocked")}</div>
+          {!fwOk && (
+            <div class="col" style={{ gap: "8px", marginTop: "6px" }}>
+              <div class="faint xs">{t("rc.fwBlockedDesc")}</div>
+              <div><FirewallButton /></div>
+            </div>
+          )}
+        </Row>
+      )}
+      <Row ok={fwOk && h.running}>{t("rc.lan", { addr: lanAddr })}</Row>
+      {h.running &&
+        (!u ? (
+          <div class="row faint small"><Spinner /> {t("rc.upnpPending")}</div>
+        ) : u.mapped && !u.cgnat ? (
+          <Row ok>{t("rc.upnpOk", { ip: u.external_ip ?? "?" })}</Row>
+        ) : u.mapped && u.cgnat ? (
+          <Row ok={false} warn>{t("rc.upnpCgnat")}</Row>
+        ) : (
+          <Row ok={false} warn>{t("rc.upnpNo", { tcp: h.port, udp: h.udp_port, ip: h.lan_ip ?? "?" })}</Row>
+        ))}
     </div>
   );
 }
@@ -61,6 +136,11 @@ function InviteCard({ h, client }: { h: HostStatus; client: ServerStore }) {
   }, [ready, h.public_host, h.port, h.running]);
 
   const shown = inv ? linkFor(client, inv.code, inv.info) : null;
+  const net = inv && h.upnp?.mapped && !h.upnp.cgnat && h.upnp.external_ip ? inviteLink(h.upnp.external_ip, h.port, inv.code, inv.info.fingerprint) : null;
+  const copy = (l: string) => {
+    copyText(l);
+    toast(t("invite.copied"), undefined, "ok", 2000);
+  };
   return (
     <div class="card col invite-hero">
       <div class="row">
@@ -76,11 +156,29 @@ function InviteCard({ h, client }: { h: HostStatus; client: ServerStore }) {
         error ? <div class="error-text">{error}</div> : <div class="row faint small"><Spinner /> {t("hc.connecting")}</div>
       ) : (
         <>
+          {h.exposed && !firewallOk(firewall.value) && (
+            <div class="notice warn small row">
+              <span class="grow">{t("rc.notReachable")}</span>
+              <FirewallButton />
+            </div>
+          )}
+          {net && <div class="label" style={{ margin: "0px" }}>{t("rc.linkLan")}</div>}
           <div class="invite-link mono selectable" onClick={(e) => getSelection()?.selectAllChildren(e.currentTarget)}>{shown.link}</div>
+          {net && (
+            <>
+              <div class="label" style={{ margin: "0px" }}>{t("rc.linkNet")}</div>
+              <div class="invite-link mono selectable" onClick={(e) => getSelection()?.selectAllChildren(e.currentTarget)}>{net}</div>
+            </>
+          )}
           <div class="row wrap" style={{ gap: "8px" }}>
-            <button class="btn primary lg" onClick={() => { copyText(shown.link); toast(t("invite.copied"), undefined, "ok", 2000); }}>
-              <Icon.Copy size={16} /> {t("invite.copyLink")}
+            <button class="btn primary lg" onClick={() => copy(shown.link)}>
+              <Icon.Copy size={16} /> {net ? t("rc.copyLan") : t("invite.copyLink")}
             </button>
+            {net && (
+              <button class="btn primary lg" onClick={() => copy(net)}>
+                <Icon.Globe size={16} /> {t("rc.copyNet")}
+              </button>
+            )}
             <button
               class="btn ghost"
               onClick={async () => {
@@ -90,11 +188,7 @@ function InviteCard({ h, client }: { h: HostStatus; client: ServerStore }) {
               <Icon.Refresh size={15} /> {t("hc.newLink")}
             </button>
           </div>
-          {h.exposed ? (
-            <div class="faint xs">{t("hc.linkLan", { tcp: h.port, udp: h.udp_port })}</div>
-          ) : (
-            <div class="notice small">{t("hc.linkLocal")}</div>
-          )}
+          {!h.exposed && <div class="notice small">{t("hc.linkLocal")}</div>}
         </>
       )}
     </div>
@@ -276,7 +370,7 @@ function HostDetail({ h, onRemoved }: { h: HostStatus; onRemoved: () => void }) 
 
   const setReach = async (exposed: boolean) => {
     if (!cfg || exposed === isExposed(cfg)) return;
-    if (exposed && !(await confirmDialog({ title: t("host.exposeTitle"), body: <ExposureWarning cfg={cfg} />, confirm: t("host.exposeConfirm"), danger: true }))) return;
+    if (exposed && !(await confirmDialog({ title: t("host.exposeTitle"), body: <><ExposureWarning cfg={cfg} /><p>{t("rc.uacHint")}</p></>, confirm: t("host.exposeConfirm"), danger: true }))) return;
     const next = { ...cfg, bind: exposed ? "0.0.0.0" : "127.0.0.1", public_host: exposed && !cfg.public_host ? (h.lan_ip ?? "") : cfg.public_host };
     setBusy(true);
     try {
@@ -284,6 +378,7 @@ function HostDetail({ h, onRemoved }: { h: HostStatus; onRemoved: () => void }) 
       if (h.running) await tauriInvoke("host_restart", { id: h.id });
       if (client) setTimeout(() => client.conn.retryNow(), 300);
       toast(t("hc.reachSaved"), undefined, "ok");
+      if (exposed) await ensureFirewall();
     } catch (e) {
       toast(t("common.saveFailed"), String(e), "error");
     } finally {
@@ -390,8 +485,9 @@ function HostDetail({ h, onRemoved }: { h: HostStatus; onRemoved: () => void }) 
             <span>{t("hc.reachNetDesc")}</span>
           </button>
         </div>
-        {exposed && cfg && <div class="notice warn small"><ExposureWarning cfg={cfg} /></div>}
       </div>
+
+      {exposed && <ReachCheck h={h} />}
 
       <div class="card col">
         <Toggle
@@ -420,12 +516,13 @@ function NewServer({ onCreated, first }: { onCreated: (id: string) => void; firs
   const [exposed, setExposed] = useState(true);
   const [busy, setBusy] = useState(false);
   const create = async () => {
-    if (exposed && !(await confirmDialog({ title: t("host.exposeTitle"), body: t("host.exposeText") + " " + t("host.firewallText"), confirm: t("host.exposeConfirm") }))) return;
+    if (exposed && !(await confirmDialog({ title: t("host.exposeTitle"), body: <><p style={{ marginTop: "0px" }}>{t("host.exposeText")}</p><p>{t("rc.uacHint")}</p></>, confirm: t("host.exposeConfirm") }))) return;
     setBusy(true);
     try {
       const st = await tauriInvoke<HostStatus>("host_create", { name: name.trim() || t("host.myServer"), exposed });
       await refreshHosts();
       onCreated(st.id);
+      if (exposed) await ensureFirewall();
     } catch (e) {
       toast(t("host.startFailed"), String(e), "error");
     } finally {

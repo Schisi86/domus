@@ -25,7 +25,7 @@ Einmalig für die Browsertests: `cd tests/e2e && npm install && npx playwright-c
 
 Stand 0.2.0 (23.10.2026): Rust-Tests und Medien-E2E erneut ausgeführt. Desktop-E2E und Installer-Test stammen noch von 0.1.0 – beim 0.2.0-Lauf lief auf dem Testrechner eine installierte NexusTalk-Instanz, die der Single-Instance-Schutz bevorzugt hätte.
 
-### Rust – 65 Tests, alle bestanden
+### Rust – 69 Tests, alle bestanden
 
 **Unit-Tests (42, `nexus-server`)**
 * Authentifizierung: Argon2id-Hash/Verifikation, Salt, Token-Hashes.
@@ -55,7 +55,7 @@ Stand 0.2.0 (23.10.2026): Rust-Tests und Medien-E2E erneut ausgeführt. Desktop-
 | `server_stats_and_logs_for_admins` | Status, Einstellungen, Logs |
 | `reactions_and_pins` | Reaktionen hinzufügen/entfernen (Ereignis an andere Clients, ungültige Emojis abgelehnt, Limit), Anheften nur mit Moderationsrecht, Liste angehefteter Nachrichten |
 
-**Weitere:** `nexus-net` (3: Adressparser, Fingerabdrücke, WS-URLs), Desktop-Crate (4: DPAPI-verschlüsselte Tokens/beschädigte Konfiguration; Übernahme des bisherigen Serverordners; getrennte Ports, Ordner und Relay-Bereiche für neue Server inkl. Konfliktprüfung; zwei eingebettete Server gleichzeitig starten und entfernen).
+**Weitere:** `nexus-net` (3: Adressparser, Fingerabdrücke, WS-URLs), Desktop-Crate (4: DPAPI-verschlüsselte Tokens/beschädigte Konfiguration; Übernahme des bisherigen Serverordners; getrennte Ports, Ordner und Relay-Bereiche für neue Server inkl. Konfliktprüfung; zwei eingebettete Server gleichzeitig starten und entfernen; Erreichbarkeit: CGNAT-Erkennung, sichere Pfad-Quotierung, PowerShell-Syntax der Firewall-Skripte, Firewall-Status ohne Adminrechte).
 
 ### Echtzeit-Medien – `tests/e2e/rtc.mjs`: 20/20 bestanden (0.1.0: 3 Läufe in Folge; 0.2.0: erneut 20/20)
 
@@ -84,9 +84,9 @@ Echte Desktop-App (Testbuild mit eigener App-Kennung, Datenordner per `APPDATA` 
 
 Browser-UI mit virtueller Bildschirmquelle: Menü öffnet sich statt sofort zu übertragen, 6 Schnellwahlen / 5 Auflösungen / 4 Bildraten / 3 Inhaltsarten, Markierung der Auswahl, gewählte Grenzen am Track (`getConstraints`: 1280×720, 15 FPS, `contentHint` detail), Änderung während der Übertragung (1080p60, motion), Anzeige im Kopfbereich, Stoppen. Ein 900×400-Bild wird im Zuschneide-Dialog über den geöffneten Servereinstellungen bearbeitet und als 512×512-WebP gespeichert (vom Server zurückgeladen und vermessen).
 
-### Fensterrahmen – `tests/e2e/chrome.mjs`: 8/8 bestanden
+### Fensterrahmen und Verbindungshilfen – `tests/e2e/chrome.mjs`: 11/11 bestanden
 
-Isolierter Desktop-Testbuild: eigene Titelleiste mit Ziehbereich und drei Fensterknöpfen, native Windows-Leiste aus (`is_decorated = false`), Maximieren/Wiederherstellen über die Knöpfe, Fußzeile mit „Spenden“, Copyright und Flagge unten rechts, kein Herz/keine Flagge mehr in der Leiste, Schließen-Knopf der Einstellungen bleibt nach dem Scrollen im sichtbaren Bereich und schließt. Dazu Screenshots in mehreren Designs. `features.mjs` prüft zusätzlich, dass beim Betreten des Sprachkanals, beim Teilen und beim Kanalwechsel Sounds ausgelöst werden (16/16).
+Isolierter Desktop-Testbuild: Firewall-Status lesbar ohne Adminrechte, Hilfetext bei „kein Server auf dem Port“ (abgelehnte Verbindung) und bei „keine Antwort“ (Firewall/Servermodus); eigene Titelleiste mit Ziehbereich und drei Fensterknöpfen, native Windows-Leiste aus (`is_decorated = false`), Maximieren/Wiederherstellen über die Knöpfe, Fußzeile mit „Spenden“, Copyright und Flagge unten rechts, kein Herz/keine Flagge mehr in der Leiste, Schließen-Knopf der Einstellungen bleibt nach dem Scrollen im sichtbaren Bereich und schließt. Dazu Screenshots in mehreren Designs. `features.mjs` prüft zusätzlich, dass beim Betreten des Sprachkanals, beim Teilen und beim Kanalwechsel Sounds ausgelöst werden (16/16).
 
 ### Übersetzungen
 
@@ -120,6 +120,8 @@ Release-Build, gesteuert über das DevTools-Protokoll von WebView2:
 | Neuinstallation + Start mit vorhandener Konfiguration (gleiches Zertifikat, Server startet) | ✅ |
 
 ## Nicht oder nur teilweise getestet
+
+* **Firewall-Freigabe und Zugriff von einem zweiten PC (0.4.1):** Die Freigabe ist eine Admin-Aktion und wurde nicht automatisiert ausgeführt; ein zweites Gerät stand nicht zur Verfügung. Geprüft sind Status-Abfrage, Skript-Syntax und die Hinweise im Client. **UPnP** konnte mangels UPnP-fähigem Router nicht gegen ein echtes Gerät getestet werden.
 
 * **Installation auf einem frisch aufgesetzten Windows-System** (ohne Entwicklungswerkzeuge) – nur auf dem Entwicklungs-PC getestet.
 * **MSI-Paket**: gebaut, aber nicht installiert (Standard-MSI installiert systemweit und benötigt Administratorrechte).
