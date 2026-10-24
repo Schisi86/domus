@@ -55,7 +55,11 @@ Stand 0.2.0 (23.10.2026): Rust-Tests und Medien-E2E erneut ausgeführt. Desktop-
 | `server_stats_and_logs_for_admins` | Status, Einstellungen, Logs |
 | `reactions_and_pins` | Reaktionen hinzufügen/entfernen (Ereignis an andere Clients, ungültige Emojis abgelehnt, Limit), Anheften nur mit Moderationsrecht, Liste angehefteter Nachrichten |
 
-**Weitere:** `nexus-net` (3: Adressparser, Fingerabdrücke, WS-URLs), Desktop-Crate (4: DPAPI-verschlüsselte Tokens/beschädigte Konfiguration; Übernahme des bisherigen Serverordners; getrennte Ports, Ordner und Relay-Bereiche für neue Server inkl. Konfliktprüfung; zwei eingebettete Server gleichzeitig starten und entfernen; Erreichbarkeit: CGNAT-Erkennung, sichere Pfad-Quotierung, PowerShell-Syntax der Firewall-Skripte, Firewall-Status ohne Adminrechte).
+**Weitere:** `nexus-net` (3: Adressparser, Fingerabdrücke, WS-URLs), Desktop-Crate (4: DPAPI-verschlüsselte Tokens/beschädigte Konfiguration; Übernahme des bisherigen Serverordners; getrennte Ports, Ordner und Relay-Bereiche für neue Server inkl. Konfliktprüfung; zwei eingebettete Server gleichzeitig starten und entfernen; Erreichbarkeit: CGNAT-Erkennung, sichere Pfad-Quotierung, PowerShell-Syntax der Firewall-Skripte, Firewall-Status ohne Adminrechte; Relay-Einstellungen speichern/laden). Zusätzlich zwei Live-Tests gegen das öffentliche Relay (mit `--ignored`): `relay_roundtrip` (Echo durch bore.pub) und `server_through_relay` (eingebetteter Server über bore.pub, HTTP + WebSocket mit Pinning, falscher Pin wird abgelehnt) – beide bestanden (0.5.0):
+
+```bash
+cargo test -p nexustalk server_through_relay -- --ignored --nocapture
+```
 
 ### Echtzeit-Medien – `tests/e2e/rtc.mjs`: 20/20 bestanden (0.1.0: 3 Läufe in Folge; 0.2.0: erneut 20/20)
 
@@ -76,7 +80,7 @@ Echte Weboberfläche, echter Server, 3–4 Clients in Chromium mit virtuellem Mi
 | Verlassen/erneuter Beitritt baut Medien neu auf | ✅ |
 | Gast ohne Bildschirmrecht wird serverseitig abgelehnt (mit Meldung) | ✅ |
 
-### Hosting-Zentrale (Desktop-App) – `tests/e2e/hosting.mjs`: 14/14 bestanden
+### Hosting-Zentrale (Desktop-App) – `tests/e2e/hosting.mjs`: 18/18 bestanden (0.5.0, inkl. Internet-Link über das Relay; ohne Internet: `E2E_NO_INTERNET=1`)
 
 Echte Desktop-App (Testbuild mit eigener App-Kennung, Datenordner per `APPDATA` in ein Temp-Verzeichnis umgeleitet – eine installierte NexusTalk bleibt unberührt), gesteuert über WebView2-DevTools: Schaltfläche unten links, Erstformular mit vorausgefülltem Namen, zwei Server nacheinander erstellt (Ports 7878/7879), Inhaber jeweils mit vorausgefülltem Benutzernamen angelegt, dauerhafte Einladungslinks angezeigt und beim erneuten Öffnen unverändert, beide Server gleichzeitig aktiv, Zähler in der Leiste, Registry `hosts.json`, Entfernen inkl. Datenordner und Client-Eintrag.
 
@@ -121,6 +125,7 @@ Release-Build, gesteuert über das DevTools-Protokoll von WebView2:
 
 ## Nicht oder nur teilweise getestet
 
+* **Internet-Tunnel mit einem zweiten Gerät (0.5.0):** Der Weg durch das echte Relay ist getestet, der Client lief aber auf demselben PC. Sprache/Video zwischen zwei Geräten in fremden Netzen (WebRTC über öffentliches STUN, ohne TURN) ist **nicht** getestet.
 * **Firewall-Freigabe und Zugriff von einem zweiten PC (0.4.1):** Die Freigabe ist eine Admin-Aktion und wurde nicht automatisiert ausgeführt; ein zweites Gerät stand nicht zur Verfügung. Geprüft sind Status-Abfrage, Skript-Syntax und die Hinweise im Client. **UPnP** konnte mangels UPnP-fähigem Router nicht gegen ein echtes Gerät getestet werden.
 
 * **Installation auf einem frisch aufgesetzten Windows-System** (ohne Entwicklungswerkzeuge) – nur auf dem Entwicklungs-PC getestet.

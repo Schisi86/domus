@@ -816,6 +816,7 @@ kbd { font-family: var(--font-mono); font-size: 10.5px; padding: 1px 6px; border
 .invite-hero { gap: 12px; border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); background: radial-gradient(420px 140px at 0% 0%, var(--accent-soft), transparent 70%), color-mix(in srgb, var(--bg-1) 85%, transparent); }
 .invite-ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex: none; color: var(--on-accent); background: var(--accent-grad); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35); }
 .invite-link { padding: 12px 14px; border-radius: var(--r-sm); background: var(--bg-0); border: 1px solid var(--line-strong); font-size: var(--fs-sm); word-break: break-all; color: var(--accent-2); cursor: text; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3); }
+.invite-link.sub { padding: 8px 12px; font-size: var(--fs-xs); color: var(--text-2); }
 .reach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .reach-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: start; padding: 12px 14px; border-radius: var(--r); border: 1px solid var(--line); background: var(--bg-2); color: var(--text-2); cursor: pointer; transition: border-color var(--dur), background var(--dur), transform var(--dur); }
 .reach-opt:hover:not(:disabled) { border-color: var(--line-strong); transform: translateY(-1px); }

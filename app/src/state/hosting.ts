@@ -24,6 +24,15 @@ export interface HostStatus {
   tls: boolean;
   public_host: string;
   upnp: UpnpStatus | null;
+  relay_enabled: boolean;
+  relay: RelayStatus | null;
+}
+
+/** Internet relay tunnel (for connections without port forwarding, e.g. CGNAT). */
+export interface RelayStatus {
+  address: string | null;
+  connecting: boolean;
+  error: string | null;
 }
 
 export interface UpnpStatus {
@@ -92,6 +101,21 @@ export async function refreshHosts() {
   } catch {
     /* keep the last known state */
   }
+}
+
+/** Turns the internet relay on/off (a running server restarts briefly). */
+export async function setRelay(id: string, enabled: boolean) {
+  await tauriInvoke<HostStatus>("host_set_relay", { id, enabled });
+  await refreshHosts();
+}
+
+/** Public invite address: router forwarding if it works, else the relay tunnel. */
+export function internetAddress(h: HostStatus): { host: string; port: number; via: "upnp" | "relay" } | null {
+  if (h.upnp?.mapped && !h.upnp.cgnat && h.upnp.external_ip) return { host: h.upnp.external_ip, port: h.port, via: "upnp" };
+  const a = h.relay?.address;
+  if (!a) return null;
+  const i = a.lastIndexOf(":");
+  return { host: a.slice(0, i), port: Number(a.slice(i + 1)), via: "relay" };
 }
 
 let timer: ReturnType<typeof setInterval> | null = null;

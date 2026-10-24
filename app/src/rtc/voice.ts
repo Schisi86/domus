@@ -241,6 +241,9 @@ export class VoiceSession {
     if (ice?.stun_port) list.push({ urls: `stun:${h}:${ice.stun_port}` });
     if (ice?.turn) list.push({ urls: `turn:${h}:${ice.turn.port}?transport=udp`, username: ice.turn.username, credential: ice.turn.credential });
     for (const s of ice?.servers ?? []) list.push({ urls: s.urls, username: s.username, credential: s.credential });
+    // Public STUN as fallback: needed when the server is only reachable through
+    // the internet relay or sits behind CGNAT (its own STUN port is unreachable).
+    list.push({ urls: ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"] });
     return list;
   }
 

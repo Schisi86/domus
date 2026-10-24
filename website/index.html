@@ -22,9 +22,9 @@
   "name": "NexusTalk",
   "operatingSystem": "Windows 10, Windows 11 (x64)",
   "applicationCategory": "CommunicationApplication",
-  "softwareVersion": "0.4.1",
+  "softwareVersion": "0.5.0",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-  "downloadUrl": "https://nexustalk-app.netlify.app/download/NexusTalk_0.4.1_x64-setup.exe",
+  "downloadUrl": "https://nexustalk-app.netlify.app/download/NexusTalk_0.5.0_x64-setup.exe",
   "image": "https://nexustalk-app.netlify.app/assets/logo.png",
   "screenshot": "https://nexustalk-app.netlify.app/assets/shots/desk-emerald.jpg",
   "license": "https://opensource.org/licenses/MIT",
@@ -441,11 +441,11 @@ footer .brand { font-size: 15px; }
     <div class="wrap hero-grid">
       <div>
         <div class="logo3d"><img src="assets/logo.png" alt="NexusTalk Logo" width="120" height="120"></div>
-        <span class="eyebrow"><span class="dot"></span>Neu in 0.4.1: Freunde verbinden sich auf Anhieb · kostenlos · MIT</span>
+        <span class="eyebrow"><span class="dot"></span>Neu in 0.5.0: Einladen über das Internet – ohne Router-Einstellungen · kostenlos · MIT</span>
         <h1>Deine Community.<br><em>Dein Server.</em></h1>
         <p class="lead">NexusTalk ist eine schlanke Alternative zu Discord für Windows: Text, Sprache, Video und Bildschirmübertragung – auf einem Server, der dir gehört. Per Klick direkt in der App gestartet. Keine Cloud, keine Werbung, kein Tracking.</p>
         <div class="hero-actions">
-          <a class="btn primary" href="download/NexusTalk_0.4.1_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
+          <a class="btn primary" href="download/NexusTalk_0.5.0_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
           <a class="btn" href="#vergleich">Warum nicht Discord?</a>
         </div>
         <div class="hero-meta">
@@ -611,7 +611,7 @@ footer .brand { font-size: 15px; }
       </div>
       <div class="grid steps">
         <div class="card step reveal"><h3>Server erstellen</h3><p>NexusTalk installieren, die grüne Server-Schaltfläche unten links anklicken, Namen eingeben und „Erstellen &amp; starten“ – Ports, Verschlüsselung und Autostart sind voreingestellt.</p></div>
-        <div class="card step reveal"><h3>Besitzer werden</h3><p>Passwort für dein Inhaberkonto festlegen – der Name ist schon ausgefüllt. Bei „Freunde einladen“ gibt NexusTalk die Windows-Firewall mit einem Klick frei und richtet die Router-Weiterleitung per UPnP automatisch ein.</p></div>
+        <div class="card step reveal"><h3>Besitzer werden</h3><p>Passwort für dein Inhaberkonto festlegen – der Name ist schon ausgefüllt. Bei „Freunde einladen“ gibt NexusTalk die Windows-Firewall mit einem Klick frei und erstellt automatisch einen Internet-Link – auch ohne öffentliche IP und ohne Router-Einstellungen.</p></div>
         <div class="card step reveal"><h3>Link teilen</h3><p>Den dauerhaften Einladungslink mit einem Klick kopieren und verschicken. Er enthält Adresse und Zertifikats-Fingerabdruck – so verbinden sich alle sicher.</p></div>
       </div>
       <p class="reveal" style="text-align:center;color:var(--faint);font-size:13.5px;margin-top:22px">Profis nutzen den Headless-Server <code>nexustalk-server</code> mit <code>server.toml</code> – ideal für einen dauerhaft laufenden Rechner oder vServer.</p>
@@ -623,14 +623,14 @@ footer .brand { font-size: 15px; }
       <div class="dl reveal">
         <div class="dl-main">
           <div class="kicker" style="font-size:12.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);font-weight:600">Download</div>
-          <h2>NexusTalk 0.4.1 für Windows</h2>
+          <h2>NexusTalk 0.5.0 für Windows</h2>
           <p style="color:var(--muted);margin:0">Ein Installer für alles: Client und eingebauter Server. Kostenlos, ohne Werbung, ohne Konto bei Dritten.</p>
           <div class="dl-file">
             <img src="assets/logo.png" alt="">
-            <div style="flex:1"><b>NexusTalk_0.4.1_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>5,0 MB</span></small></div>
+            <div style="flex:1"><b>NexusTalk_0.5.0_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>5,1 MB</span></small></div>
           </div>
-          <a class="btn primary" href="download/NexusTalk_0.4.1_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
-          <div class="hash">SHA-256: <span class="mono" id="sha-client">349f914f9a5a05bccfbfc46c66e59fcf3c5cc13f11a9e2810cae553a776e119a</span></div>
+          <a class="btn primary" href="download/NexusTalk_0.5.0_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
+          <div class="hash">SHA-256: <span class="mono" id="sha-client">5ec54fb4f8519f1d2547557f5512f34db77f6722330ea075585cc5ef29f01aa6</span></div>
         </div>
         <div class="dl-side">
           <h3>Systemvoraussetzungen</h3>
@@ -644,7 +644,7 @@ footer .brand { font-size: 15px; }
             <div><b>Headless-Server für Windows</b><small>nexustalk-server.exe · <span id="srv-size">7,0 MB</span> · ohne Oberfläche</small></div>
             <a class="btn small" href="download/nexustalk-server.exe" download><svg><use href="#i-download"/></svg>Server</a>
           </div>
-          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">0c03daf1ea676d71ed4db080782dc894b2cb5c41ed011f7f5fc43cee8c6ef716</span></p>
+          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">5bc02915e0eb18ddd7e9b5cf602aee7f7631df95131e19efad394694980e9eb7</span></p>
           <p class="hash" style="margin-top:10px">Hinweis: Der Installer ist (noch) nicht code-signiert. Windows SmartScreen kann deshalb warnen – „Weitere Informationen“ → „Trotzdem ausführen“. Prüfe im Zweifel die Prüfsumme.</p>
         </div>
       </div>
@@ -675,8 +675,8 @@ footer .brand { font-size: 15px; }
         <details><summary>Ist NexusTalk wirklich kostenlos?</summary><p>Ja. Keine Abos, keine Premium-Stufen, keine Werbung. Der Quellcode steht unter der MIT-Lizenz. Freiwillige Spenden helfen bei der Weiterentwicklung.</p></details>
         <details><summary>Brauche ich einen eigenen Server?</summary><p>Nein – du kannst dich auch mit dem Server eines Freundes verbinden. Wer selbst hosten möchte, startet den Server direkt in der App; ein separater Rechner ist nicht nötig.</p></details>
         <details><summary>Kann ich mehrere Server hosten?</summary><p>Ja. In der Hosting-Zentrale legst du über „Neuer Server“ beliebig viele Server an. Jeder läuft auf eigenen Ports (7878, 7879, …), hat einen eigenen Datenordner und einen eigenen Einladungslink.</p></details>
-        <details><summary>Warum kann sich niemand verbinden?</summary><p>Fast immer ist es die Windows-Firewall auf dem Server-PC. Öffne in NexusTalk „Server hosten“: Der Verbindungs-Check zeigt, was fehlt, und „Firewall freigeben“ erledigt es mit einer Windows-Bestätigung. Zusätzlich muss der Server laufen und auf „Freunde einladen“ stehen. Wer sich verbinden will und keine Antwort bekommt, sieht dazu direkt einen Hinweis in der App.</p></details>
-        <details><summary>Können sich Freunde über das Internet verbinden?</summary><p>Ja. Bei „Freunde einladen“ versucht NexusTalk, den Port per UPnP automatisch im Router freizugeben, und zeigt dann einen eigenen Internet-Einladungslink. Unterstützt der Router kein UPnP, nennt der Verbindungs-Check die Ports zum manuellen Weiterleiten. Anschlüsse ohne eigene öffentliche IPv4 (DS-Lite/CGNAT) erkennt NexusTalk und weist darauf hin – dann helfen VPN-Lösungen wie Tailscale oder ZeroTier.</p></details>
+        <details><summary>Warum kann sich niemand verbinden?</summary><p>Fast immer ist es die Windows-Firewall auf dem Server-PC. Öffne in NexusTalk „Server hosten“: Der Verbindungs-Check zeigt, was fehlt, und „Firewall freigeben“ erledigt es mit einer Windows-Bestätigung. Zusätzlich muss der Server laufen und auf „Freunde einladen“ stehen. Freunde außerhalb deines WLANs brauchen den <b>Internet-Link</b> (beginnt mit <code>nexustalk://bore.pub:</code>), nicht den Heimnetz-Link. Wer sich verbinden will und keine Antwort bekommt, sieht dazu direkt einen Hinweis in der App.</p></details>
+        <details><summary>Können sich Freunde über das Internet verbinden?</summary><p>Ja – ohne Router-Einstellungen. Bei „Freunde einladen“ baut NexusTalk automatisch einen verschlüsselten Tunnel über das kostenlose öffentliche Relay bore.pub auf und zeigt einen Internet-Link, der für alle funktioniert. Das klappt auch bei Anschlüssen ohne eigene öffentliche IPv4 wie Starlink oder DS-Lite. Die Verbindung bleibt Ende-zu-Ende per TLS verschlüsselt, das Relay leitet nur weiter. Sprache und Video laufen direkt zwischen den Teilnehmern; in sehr restriktiven Netzen kann Sprache trotzdem scheitern. Das Relay ist ein Dienst eines Dritten ohne Verfügbarkeitsgarantie; der Tunnel lässt sich im Verbindungs-Check abschalten.</p></details>
         <details><summary>Wie sicher ist das?</summary><p>Verbindungen sind per TLS verschlüsselt; selbstsignierte Zertifikate werden beim ersten Verbinden per Fingerabdruck bestätigt und danach bei jeder Verbindung geprüft. Passwörter werden mit Argon2 gespeichert und verlassen nie den gewählten Server.</p></details>
         <details><summary>Gibt es NexusTalk für Mac, Linux oder Handy?</summary><p>Der Client ist derzeit für Windows (x64) gebaut. Der Headless-Server läuft auch unter Linux (aus dem Quellcode). Weitere Plattformen sind möglich, aber noch nicht verfügbar.</p></details>
         <details><summary>Wie viele Personen passen in einen Sprachkanal?</summary><p>Teilnehmer werden direkt miteinander verbunden. Mit Video sind etwa 8 Personen pro Kanal empfehlenswert, nur mit Sprache auch mehr – abhängig von Bandbreite und Rechner.</p></details>

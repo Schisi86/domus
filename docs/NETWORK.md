@@ -35,14 +35,22 @@ New-NetFirewallRule -DisplayName "NexusTalk TCP" -Direction Inbound -Protocol TC
 New-NetFirewallRule -DisplayName "NexusTalk STUN/TURN" -Direction Inbound -Protocol UDP -LocalPort 3478 -Action Allow -Profile Private
 ```
 
-### Internet
+### Internet – ohne Router-Einstellungen (ab 0.5.0)
+Im Modus „Freunde einladen“ baut die App automatisch einen **Internet-Tunnel** auf: eine ausgehende Verbindung zum öffentlichen Relay `bore.pub`, das den Server unter `bore.pub:PORT` erreichbar macht. Die Einladungskarte zeigt diesen Link als „Über das Internet“. Das funktioniert auch bei Anschlüssen ohne eigene öffentliche IPv4 (Starlink, DS-Lite/CGNAT) und ohne Portweiterleitung, weil nur ausgehende Verbindungen nötig sind.
+
+* TLS bleibt Ende-zu-Ende zwischen App und Server; das Relay leitet nur verschlüsselte Bytes weiter. Clients prüfen den Fingerabdruck aus dem Link.
+* Sprache und Video laufen nicht durch den Tunnel, sondern per WebRTC direkt (STUN des Servers plus öffentliche STUN-Server von Cloudflare und Google als Rückfallebene). Hinter CGNAT ist der eingebaute TURN-Server nicht erreichbar; in sehr restriktiven Netzen kann Sprache scheitern, obwohl Chat funktioniert. Dann hilft ein externer TURN-Server (siehe unten).
+* Abschaltbar im Verbindungs-Check („Tunnel ausschalten“). Der Port wird in `relay.json` im Serverordner gemerkt.
+* `bore.pub` ist ein kostenloser Dienst eines Dritten ohne Verfügbarkeitsgarantie.
+
+### Internet – mit Portweiterleitung
 1. Router: **Portweiterleitung** TCP 7878 und UDP 3478 (ggf. 49160–49200) auf die LAN-IP des Server-PCs.
 2. In „Öffentliche Adresse“ die öffentliche IP oder einen (DynDNS-)Hostnamen eintragen – sie wird in Einladungslinks verwendet.
 3. Empfohlen: eigenes Zertifikat (z. B. Let's Encrypt) für den Hostnamen eintragen; sonst prüfen Clients den Fingerabdruck aus dem Einladungslink.
 4. Registrierung auf „Nur mit Einladung“ oder „Freischaltung“ lassen.
 5. Mit TURN aktivieren, wenn Teilnehmer in restriktiven Netzen sind (Firmen, Mobilfunk-CGNAT). „Relay-IP“ = öffentliche IP des Servers.
 
-**Realistische Grenzen:** Hat der Server-Anschluss selbst keine öffentliche IPv4 (DS-Lite/CGNAT), ist er aus dem Internet nur über IPv6, einen VPS/Reverse-Proxy oder ein VPN (z. B. WireGuard) erreichbar. Kein zentraler Dienst von NexusTalk wird benötigt, aber ohne erreichbare Adresse kann auch kein Peer verbinden.
+**Realistische Grenzen:** Hat der Server-Anschluss selbst keine öffentliche IPv4 (DS-Lite/CGNAT), funktioniert die Portweiterleitung nicht. Dann bleiben der Internet-Tunnel (oben), IPv6 (der Server lauscht dual-stack), ein VPS/Reverse-Proxy oder ein VPN (z. B. WireGuard). Kein zentraler Dienst von NexusTalk wird benötigt, aber ohne erreichbare Adresse kann auch kein Peer verbinden.
 
 ### Hinter einem Reverse-Proxy
 `tls.enabled = false` und `bind = "127.0.0.1"` setzen, der Proxy terminiert TLS und leitet `/` inkl. WebSocket-Upgrade (`/api/v1/ws`) weiter. Clients verbinden sich dann mit `https://chat.example.org:443` (öffentlich vertrauenswürdiges Zertifikat → keine Fingerabdruck-Abfrage).

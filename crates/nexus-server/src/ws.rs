@@ -106,7 +106,9 @@ pub async fn ws_handler(
     if st.hub.total() >= st.cfg.limits.max_connections {
         return ApiError::new(Code::ServerFull, "Server ist ausgelastet").into_response();
     }
-    if st.hub.ip_count(ip) >= st.cfg.limits.max_connections_per_ip {
+    // Through the app's internet relay every client arrives from loopback, so
+    // only the global limit applies there.
+    if !ip.is_loopback() && st.hub.ip_count(ip) >= st.cfg.limits.max_connections_per_ip {
         return ApiError::rate_limited().into_response();
     }
     ws.max_message_size(MAX_FRAME).max_frame_size(MAX_FRAME).on_upgrade(move |socket| run(st, socket, ip))

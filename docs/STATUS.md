@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.4.1)
+# Funktionsstand (Version 0.5.0)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -78,6 +78,23 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Fehlerprotokolle (Client + Server, rotierend) | ✅ |
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
+
+### Internet-Einladungen ohne Router-Einstellungen (neu in 0.5.0)
+| Funktion | Stand |
+|---|---|
+| Internet-Tunnel: Ein Server im Modus „Freunde einladen“ baut automatisch eine **ausgehende** Verbindung zum öffentlichen Relay `bore.pub` auf (bore-Protokoll) und bekommt eine öffentliche Adresse `bore.pub:PORT`. Das funktioniert auch ohne eigene öffentliche IPv4 (Starlink, DS-Lite/CGNAT), ohne UPnP und ohne Portweiterleitung | ✅ Rust-Test über das echte Relay: eingebetteter Server → bore.pub → Client mit Zertifikats-Pinning, HTTP und WebSocket; falscher Fingerabdruck wird abgelehnt. Desktop-E2E: öffentliche Adresse erscheint |
+| Einladungskarte: Internet-Link zuerst und hervorgehoben („funktioniert für alle, egal wo“), Heimnetz-Link darunter; Verbindungs-Check mit Tunnel-Status; Tunnel ein- und ausschaltbar | ✅ Desktop-E2E `hosting.mjs` |
+| Relay-Port wird gemerkt (`relay.json` im Serverordner) und beim nächsten Start wieder angefragt, damit verschickte Links gültig bleiben; automatische Wiederverbindung mit Backoff | ✅ Rust-Test; 🟡 Ist der Port beim Relay inzwischen vergeben, gibt es einen neuen Link |
+| Server lauscht zusätzlich auf IPv6 (Dual-Stack) | 🟡 kompiliert und läuft, nicht aus einem fremden IPv6-Netz getestet |
+| Öffentliche STUN-Server (Cloudflare, Google) als Rückfallebene für Sprache/Video | 🟡 nicht über echte NAT-Kombinationen getestet |
+
+**Grenzen (ehrlich):**
+* `bore.pub` ist ein kostenloser, öffentlicher Dienst eines Dritten ohne Verfügbarkeitsgarantie. Fällt er aus, versucht NexusTalk es automatisch weiter; der Heimnetz-Link funktioniert unabhängig davon.
+* Inhalte bleiben TLS-verschlüsselt zwischen App und Server (Fingerabdruck im Link). Der Relay-Betreiber sieht IP-Adressen und Datenmengen, aber keine Inhalte.
+* Der Relay-Port ist öffentlich erreichbar. Wer ihn errät, landet beim Server; die Standard-Registrierung „Nur mit Einladung“ schützt davor.
+* Über den Tunnel kommen für den Server alle Teilnehmer von `127.0.0.1`. Das Verbindungslimit pro IP gilt dort deshalb nicht (nur das Gesamtlimit), und die Login-Bremse (6/min, 10 auf einmal) teilen sich alle Tunnel-Nutzer.
+* Sprache und Video laufen per WebRTC direkt zwischen den Teilnehmern, nicht durch den Tunnel. Der eingebaute TURN-Server ist hinter CGNAT nicht erreichbar. Bei ungünstigen NAT-Kombinationen kann Sprache deshalb scheitern, obwohl Chat funktioniert.
+* Getestet wurde der Weg durch das echte Relay im Internet, der Test-Client lief aber auf demselben PC. Ein zweites Gerät in einem fremden Netz stand nicht zur Verfügung.
 
 ### Erreichbarkeit für andere (neu in 0.4.1)
 | Funktion | Stand |

@@ -126,6 +126,37 @@ try {
   check("invite link stays the same when reopened", again === a.link);
   await shot(page, "host-two.png");
 
+  // ------------------------------------------------------------ internet link via relay
+  // Switches A to "Freunde einladen" through the API (the UI path would ask
+  // for admin rights for the firewall) and waits for the relay link.
+  // Needs internet access; skip with E2E_NO_INTERNET=1.
+  if (!process.env.E2E_NO_INTERNET) {
+    const idA = list.find((h) => h.name === "Testserver A").id;
+    await page.evaluate(async (id) => {
+      const { invoke } = window.__TAURI_INTERNALS__;
+      const cfg = await invoke("host_config", { id });
+      const st = (await invoke("host_list")).find((x) => x.id === id);
+      await invoke("host_config_save", { id, config: { ...cfg, bind: "0.0.0.0", public_host: st.lan_ip ?? "" } });
+      await invoke("host_restart", { id });
+    }, idA);
+    await page.keyboard.press("Escape");
+    await hostBtn.click();
+    await page.locator(".host-modal .pane-nav button", { hasText: "Testserver A" }).click();
+    const relayAddr = await waitFor(async () => {
+      const h = (await page.evaluate(() => window.__TAURI_INTERNALS__.invoke("host_list"))).find((x) => x.id === idA);
+      return h?.relay?.address ?? null;
+    }, 40000);
+    check("exposed server gets a public relay address", !!relayAddr?.startsWith("bore.pub:"), relayAddr ?? "none");
+    const netLink = await waitFor(async () => {
+      const t = await page.locator(".invite-link").first().textContent({ timeout: 500 });
+      return t?.includes("bore.pub") ? t : null;
+    });
+    check("invite card shows the internet link first", !!netLink && netLink.startsWith(`nexustalk://${relayAddr}/`) && netLink.includes("#fp="), netLink ?? "");
+    check("home network link stays available", (await page.locator(".invite-link.sub").count()) === 1);
+    check("reach check shows the tunnel", (await page.locator(".reach-row.ok", { hasText: relayAddr ?? "?" }).count()) === 1);
+    await shot(page, "host-internet.png");
+  }
+
   // ------------------------------------------------------------ remove
   for (const name of ["Testserver B", "Testserver A"]) {
     await page.locator(".host-modal .pane-nav button", { hasText: name }).click();

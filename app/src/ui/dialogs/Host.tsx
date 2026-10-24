@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "preact/hooks";
 import { addServer, closeModal, removeServer, selectServer, servers, toast } from "../../state/app";
-import { checkFirewall, clientFor, firewall, firewallOk, hostName, hosts, localAddress, openFirewall, refreshHosts, whenReady, type HostConfig, type HostStatus } from "../../state/hosting";
+import { checkFirewall, clientFor, firewall, firewallOk, hostName, hosts, internetAddress, localAddress, openFirewall, refreshHosts, setRelay, whenReady, type HostConfig, type HostStatus } from "../../state/hosting";
 import type { ServerStore } from "../../state/server";
 import type { Invite, InviteLinkInfo } from "../../types";
 import { errorText, t } from "../../i18n";
@@ -69,6 +69,18 @@ function ReachCheck({ h }: { h: HostStatus }) {
   const fw = firewall.value;
   const fwOk = firewallOk(fw);
   const u = h.upnp;
+  const r = h.relay;
+  const relayUp = !!r?.address;
+  const [busy, setBusy] = useState(false);
+  const toggleRelay = async (on: boolean) => {
+    setBusy(true);
+    try {
+      await setRelay(h.id, on);
+    } catch (e) {
+      toast(errorText(e), undefined, "error");
+    }
+    setBusy(false);
+  };
   const lanAddr = `${h.public_host || h.lan_ip || "?"}:${h.port}`;
   const Row = ({ ok, warn, children }: { ok: boolean; warn?: boolean; children: preact.ComponentChildren }) => (
     <div class={`reach-row${ok ? " ok" : warn ? " warn" : " bad"}`}>
@@ -94,12 +106,33 @@ function ReachCheck({ h }: { h: HostStatus }) {
         </Row>
       )}
       <Row ok={fwOk && h.running}>{t("rc.lan", { addr: lanAddr })}</Row>
+      {h.running && h.exposed && (
+        <Row ok={relayUp} warn={!relayUp}>
+          {!h.relay_enabled ? (
+            <div>{t("rc.relayOff")}</div>
+          ) : relayUp ? (
+            <div>{t("rc.relayOk", { addr: r!.address! })}</div>
+          ) : r?.error ? (
+            <div>{t("rc.relayFailed", { error: r.error })}</div>
+          ) : (
+            <div class="row"><Spinner /> {t("rc.relayPending")}</div>
+          )}
+          <div class="col" style={{ gap: "8px", marginTop: "6px" }}>
+            <div class="faint xs">{t("rc.relayNote")}</div>
+            <div>
+              <button class={`btn ${h.relay_enabled ? "ghost" : "primary"} sm`} disabled={busy} onClick={() => void toggleRelay(!h.relay_enabled)}>
+                {busy ? <Spinner /> : <Icon.Globe size={14} />} {h.relay_enabled ? t("rc.relayDisable") : t("rc.relayEnable")}
+              </button>
+            </div>
+          </div>
+        </Row>
+      )}
       {h.running &&
         (!u ? (
           <div class="row faint small"><Spinner /> {t("rc.upnpPending")}</div>
         ) : u.mapped && !u.cgnat ? (
           <Row ok>{t("rc.upnpOk", { ip: u.external_ip ?? "?" })}</Row>
-        ) : u.mapped && u.cgnat ? (
+        ) : relayUp ? null : u.mapped && u.cgnat ? (
           <Row ok={false} warn>{t("rc.upnpCgnat")}</Row>
         ) : (
           <Row ok={false} warn>{t("rc.upnpNo", { tcp: h.port, udp: h.udp_port, ip: h.lan_ip ?? "?" })}</Row>
@@ -136,7 +169,9 @@ function InviteCard({ h, client }: { h: HostStatus; client: ServerStore }) {
   }, [ready, h.public_host, h.port, h.running]);
 
   const shown = inv ? linkFor(client, inv.code, inv.info) : null;
-  const net = inv && h.upnp?.mapped && !h.upnp.cgnat && h.upnp.external_ip ? inviteLink(h.upnp.external_ip, h.port, inv.code, inv.info.fingerprint) : null;
+  const pub = h.exposed ? internetAddress(h) : null;
+  const net = inv && pub ? inviteLink(pub.host, pub.port, inv.code, inv.info.fingerprint) : null;
+  const relayPending = h.exposed && !net && h.relay_enabled && !h.relay?.error;
   const copy = (l: string) => {
     copyText(l);
     toast(t("invite.copied"), undefined, "ok", 2000);
@@ -156,29 +191,32 @@ function InviteCard({ h, client }: { h: HostStatus; client: ServerStore }) {
         error ? <div class="error-text">{error}</div> : <div class="row faint small"><Spinner /> {t("hc.connecting")}</div>
       ) : (
         <>
-          {h.exposed && !firewallOk(firewall.value) && (
+          {h.exposed && !net && !firewallOk(firewall.value) && (
             <div class="notice warn small row">
               <span class="grow">{t("rc.notReachable")}</span>
               <FirewallButton />
             </div>
           )}
-          {net && <div class="label" style={{ margin: "0px" }}>{t("rc.linkLan")}</div>}
-          <div class="invite-link mono selectable" onClick={(e) => getSelection()?.selectAllChildren(e.currentTarget)}>{shown.link}</div>
           {net && (
             <>
-              <div class="label" style={{ margin: "0px" }}>{t("rc.linkNet")}</div>
+              <div class="label" style={{ margin: "0px" }}>
+                {t("rc.linkNet")} <span class="faint xs">· {t("rc.linkNetHint")}</span>
+              </div>
               <div class="invite-link mono selectable" onClick={(e) => getSelection()?.selectAllChildren(e.currentTarget)}>{net}</div>
             </>
           )}
+          {relayPending && <div class="row faint small"><Spinner /> {t("rc.relayPending")}</div>}
+          {net && <div class="label" style={{ margin: "0px" }}>{t("rc.linkLan")}</div>}
+          <div class={`invite-link mono selectable${net ? " sub" : ""}`} onClick={(e) => getSelection()?.selectAllChildren(e.currentTarget)}>{shown.link}</div>
           <div class="row wrap" style={{ gap: "8px" }}>
-            <button class="btn primary lg" onClick={() => copy(shown.link)}>
-              <Icon.Copy size={16} /> {net ? t("rc.copyLan") : t("invite.copyLink")}
-            </button>
             {net && (
               <button class="btn primary lg" onClick={() => copy(net)}>
                 <Icon.Globe size={16} /> {t("rc.copyNet")}
               </button>
             )}
+            <button class={`btn ${net ? "ghost" : "primary lg"}`} onClick={() => copy(shown.link)}>
+              <Icon.Copy size={16} /> {net ? t("rc.copyLan") : t("invite.copyLink")}
+            </button>
             <button
               class="btn ghost"
               onClick={async () => {

@@ -229,6 +229,29 @@ pub fn db_path(data_dir: &Path) -> PathBuf {
 }
 
 /// Starts the server. `data_dir` holds the database, uploads, TLS material and backups.
+/// Binds the TCP listener. "All interfaces" (0.0.0.0) becomes a dual-stack
+/// socket on `[::]` so the server is reachable over IPv6 as well – important
+/// for connections without a public IPv4 address (CGNAT, e.g. Starlink).
+/// Falls back to IPv4 only if the system has no IPv6.
+pub fn bind_listener(ip: std::net::IpAddr, port: u16) -> std::io::Result<std::net::TcpListener> {
+    if ip == std::net::IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED) {
+        let dual = (|| -> std::io::Result<std::net::TcpListener> {
+            use socket2::{Domain, Protocol, Socket, Type};
+            let s = Socket::new(Domain::IPV6, Type::STREAM, Some(Protocol::TCP))?;
+            s.set_only_v6(false)?;
+            s.bind(&SocketAddr::new(std::net::IpAddr::V6(std::net::Ipv6Addr::UNSPECIFIED), port).into())?;
+            s.listen(1024)?;
+            Ok(s.into())
+        })();
+        match dual {
+            Ok(l) => return Ok(l),
+            Err(e) if e.kind() == std::io::ErrorKind::AddrInUse => return Err(e),
+            Err(e) => tracing::warn!(error = %e, "IPv6 nicht verfügbar – nur IPv4"),
+        }
+    }
+    std::net::TcpListener::bind(SocketAddr::new(ip, port))
+}
+
 pub async fn start(cfg: Config, data_dir: &Path) -> Result<RunningServer, StartError> {
     let _ = rustls::crypto::ring::default_provider().install_default();
     cfg.validate().map_err(|e| StartError::Config(e.join("; ")))?;
@@ -287,8 +310,7 @@ pub async fn start(cfg: Config, data_dir: &Path) -> Result<RunningServer, StartE
     };
 
     let bind_ip: std::net::IpAddr = cfg.bind.parse().map_err(|_| StartError::Config("bind".into()))?;
-    let addr = SocketAddr::new(bind_ip, cfg.port);
-    let listener = std::net::TcpListener::bind(addr)
+    let listener = bind_listener(bind_ip, cfg.port)
         .map_err(|err| StartError::Bind { bind: cfg.bind.clone(), port: cfg.port, err })?;
     listener.set_nonblocking(true).map_err(StartError::DataDir)?;
     let local_addr = listener.local_addr().map_err(StartError::DataDir)?;
@@ -353,4 +375,26 @@ pub async fn start(cfg: Config, data_dir: &Path) -> Result<RunningServer, StartE
         media,
         maint,
     })
+}
+
+#[cfg(test)]
+mod bind_tests {
+    use super::bind_listener;
+    use std::net::{IpAddr, Ipv4Addr, TcpStream};
+
+    #[test]
+    fn all_interfaces_accepts_ipv4_and_ipv6() {
+        let l = bind_listener(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0).unwrap();
+        let port = l.local_addr().unwrap().port();
+        assert!(TcpStream::connect(("127.0.0.1", port)).is_ok(), "IPv4 loopback");
+        if l.local_addr().unwrap().is_ipv6() {
+            assert!(TcpStream::connect(("::1", port)).is_ok(), "IPv6 loopback");
+        }
+    }
+
+    #[test]
+    fn loopback_stays_ipv4_only() {
+        let l = bind_listener(IpAddr::V4(Ipv4Addr::LOCALHOST), 0).unwrap();
+        assert!(l.local_addr().unwrap().is_ipv4());
+    }
 }

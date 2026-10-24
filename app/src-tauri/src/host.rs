@@ -16,6 +16,7 @@ use tauri::State;
 use tokio::sync::oneshot;
 
 use crate::reach::{self, UpnpStatus};
+use crate::tunnel::{self, RelayStatus};
 
 /// Id of the server that lives in the legacy `server` folder (version 0.1/0.2).
 pub const MAIN_ID: &str = "main";
@@ -46,6 +47,9 @@ pub struct HostStatus {
     pub public_host: String,
     /// Router port forwarding (only while running and reachable from the network).
     pub upnp: Option<UpnpStatus>,
+    /// Internet relay: on/off and – while running – the public address.
+    pub relay_enabled: bool,
+    pub relay: Option<RelayStatus>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -104,12 +108,13 @@ pub struct HostInstance {
     pub id: String,
     pub data_dir: PathBuf,
     live: Arc<Mutex<Live>>,
+    relay: Arc<Mutex<Option<RelayStatus>>>,
     control: tokio::sync::Mutex<Option<(oneshot::Sender<()>, tauri::async_runtime::JoinHandle<()>)>>,
 }
 
 impl HostInstance {
     fn new(id: String, data_dir: PathBuf) -> Self {
-        Self { id, data_dir, live: Arc::default(), control: tokio::sync::Mutex::new(None) }
+        Self { id, data_dir, live: Arc::default(), relay: Arc::default(), control: tokio::sync::Mutex::new(None) }
     }
 
     fn config_path(&self) -> PathBuf {
@@ -149,6 +154,8 @@ impl HostInstance {
             tls: cfg.as_ref().is_some_and(|c| c.tls.enabled),
             public_host: cfg.map(|c| c.public_host).unwrap_or_default(),
             upnp: if live.running { live.upnp.clone() } else { None },
+            relay_enabled: tunnel::load(&self.data_dir).enabled,
+            relay: if live.running { lock(&self.relay).clone() } else { None },
         }
     }
 
@@ -165,6 +172,7 @@ impl HostInstance {
         let (stop_tx, mut stop_rx) = oneshot::channel::<()>();
         let (first_tx, first_rx) = oneshot::channel::<Result<(), String>>();
         let live = self.live.clone();
+        let relay_state = self.relay.clone();
         let data_dir = self.data_dir.clone();
         let cfg_path = self.config_path();
         let id = self.id.clone();
@@ -203,10 +211,16 @@ impl HostInstance {
                 }
                 // Reachable from the network: open the router ports as well.
                 let upnp = cfg.is_exposed().then(|| spawn_upnp(live.clone(), &cfg));
+                // Internet relay for connections without port forwarding (CGNAT).
+                let relay = (cfg.is_exposed() && tunnel::load(&data_dir).enabled).then(|| tunnel::spawn(relay_state.clone(), data_dir.clone(), cfg.port));
                 let stop = tokio::select! {
                     _ = &mut stop_rx => true,
                     _ = server.restart_requested() => false,
                 };
+                if let Some(task) = relay {
+                    task.abort();
+                    *lock(&relay_state) = None;
+                }
                 if let Some(task) = upnp {
                     task.abort();
                     let (port, udp) = upnp_ports(&cfg);
@@ -470,6 +484,20 @@ pub fn host_set_autostart(hosts: State<'_, HostManager>, id: String, autostart: 
     hosts.update_entry(&id, |e| e.autostart = autostart)
 }
 
+/// Turns the internet relay on or off; a running server picks it up on restart.
+#[tauri::command]
+pub async fn host_set_relay(hosts: State<'_, HostManager>, id: String, enabled: bool) -> Result<HostStatus, String> {
+    let inst = hosts.get(&id)?;
+    let mut s = tunnel::load(&inst.data_dir);
+    s.enabled = enabled;
+    tunnel::save(&inst.data_dir, &s);
+    if inst.is_running() {
+        inst.stop().await;
+        inst.start().await?;
+    }
+    hosts.status(&id)
+}
+
 #[tauri::command]
 pub fn host_config(hosts: State<'_, HostManager>, id: String) -> Result<Config, String> {
     hosts.get(&id)?.load_config()
@@ -600,6 +628,46 @@ mod tests {
             assert_eq!(m.list().len(), 1);
             m.stop_all().await;
             assert!(!m.any_running());
+        });
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    /// Full internet path through the public relay: hosted server → bore.pub →
+    /// pinned TLS client (HTTP + WebSocket).
+    /// `cargo test -p nexustalk server_through_relay -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn server_through_relay() {
+        let base = temp_base("relay");
+        let m = HostManager::load(base.clone(), false);
+        let a = m.create("Relay".into(), false).unwrap();
+        tauri::async_runtime::block_on(async {
+            m.get(&a.id).unwrap().start().await.unwrap();
+            let st = m.status(&a.id).unwrap();
+            let fp = st.fingerprint.clone().expect("TLS fingerprint");
+            let relay: Arc<Mutex<Option<RelayStatus>>> = Arc::default();
+            let task = tunnel::spawn(relay.clone(), PathBuf::from(&st.data_dir), st.port);
+            let mut addr = None;
+            for _ in 0..100 {
+                addr = lock(&relay).as_ref().and_then(|r| r.address.clone());
+                if addr.is_some() {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+            }
+            let addr = addr.expect("relay address");
+            println!("public address {addr}");
+            assert_eq!(tunnel::load(std::path::Path::new(&st.data_dir)).port, addr.rsplit(':').next().and_then(|p| p.parse().ok()), "port is remembered");
+            let ep = nexus_net::Endpoint::new(&format!("https://{addr}"), Some(&fp)).unwrap();
+            let r = ep.request("GET", "/api/v1/info", None, None, None).await.expect("info through relay");
+            assert_eq!(r.status, 200);
+            println!("info: {}", String::from_utf8_lossy(&r.body));
+            ep.connect_ws().await.expect("websocket through relay");
+            // A wrong pin must be refused even though the relay forwards everything.
+            let bad = nexus_net::Endpoint::new(&format!("https://{addr}"), Some(&"AA".repeat(32))).unwrap();
+            assert!(matches!(bad.request("GET", "/api/v1/info", None, None, None).await, Err(nexus_net::NetError::Mismatch { .. })));
+            task.abort();
+            m.stop_all().await;
         });
         let _ = std::fs::remove_dir_all(&base);
     }

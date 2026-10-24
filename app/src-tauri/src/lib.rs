@@ -10,6 +10,7 @@ mod host;
 mod net;
 mod reach;
 mod store;
+mod tunnel;
 
 use std::path::PathBuf;
 
@@ -180,6 +181,7 @@ pub fn run() {
             host::host_remove,
             host::host_rename,
             host::host_set_autostart,
+            host::host_set_relay,
             host::host_config,
             host::host_config_save,
             host::host_config_reset,

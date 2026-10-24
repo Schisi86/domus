@@ -27,6 +27,8 @@
 * **Durchsetzung von Sprech-/Video-/Bildschirmrechten in P2P-Sitzungen**: Der Server verweigert die entsprechenden Zustände (`voice.update`) und markiert stumme Benutzer; ehrliche Clients rendern nur vom Server freigegebene Streams. Ein manipulierter Client könnte dennoch Medien an andere Teilnehmer senden, weil diese nicht über den Server laufen. Vollständige Durchsetzung erfordert eine SFU (geplant).
 * Keine Zwei-Faktor-Anmeldung, keine Passwort-Zurücksetzung per E-Mail (bewusst keine externen Dienste; Admin kann Konto löschen, Benutzer neu registrieren).
 * Kein Virenscan hochgeladener Dateien.
+* **Internet-Tunnel (ab 0.5.0):** Für Einladungen über das Internet läuft der Verkehr über das öffentliche Relay `bore.pub` (Dritter). Inhalte bleiben TLS-verschlüsselt und per Fingerabdruck geprüft; das Relay sieht IP-Adressen, Zeitpunkte und Datenmengen. Der Relay-Port ist öffentlich erreichbar, Schutz bietet die Einladungspflicht. Hinter dem Tunnel sieht der Server alle Teilnehmer als `127.0.0.1`: das Verbindungslimit pro IP entfällt dort, die Login-Bremse gilt gemeinsam. Der Tunnel ist im Verbindungs-Check abschaltbar.
+* **Öffentliche STUN-Server:** Für Sprache/Video fragen Clients zusätzlich `stun.cloudflare.com` und `stun.l.google.com` nach ihrer öffentlichen Adresse. Diese Dienste sehen dabei die IP-Adresse, aber keine Medien.
 
 ## Welche Daten speichert der Server?
 
