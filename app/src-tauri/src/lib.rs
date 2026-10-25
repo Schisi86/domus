@@ -1,4 +1,4 @@
-//! NexusTalk desktop shell (Tauri 2).
+//! NexUs desktop shell (Tauri 2). Formerly NexusTalk – the data folder keeps that name.
 //!
 //! The UI lives in `app/src` (Preact). This crate provides:
 //! * `net`   – pinned-TLS networking for the UI (HTTP, WebSocket, files)
@@ -110,12 +110,12 @@ fn show_main(app: &AppHandle) {
 }
 
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
-    let open = MenuItem::with_id(app, "open", "NexusTalk öffnen", true, None::<&str>)?;
+    let open = MenuItem::with_id(app, "open", "NexUs öffnen", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Beenden", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&open, &PredefinedMenuItem::separator(app)?, &quit])?;
     *app.state::<TrayItems>().0.lock().unwrap_or_else(|p| p.into_inner()) = Some((open.clone(), quit.clone()));
     let mut tb = TrayIconBuilder::with_id("main")
-        .tooltip("NexusTalk")
+        .tooltip("NexUs")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, ev| match ev.id().as_ref() {
@@ -143,7 +143,7 @@ pub fn run() {
     let dir = app_dir();
     let _ = std::fs::create_dir_all(&dir);
     let _log_guard = nexus_server::logbuf::init(Some(&dir.join("logs")), "nexustalk", "info", 7, cfg!(debug_assertions));
-    tracing::info!(version = env!("CARGO_PKG_VERSION"), background, "NexusTalk starting");
+    tracing::info!(version = env!("CARGO_PKG_VERSION"), background, "NexUs starting");
 
     let store = store::ConfigStore { path: dir.join("client.json") };
     let (initial, _) = store.load();
@@ -198,7 +198,7 @@ pub fn run() {
         ])
         .setup(move |app| {
             WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
-                .title("NexusTalk")
+                .title("NexUs")
                 .inner_size(1180.0, 760.0)
                 .min_inner_size(760.0, 480.0)
                 // The UI draws its own title bar in the colours of the active design.
@@ -242,7 +242,7 @@ pub fn run() {
         })
         .run(tauri::generate_context!());
     if let Err(e) = result {
-        tracing::error!(error = %e, "NexusTalk terminated with error");
-        eprintln!("NexusTalk konnte nicht gestartet werden: {e}");
+        tracing::error!(error = %e, "NexUs terminated with error");
+        eprintln!("NexUs konnte nicht gestartet werden: {e}");
     }
 }

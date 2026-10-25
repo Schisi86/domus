@@ -1,8 +1,10 @@
-# NexusTalk
+# NexUs
+
+*Vormals NexusTalk.* Einstellungen, Server und Chats liegen weiterhin in `%APPDATA%\NexusTalk`.
 
 Schlanke, selbst hostbare Kommunikationssoftware für Text, Sprache, Video und Bildschirmübertragung – Windows-Desktop-App mit integriertem Servermodus und eigenständigem Headless-Server. Keine Cloud, keine externe Registrierung, kein zentraler Anbieter.
 
-© 2026 Christian Schiessl · [cjs86.netlify.app](https://cjs86.netlify.app) · Projektseite & Download: [nexustalk-app.netlify.app](https://nexustalk-app.netlify.app) · [Spenden per PayPal](https://www.paypal.com/donate/?business=r4pi%40gmx.de&item_name=NexusTalk&currency_code=EUR) (r4pi@gmx.de)
+© 2026 Christian Schiessl · [cjs86.netlify.app](https://cjs86.netlify.app) · Projektseite & Download: [nexustalk-app.netlify.app](https://nexustalk-app.netlify.app) · [Spenden per PayPal](https://www.paypal.com/donate/?business=r4pi%40gmx.de&item_name=NexUs&currency_code=EUR) (r4pi@gmx.de)
 
 ## Funktionsumfang (Kurzfassung)
 

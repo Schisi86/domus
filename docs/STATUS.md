@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.7.0)
+# Funktionsstand (Version 0.8.0)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -79,6 +79,21 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
 
+### NexUs (neu in 0.8.0)
+| Funktion | Stand |
+|---|---|
+| **Neuer Name „NexUs“ und neues Logo** (ein durchgehender Strich bildet das N, der Verbindungspunkt leuchtet; Smaragd → Cyan → Indigo) – App, Fenster, Taskleiste, Tray, Desktop-/Startmenü-Verknüpfung, Installer (eigene Kopf- und Seitengrafik), Projektseite | ✅ Desktop-E2E (Titelleiste), Installer gebaut; Daten bleiben in `%APPDATA%\NexusTalk` |
+| Installer entfernt die alte „NexUs“-Installation automatisch (stilles Deinstallieren, alte Verknüpfungen und Autostart-Eintrag), Einstellungen/Server/Chats bleiben | 🟡 Hook gebaut; das Upgrade von einer installierten 0.7.0 wurde nicht automatisiert getestet |
+| **Fehler behoben: Soundboard-Sounds** spielten in der Desktop-App nicht (Sicherheitsrichtlinie `connect-src` blockierte das Laden; betraf auch die Wellenform von Sprachnachrichten) | ✅ Desktop-E2E: Datei lädt und dekodiert, Worklet lädt, `blob:` lesbar |
+| **Fehler behoben: Spenden-Link** (und Homepage) öffneten sich nicht – der Opener hatte keinen erlaubten URL-Bereich | ✅ einmal echt geöffnet; Desktop-E2E prüft den Bereich und dass andere Schemata gesperrt bleiben |
+| **Breiten per Ziehen:** Seitenleiste (200–440 px) und Mitgliederliste (180–420 px), Chat nimmt den Rest; Doppelklick setzt zurück, Pfeiltasten am Griff, wird gespeichert | ✅ Browser-E2E |
+| Mitgliederliste standardmäßig eingeblendet (einmalig auch für bestehende Einstellungen) | ✅ |
+| Posteingang aus der Chat-Kopfzeile in die linke Leiste verlegt (öffnet als Fenster) | ✅ Browser-E2E |
+| Brief-Symbol für Direktnachrichten/Freunde | ✅ |
+| **Bildschirm teilen:** Systemton standardmäßig an; Start-Knöpfe „Gesamter Bildschirm“ (wählt im Windows-Dialog den Bildschirm-Reiter vor) und daneben „Anderer Inhalt“ (Fenster) | ✅ Browser-E2E (Knöpfe, Platz); 🟡 Vorauswahl im WebView2-Dialog nicht automatisiert geprüft |
+| **Webcam:** neues Symbol, Systemton standardmäßig mitübertragen (abschaltbar in den Einstellungen) – Windows fragt dafür beim Start der Kamera einmal nach der Tonquelle | 🟡 implementiert; mit echter Kamera nicht getestet |
+| **Kompakter Chat** (eine Zeile pro Nachricht), **Emoji-Vorschläge** mit „:“ und automatische Umwandlung von `:name:`, Knopf **„Zu den neuesten Nachrichten“** beim Hochscrollen | ✅ Browser-E2E |
+
 ### Premium-Ausbau (neu in 0.7.0)
 | Funktion | Stand |
 |---|---|
@@ -116,7 +131,7 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Öffentliche STUN-Server (Cloudflare, Google) als Rückfallebene für Sprache/Video | 🟡 nicht über echte NAT-Kombinationen getestet |
 
 **Grenzen (ehrlich):**
-* `bore.pub` ist ein kostenloser, öffentlicher Dienst eines Dritten ohne Verfügbarkeitsgarantie. Fällt er aus, versucht NexusTalk es automatisch weiter; der Heimnetz-Link funktioniert unabhängig davon.
+* `bore.pub` ist ein kostenloser, öffentlicher Dienst eines Dritten ohne Verfügbarkeitsgarantie. Fällt er aus, versucht NexUs es automatisch weiter; der Heimnetz-Link funktioniert unabhängig davon.
 * Inhalte bleiben TLS-verschlüsselt zwischen App und Server (Fingerabdruck im Link). Der Relay-Betreiber sieht IP-Adressen und Datenmengen, aber keine Inhalte.
 * Der Relay-Port ist öffentlich erreichbar. Wer ihn errät, landet beim Server; die Standard-Registrierung „Nur mit Einladung“ schützt davor.
 * Über den Tunnel kommen für den Server alle Teilnehmer von `127.0.0.1`. Das Verbindungslimit pro IP gilt dort deshalb nicht (nur das Gesamtlimit), und die Login-Bremse (6/min, 10 auf einmal) teilen sich alle Tunnel-Nutzer.

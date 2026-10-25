@@ -7,7 +7,7 @@
 //   node tests/e2e/chrome.mjs <address> <token>
 
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -103,7 +103,7 @@ try {
   await page.locator(".modal input.input").fill("127.0.0.1:7998");
   await page.locator(".modal .btn.primary").click();
   const help = await waitFor(() => page.locator(".modal .notice.warn").textContent({ timeout: 500 }), 20000);
-  check("connecting to a PC without server explains the cause", /läuft kein NexusTalk-Server/.test(help ?? ""), help ?? "");
+  check("connecting to a PC without server explains the cause", /läuft kein NexUs-Server/.test(help ?? ""), help ?? "");
   // No answer at all (what a blocking firewall looks like from outside).
   await page.locator(".modal input.input").fill("10.255.255.1:7878");
   await page.locator(".modal .btn.primary").click();
@@ -133,6 +133,40 @@ try {
   await shot(page, "desk-settings-scrolled.jpg");
   await page.locator(".pane-close button").click();
   check("close button closes the settings", (await page.locator(".pane-nav").count()) === 0);
+  // ------------------------------------------------------------ media & links inside the desktop app (CSP, ACL)
+  const media = await page.evaluate(async () => {
+    const out = {};
+    try {
+      const r = await fetch("/sounds/airhorn.mp3");
+      const ctx = new AudioContext();
+      const a = await ctx.decodeAudioData(await r.arrayBuffer());
+      out.sound = Math.round(a.duration * 10) / 10;
+      await ctx.audioWorklet.addModule("/gate-worklet.js");
+      out.worklet = true;
+      void ctx.close();
+    } catch (e) {
+      out.err = String(e);
+    }
+    try {
+      const u = URL.createObjectURL(new Blob(["wave"]));
+      out.blob = (await (await fetch(u)).text()) === "wave";
+    } catch (e) {
+      out.blobErr = String(e);
+    }
+    return out;
+  });
+  check("soundboard files load and decode in the desktop app", media.sound > 1, JSON.stringify(media));
+  check("noise-gate worklet loads (CSP)", media.worklet === true);
+  check("voice-message waveforms can read blob URLs (CSP)", media.blob === true, JSON.stringify(media));
+  // The opener scope must allow web links (donate, homepage) – checked in the
+  // capability file, so the test opens nothing. Other schemes stay blocked.
+  const cap = JSON.parse(readFileSync(join(ROOT, "app", "src-tauri", "capabilities", "default.json"), "utf8"));
+  const scope = cap.permissions.find((x) => x.identifier === "opener:allow-open-url");
+  check("web links are allowed for the opener (donate button)", !!scope?.allow?.some((a) => a.url === "https://*"), JSON.stringify(scope));
+  const blocked = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke("plugin:opener|open_url", { url: "file:///C:/Windows/win.ini" }).then(() => "opened", (e) => String(e)));
+  check("non-web links stay blocked", /not allowed/i.test(blocked), blocked);
+  const brand = await page.locator(".titlebar .wordmark").textContent();
+  check("title bar shows the new name NexUs", brand === "NexUs", brand ?? "");
   await page.evaluate(() => window.__TAURI_INTERNALS__.invoke("quit_app")).catch(() => {});
 } catch (e) {
   check("test run", false, String(e?.stack ?? e));

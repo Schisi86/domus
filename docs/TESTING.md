@@ -80,9 +80,9 @@ Echte Weboberfläche, echter Server, 3–4 Clients in Chromium mit virtuellem Mi
 | Verlassen/erneuter Beitritt baut Medien neu auf | ✅ |
 | Gast ohne Bildschirmrecht wird serverseitig abgelehnt (mit Meldung) | ✅ |
 
-### Interaktion – `tests/e2e/interact.mjs`: 25/25 bestanden (0.7.0)
+### Interaktion – `tests/e2e/interact.mjs`: 33/33 bestanden (0.8.0, zweimal hintereinander)
 
-Zwei Browser-Clients (Inhaber + Mitglied) gegen einen frischen Server: Sprachnachricht aufnehmen/senden/abspielbar mit Wellenform, Profil-Banner und „Über mich“, Posteingang (Erwähnung, „Für später“ mit Erinnerung), Anruf-Reaktion und Hand heben, Noise-Gate im Mikrofonweg, Umfrage erstellen/abstimmen/live zählen, Weiterleiten, Als ungelesen markieren, Auszeit über das Personen-Menü (Eingabe gesperrt, Uhr-Symbol, aufheben), Slow-Mode (Hinweis, Countdown), Soundboard, serverseitig stummschalten (Mitglied kann nicht selbst aufheben), Verschieben in anderen Sprachkanal, Kicken (abgemeldet, wartet auf Freischaltung).
+Zwei Browser-Clients (Inhaber + Mitglied) gegen einen frischen Server: Breiten per Ziehen und Zurücksetzen, kompakter Chat, Emoji-Vorschläge, Bildschirm-Startknöpfe, Posteingang in der linken Leiste, Sprachnachricht aufnehmen/senden/abspielbar mit Wellenform, Profil-Banner und „Über mich“, Posteingang (Erwähnung, „Für später“ mit Erinnerung), Anruf-Reaktion und Hand heben, Noise-Gate im Mikrofonweg, Umfrage erstellen/abstimmen/live zählen, Weiterleiten, Als ungelesen markieren, Auszeit über das Personen-Menü (Eingabe gesperrt, Uhr-Symbol, aufheben), Slow-Mode (Hinweis, Countdown), Soundboard, serverseitig stummschalten (Mitglied kann nicht selbst aufheben), Verschieben in anderen Sprachkanal, Kicken (abgemeldet, wartet auf Freischaltung).
 
 ### Sprach-Relay über TCP – `tests/e2e/turn.mjs`: 5/5 bestanden (0.6.0)
 
@@ -96,7 +96,7 @@ Rust-Integrationstests neu in 0.6.0: `timeout_kick_and_voice_moderation`, `polls
 
 ### Hosting-Zentrale (Desktop-App) – `tests/e2e/hosting.mjs`: 19/19 bestanden (0.6.0, inkl. Internet-Link und eigenem TURN-Tunnel; ohne Internet: `E2E_NO_INTERNET=1`)
 
-Echte Desktop-App (Testbuild mit eigener App-Kennung, Datenordner per `APPDATA` in ein Temp-Verzeichnis umgeleitet – eine installierte NexusTalk bleibt unberührt), gesteuert über WebView2-DevTools: Schaltfläche unten links, Erstformular mit vorausgefülltem Namen, zwei Server nacheinander erstellt (Ports 7878/7879), Inhaber jeweils mit vorausgefülltem Benutzernamen angelegt, dauerhafte Einladungslinks angezeigt und beim erneuten Öffnen unverändert, beide Server gleichzeitig aktiv, Zähler in der Leiste, Registry `hosts.json`, Entfernen inkl. Datenordner und Client-Eintrag.
+Echte Desktop-App (Testbuild mit eigener App-Kennung, Datenordner per `APPDATA` in ein Temp-Verzeichnis umgeleitet – eine installierte NexUs bleibt unberührt), gesteuert über WebView2-DevTools: Schaltfläche unten links, Erstformular mit vorausgefülltem Namen, zwei Server nacheinander erstellt (Ports 7878/7879), Inhaber jeweils mit vorausgefülltem Benutzernamen angelegt, dauerhafte Einladungslinks angezeigt und beim erneuten Öffnen unverändert, beide Server gleichzeitig aktiv, Zähler in der Leiste, Registry `hosts.json`, Entfernen inkl. Datenordner und Client-Eintrag.
 
 ### Bildschirm-Menü, Bildzuschnitt, Sounds – `tests/e2e/features.mjs`: 16/16 bestanden
 

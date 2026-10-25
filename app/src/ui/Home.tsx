@@ -37,7 +37,7 @@ export function FriendsView() {
   return (
     <div class="content">
       <header class="main-head">
-        <div class="chan-title"><Icon.Users /> {t("home.friends")}</div>
+        <div class="chan-title"><Icon.Mail /> {t("home.friends")}</div>
         <div class="tabs">
           {(["online", "all", "pending", "blocked"] as Tab[]).map((x) => (
             <button key={x} class={tab === x ? "active" : ""} onClick={() => setTab(x)}>{labels[x]}</button>

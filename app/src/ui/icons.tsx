@@ -92,3 +92,6 @@ export const Note = I(<><path d="M5 3h10l4 4v14H5z" /><path d="M9 9h6M9 13h6M9 1
 export const Pause = I(<><rect x="6" y="4" width="4" height="16" rx="1.2" /><rect x="14" y="4" width="4" height="16" rx="1.2" /></>);
 export const Pip = I(<><rect x="2" y="4" width="20" height="16" rx="2" /><rect x="12" y="11" width="8" height="6" rx="1" /></>);
 export const Inbox = I(<><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></>);
+export const Mail = I(<><rect x="2.5" y="5" width="19" height="14" rx="2.5" /><path d="m3.5 7 8.5 6 8.5-6" /></>);
+export const Webcam = I(<><circle cx="12" cy="10" r="7" /><circle cx="12" cy="10" r="2.6" /><path d="M8 20.5h8M12 17v3.5" /></>);
+export const WebcamOff = I(<><circle cx="12" cy="10" r="7" /><circle cx="12" cy="10" r="2.6" /><path d="M8 20.5h8M12 17v3.5M3 3l18 18" /></>);

@@ -1,4 +1,4 @@
-# NexusTalk – Architektur
+# NexUs – Architektur
 
 ## 1. Ziele und Randbedingungen
 
@@ -24,7 +24,7 @@
 ## 3. Komponenten
 
 ```
-┌────────────────────────── NexusTalk Desktop (nexustalk.exe) ──────────────────────────┐
+┌────────────────────────── NexUs Desktop (nexustalk.exe) ──────────────────────────┐
 │  WebView2 (UI, Preact)                     │  Rust (Tauri)                            │
 │  ─ Zustand pro Server (signals)            │  ─ net:   HTTP/WebSocket über rustls     │
 │  ─ WebRTC-Mesh (Audio/Video/Bildschirm) ───┼──►        mit Zertifikats-Pinning (TOFU) │

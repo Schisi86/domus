@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-25T02:29:44.976Z",
+  "date": "2026-10-25T03:22:56.805Z",
   "results": [
     {
       "name": "poll: member sees the new poll",
@@ -34,7 +34,7 @@
     {
       "name": "voice message: playable with duration",
       "ok": true,
-      "detail": "0:03"
+      "detail": "0:02"
     },
     {
       "name": "profile: banner gradient and bio shown",
@@ -42,7 +42,12 @@
       "detail": "linear-gradient(135deg, rgb(255, 42, 109), rgb(252, 238, 10)"
     },
     {
-      "name": "inbox: mention listed",
+      "name": "inbox button is gone from the chat header",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "inbox (left rail): mention listed",
       "ok": true,
       "detail": ""
     },
@@ -50,6 +55,31 @@
       "name": "save for later: listed with reminder",
       "ok": true,
       "detail": ""
+    },
+    {
+      "name": "panes: sidebar and member list can be resized by dragging",
+      "ok": true,
+      "detail": "246→322, 236→301, saved 322"
+    },
+    {
+      "name": "panes: double-click resets the width",
+      "ok": true,
+      "detail": "246"
+    },
+    {
+      "name": "compact chat: one line per message without avatars",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "emoji suggestions: ':fir' → 🔥",
+      "ok": true,
+      "detail": "Super 🔥 "
+    },
+    {
+      "name": "emoji shortcode ':tada:' converts while typing",
+      "ok": true,
+      "detail": "Danke 🎉"
     },
     {
       "name": "timeout: member's composer is blocked",
@@ -75,6 +105,16 @@
       "name": "slow mode: countdown after sending",
       "ok": true,
       "detail": ""
+    },
+    {
+      "name": "screen share: both start buttons fit inside the menu",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "screen share: 'Entire screen' first, other content next to it",
+      "ok": true,
+      "detail": "Gesamter Bildschirm | Anderer Inhalt"
     },
     {
       "name": "soundboard: sound sent (cooldown starts, no error)",

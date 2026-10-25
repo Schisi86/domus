@@ -320,6 +320,7 @@ function Voice() {
           {cams.map((d, i) => <option key={d.deviceId} value={d.deviceId}>{label(d, i)}</option>)}
         </select>
       </Field>
+      <Toggle checked={s.cameraAudio} onChange={(x) => set({ cameraAudio: x })} label={t("cam.audio")} desc={t("cam.audioDesc")} />
       <div class="faint xs">{t("settings.privacyHint")}</div>
     </>
   );
@@ -423,6 +424,7 @@ function Look() {
         </div>
       </Field>
       <Toggle checked={s.ambient} onChange={(x) => updateSettings({ ambient: x })} label={t("look.ambient")} desc={t("look.ambientDesc")} />
+      <Toggle checked={s.compact} onChange={(x) => updateSettings({ compact: x })} label={t("look.compact")} desc={t("look.compactDesc")} />
       <Field label={t("lang.title")}>
         <div class="flag-picker" style={{ width: "auto", padding: "0px" }}>
           {LANGS.map((l) => (
@@ -520,7 +522,7 @@ function About() {
       <div class="about-hero">
         <LogoMark />
         <div>
-          <h2 style={{ fontSize: "var(--fs-2xl)" }}>NexusTalk</h2>
+          <h2 style={{ fontSize: "var(--fs-2xl)" }} class="wordmark">Nex<b>Us</b></h2>
           <div class="muted">{t("about.tagline")}</div>
         </div>
       </div>

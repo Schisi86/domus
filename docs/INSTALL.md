@@ -5,10 +5,10 @@
 1. `NexusTalk_<version>_x64-setup.exe` (NSIS, empfohlen) oder `NexusTalk_<version>_x64_de-DE.msi` ausführen.
    * Der NSIS-Installer installiert **ohne Administratorrechte** für den aktuellen Benutzer nach `%LOCALAPPDATA%\NexusTalk`.
    * Benötigt die Microsoft-Edge-WebView2-Runtime (unter Windows 11 vorinstalliert; fehlt sie, lädt der Installer sie von Microsoft).
-2. Startmenüeintrag „NexusTalk“ wird angelegt.
+2. Startmenüeintrag „NexUs“ wird angelegt.
 3. Die Installation aktiviert **keinen** Server. Der Servermodus muss bewusst im Dialog „Eigenen Server betreiben“ (Server-Symbol in der linken Leiste) gestartet werden.
 
-**Deinstallation:** Windows-Einstellungen › Apps › NexusTalk › Deinstallieren. Benutzerdaten bleiben erhalten und können manuell gelöscht werden:
+**Deinstallation:** Windows-Einstellungen › Apps › NexUs › Deinstallieren. Benutzerdaten bleiben erhalten und können manuell gelöscht werden:
 
 | Ordner | Inhalt |
 |---|---|
@@ -23,7 +23,7 @@
 2. Beim ersten Start: **Inhaberkonto anlegen** (Benutzername/Passwort). Der Server erscheint danach automatisch in der Liste.
 3. Für andere erreichbar machen: „Lokales Netzwerk / Internet“ wählen, Warnung bestätigen, „Öffentliche Adresse“ eintragen, speichern, neu starten. Siehe [NETWORK.md](NETWORK.md).
 4. Personen einladen: Rechtsklick auf den Server → „Personen einladen“ → Link kopieren.
-5. Hintergrundbetrieb: Fenster schließen → NexusTalk bleibt im Infobereich, der Server läuft weiter. Optional „Server beim Start automatisch starten“ + Einstellungen › App › „Mit Windows starten“.
+5. Hintergrundbetrieb: Fenster schließen → NexUs bleibt im Infobereich, der Server läuft weiter. Optional „Server beim Start automatisch starten“ + Einstellungen › App › „Mit Windows starten“.
 
 ## Headless-Server (ohne Oberfläche, Windows oder Linux)
 
@@ -47,7 +47,7 @@ nexustalk-server restore DATEI --data DIR      # Wiederherstellung beim nächste
 ```ini
 # /etc/systemd/system/nexustalk.service
 [Unit]
-Description=NexusTalk Server
+Description=NexUs Server
 After=network-online.target
 
 [Service]

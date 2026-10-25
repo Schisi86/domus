@@ -2,7 +2,7 @@
 
 import type { ButtonHTMLAttributes, ComponentChildren } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
-import { closeDialog, closeModal, contextMenu, dialog, dismissToast, lightbox, openDialog, toasts, type MenuItem } from "../state/app";
+import { PANE_LIMITS, closeDialog, closeModal, contextMenu, dialog, dismissToast, lightbox, openDialog, settings, toasts, updateSettings, type MenuItem } from "../state/app";
 import type { ServerStore } from "../state/server";
 import { transport } from "../net/transport";
 import * as Icon from "./icons";
@@ -362,7 +362,7 @@ export function EmptyState(props: { title: string; children?: ComponentChildren;
 export function LogoMark({ size }: { size?: number }) {
   return (
     <div class="logo-mark" style={size ? { width: `${size}px`, height: `${size}px` } : undefined}>
-      <img src="/logo.png" alt="NexusTalk" draggable={false} />
+      <img src="/logo.png" alt="NexUs" draggable={false} />
     </div>
   );
 }
@@ -397,6 +397,60 @@ export function Popover(props: { anchor: DOMRect; onClose: () => void; children:
     <div ref={ref} class="popover" style={{ left: `${pos?.left ?? -9999}px`, top: `${pos?.top ?? -9999}px` }}>
       {props.children}
     </div>
+  );
+}
+
+/** Drag handle between two panes; `edge` says which side the pane grows to. */
+export function Resizer(props: { setting: "sidebarWidth" | "membersWidth"; edge: "right" | "left"; label: string }) {
+  const [min, max, def] = PANE_LIMITS[props.setting];
+  const cssVar = props.setting === "sidebarWidth" ? "--sidebar-w" : "--members-w";
+  const down = (e: PointerEvent) => {
+    e.preventDefault();
+    const el = e.currentTarget as HTMLElement;
+    el.setPointerCapture(e.pointerId);
+    const startX = e.clientX;
+    const rtl = document.documentElement.dir === "rtl";
+    const start = settings.value[props.setting];
+    let w = start;
+    el.classList.add("dragging");
+    document.body.classList.add("resizing");
+    const move = (ev: PointerEvent) => {
+      const dx = (ev.clientX - startX) * (rtl ? -1 : 1);
+      w = Math.round(Math.max(min, Math.min(max, start + (props.edge === "right" ? dx : -dx))));
+      document.documentElement.style.setProperty(cssVar, `${w}px`);
+    };
+    const up = () => {
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerup", up);
+      el.classList.remove("dragging");
+      document.body.classList.remove("resizing");
+      updateSettings({ [props.setting]: w });
+    };
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+  };
+  const key = (e: KeyboardEvent) => {
+    const step = e.shiftKey ? 40 : 10;
+    const dir = (e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0) * (props.edge === "right" ? 1 : -1);
+    if (!dir) return;
+    e.preventDefault();
+    updateSettings({ [props.setting]: Math.max(min, Math.min(max, settings.value[props.setting] + dir * step)) });
+  };
+  return (
+    <div
+      class={`resizer ${props.edge}`}
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={props.label}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={settings.value[props.setting]}
+      tabIndex={0}
+      title={props.label}
+      onPointerDown={down}
+      onDblClick={() => updateSettings({ [props.setting]: def })}
+      onKeyDown={key}
+    />
   );
 }
 

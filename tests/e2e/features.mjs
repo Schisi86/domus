@@ -147,7 +147,7 @@ try {
     g.fill();
     return c.toDataURL("image/png").split(",")[1];
   });
-  await page.locator(".rail-item .rail-btn[title='E2E'], .rail-item .rail-btn").nth(1).click({ button: "right" });
+  await page.locator(".rail-item .rail-btn:not(.home):not(.inbox-btn):not(.add):not(.host)").first().click({ button: "right" });
   await page.locator(".menu button", { hasText: "Servereinstellungen" }).click();
   await page.waitForSelector(".modal.wide");
   const chooser = page.waitForEvent("filechooser");

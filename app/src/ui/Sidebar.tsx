@@ -63,7 +63,7 @@ function VoiceUsers({ server, channel }: { server: ServerStore; channel: Channel
           <span class="flags">
             {m.hand && <span title={t("call.handRaised")}>✋</span>}
             {m.screen && <span class="live-badge" title={t("voice.sharingScreen")}>LIVE</span>}
-            {m.video && <Icon.Camera title={t("voice.cameraOn")} />}
+            {m.video && <Icon.Webcam title={t("voice.cameraOn")} />}
             {m.server_muted ? <span class="mod-flag"><Icon.MicOff title={t("mod.serverMuted")} /></span> : (m.muted || m.suppressed) && <Icon.MicOff title={t("voice.muted")} />}
             {m.server_deafened ? <span class="mod-flag"><Icon.HeadphonesOff title={t("mod.serverDeafened")} /></span> : m.deafened && <Icon.HeadphonesOff title={t("voice.deafened")} />}
           </span>
@@ -221,7 +221,7 @@ function HomeSidebar() {
       </div>
       <div class="sidebar-scroll">
         <button class={`chan${!cur ? " active" : ""}`} onClick={() => (homeDm.value = null)}>
-          <Icon.Users />
+          <Icon.Mail />
           <span class="name">{t("home.friends")}</span>
         </button>
         <div class="cat-head" style={{ marginTop: "14px" }}>{t("home.conversations")}</div>
@@ -328,7 +328,7 @@ function VoicePanel() {
       <div class="controls">
         <ScreenShareControl v={v} variant="panel" />
         <button class={`btn${v.cameraOn.value ? " on" : ""}`} title={v.cameraOn.value ? t("voice.cameraOff") : t("voice.cameraOnAction")} onClick={() => (v.cameraOn.value ? v.stopCamera() : v.startCamera())}>
-          {v.cameraOn.value ? <Icon.Camera /> : <Icon.CameraOff />}
+          {v.cameraOn.value ? <Icon.Webcam /> : <Icon.WebcamOff />}
         </button>
         <SoundboardButton v={v} />
       </div>

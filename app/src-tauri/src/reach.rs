@@ -60,7 +60,7 @@ fn allow_script(exe: &str) -> String {
            Where-Object {{ [Environment]::ExpandEnvironmentVariables($_.Program) -ieq $p }} | \
            Get-NetFirewallRule -ErrorAction SilentlyContinue | Where-Object {{ $_.Direction -eq 'Inbound' }} | \
            Remove-NetFirewallRule -ErrorAction SilentlyContinue; \
-         New-NetFirewallRule -DisplayName 'NexusTalk Server' -Description 'Erlaubt Verbindungen zu in NexusTalk gehosteten Servern' \
+         New-NetFirewallRule -DisplayName 'NexUs Server' -Description 'Erlaubt Verbindungen zu in NexUs gehosteten Servern' \
            -Direction Inbound -Action Allow -Program $p -Profile Any -Enabled True | Out-Null",
         exe = ps_quote(exe)
     )
@@ -205,7 +205,7 @@ pub async fn upnp_map(lan_ip: Ipv4Addr, port: u16, udp_port: Option<u16>) -> Upn
     }
     use igd_next::PortMappingProtocol::{TCP, UDP};
     let local = |p: u16| SocketAddr::new(IpAddr::V4(lan_ip), p);
-    match gw.add_port(TCP, port, local(port), LEASE_SECS, "NexusTalk").await {
+    match gw.add_port(TCP, port, local(port), LEASE_SECS, "NexUs").await {
         Ok(()) => st.mapped = true,
         Err(e) => {
             st.error = Some(format!("Router hat die Weiterleitung abgelehnt ({e})"));
@@ -215,7 +215,7 @@ pub async fn upnp_map(lan_ip: Ipv4Addr, port: u16, udp_port: Option<u16>) -> Upn
     if let Some(u) = udp_port {
         // Voice still works through the relay-free path without it, so a
         // refusal here is not fatal.
-        let _ = gw.add_port(UDP, u, local(u), LEASE_SECS, "NexusTalk (Sprache)").await;
+        let _ = gw.add_port(UDP, u, local(u), LEASE_SECS, "NexUs (Sprache)").await;
     }
     st
 }

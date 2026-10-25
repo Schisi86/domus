@@ -70,7 +70,7 @@ export interface HostConfig {
 }
 
 export const hosts = signal<HostStatus[]>([]);
-/** Windows Firewall state for NexusTalk (null = not checked yet). */
+/** Windows Firewall state for NexUs (null = not checked yet). */
 export const firewall = signal<FirewallStatus | null>(null);
 export const firewallOk = (f: FirewallStatus | null) => !f || !f.supported || (f.allow > 0 && f.block === 0);
 

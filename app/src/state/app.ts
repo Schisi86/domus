@@ -35,7 +35,7 @@ export interface Settings {
   autoGainControl: boolean;
   pushToTalk: boolean;
   pttKey: string;
-  /** Push-to-talk also works while NexusTalk is in the background (desktop app). */
+  /** Push-to-talk also works while NexUs is in the background (desktop app). */
   globalPtt: boolean;
   globalPttKey: string;
   notifications: boolean;
@@ -66,7 +66,16 @@ export interface Settings {
   /** Screen share: chosen in the menu before (or while) sharing. */
   screen: ScreenOpts;
   screenAudio: boolean;
+  /** Webcam also sends the PC's system audio (like screen sharing). */
+  cameraAudio: boolean;
   showMembers: boolean;
+  /** Pane widths in px (drag the dividers). */
+  sidebarWidth: number;
+  membersWidth: number;
+  /** Compact chat (Discord/IRC style): no avatars, one line per message. */
+  compact: boolean;
+  /** One-time UI migrations already applied. */
+  uiRev: number;
   lastChannel: Record<string, number>;
 }
 
@@ -169,7 +178,12 @@ export const defaultSettings: Settings = {
   soundboardVolume: 0.6,
   screen: { res: "1080", fps: 30, content: "auto", kbps: 0 },
   screenAudio: true,
+  cameraAudio: true,
   showMembers: true,
+  sidebarWidth: 246,
+  membersWidth: 236,
+  compact: false,
+  uiRev: 3,
   lastChannel: {},
 };
 
@@ -177,10 +191,21 @@ export const settings = signal<Settings>(defaultSettings);
 export const hostAutostart = signal(false);
 export const minimizeToTray = signal(true);
 
+export const PANE_LIMITS = { sidebarWidth: [200, 440, 246], membersWidth: [180, 420, 236] } as const;
+
+/** Pane widths as CSS variables (also set live while dragging a divider). */
+export function applyLayout() {
+  const s = settings.value;
+  const root = document.documentElement;
+  root.style.setProperty("--sidebar-w", `${s.sidebarWidth}px`);
+  root.style.setProperty("--members-w", `${s.membersWidth}px`);
+}
+
 export function updateSettings(patch: Partial<Settings>) {
   settings.value = { ...settings.value, ...patch };
   if ("theme" in patch || "followSystemTheme" in patch || "accent" in patch) applyTheme(settings.value.theme, settings.value.followSystemTheme, settings.value.accent);
   if ("language" in patch) void setLang(settings.value.language || detectLang());
+  if ("sidebarWidth" in patch || "membersWidth" in patch) applyLayout();
   schedulePersist();
 }
 
@@ -426,6 +451,9 @@ export async function initApp() {
   delete (stored as Record<string, unknown>).screenProfile;
   delete (stored as Record<string, unknown>).screenManual;
   settings.value = { ...defaultSettings, ...stored };
+  // 0.8: the member list is shown by default again.
+  if ((settings.value.uiRev ?? 0) < 3) settings.value = { ...settings.value, showMembers: true, screenAudio: true, cameraAudio: true, uiRev: 3 };
+  applyLayout();
   applyTheme(settings.value.theme, settings.value.followSystemTheme, settings.value.accent);
   await setLang(settings.value.language || detectLang());
   hostAutostart.value = config.host_autostart;

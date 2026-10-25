@@ -88,9 +88,14 @@ class Peer {
 }
 
 /** Hides WebView2's floating "sharing your screen" bar while a share runs (desktop app). */
+let captureUsers = 0;
 function captureBar(active: boolean) {
-  if (isTauri) void tauriInvoke("capture_bar_hide", { active }).catch(() => {});
+  // Screen share and webcam system audio can both hold a capture.
+  captureUsers = Math.max(0, captureUsers + (active ? 1 : -1));
+  if (isTauri) void tauriInvoke("capture_bar_hide", { active: captureUsers > 0 }).catch(() => {});
 }
+
+const SYSTEM_AUDIO = { echoCancellation: false, noiseSuppression: false, autoGainControl: false, restrictOwnAudio: true };
 
 export class VoiceSession {
   state = signal<"connecting" | "connected" | "reconnecting" | "ended">("connecting");
@@ -106,6 +111,9 @@ export class VoiceSession {
   sharingScreen = signal(false);
   screenHasAudio = signal<boolean | null>(null);
   cameraOn = signal(false);
+  /** The webcam stream also carries system audio. */
+  cameraHasAudio = signal(false);
+  private cameraAudioTrack: MediaStreamTrack | null = null;
   suppressed = signal(false);
   /** Muted / deafened by a moderator. */
   serverMuted = signal(false);
@@ -265,6 +273,7 @@ export class VoiceSession {
     for (const p of this.peers.values()) p.close();
     this.peers.clear();
     if (this.screen) captureBar(false);
+    if (this.cameraAudioTrack) captureBar(false);
     for (const s of [this.mic, this.rawMic, this.screen, this.camera]) s?.getTracks().forEach((t) => t.stop());
     this.mic = this.rawMic = this.screen = this.camera = null;
     void this.audioCtx?.close();
@@ -313,7 +322,7 @@ export class VoiceSession {
     if (this.mic) for (const t of this.mic.getAudioTracks()) pc.addTrack(t, this.mic);
     else if (!pc.getTransceivers().some((t) => t.receiver.track.kind === "audio")) pc.addTransceiver("audio", { direction: "recvonly" });
     if (this.screen) for (const t of this.screen.getTracks()) pc.addTrack(t, this.screen);
-    if (this.camera) for (const t of this.camera.getVideoTracks()) pc.addTrack(t, this.camera);
+    if (this.camera) for (const t of this.camera.getTracks()) pc.addTrack(t, this.camera);
   }
 
   private createPeer(uid: number, initiator: boolean): Peer {
@@ -412,8 +421,9 @@ export class VoiceSession {
     const kind = (stream && peer.remoteKinds.get(stream.id)) ?? (ev.track.kind === "audio" ? "mic" : "camera");
     const uid = peer.uid;
     if (ev.track.kind === "audio") {
-      const el = kind === "screen" ? peer.screenAudioEl : peer.micEl;
-      if (kind !== "screen") peer.micTrackId = ev.track.id;
+      // Screen and webcam carry system audio; only the mic counts for "speaking".
+      const el = kind === "mic" ? peer.micEl : peer.screenAudioEl;
+      if (kind === "mic") peer.micTrackId = ev.track.id;
       el.srcObject = stream ?? new MediaStream([ev.track]);
       this.applyOutput(peer);
       el.play().catch(() => toast(t("voice.audioBlocked"), t("voice.audioBlockedBody"), "warn"));
@@ -631,7 +641,8 @@ export class VoiceSession {
 
   // ------------------------------------------------------------- screen & camera
 
-  async startScreen() {
+  /** `surface` preselects the tab in the system picker: whole screen or a window. */
+  async startScreen(surface: "monitor" | "window" = "monitor") {
     if (this.sharingScreen.value) return;
     const prof = screenProfile();
     const st = settings.value;
@@ -639,10 +650,10 @@ export class VoiceSession {
     captureBar(true);
     try {
       stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: { ideal: prof.fps, max: prof.fps }, width: { max: prof.width }, height: { max: prof.height } },
-        // restrictOwnAudio: keep NexusTalk's own output (the others' voices) out of
+        video: { displaySurface: surface, frameRate: { ideal: prof.fps, max: prof.fps }, width: { max: prof.width }, height: { max: prof.height } } as MediaTrackConstraints,
+        // restrictOwnAudio: keep NexUs' own output (the others' voices) out of
         // the shared system audio, so nobody hears themselves echoed back.
-        audio: st.screenAudio ? { echoCancellation: false, noiseSuppression: false, autoGainControl: false, restrictOwnAudio: true } : false,
+        audio: st.screenAudio ? SYSTEM_AUDIO : false,
         systemAudio: st.screenAudio ? "include" : "exclude",
         selfBrowserSurface: "exclude",
         surfaceSwitching: "include",
@@ -762,13 +773,37 @@ export class VoiceSession {
       toast(t("voice.camNotAllowed"), errorText(e), "error");
       return;
     }
+    // System audio with the webcam (optional): the screen picker hands it over,
+    // its picture is dropped right away.
+    if (st.cameraAudio && !(this.sharingScreen.value && this.screenHasAudio.value)) {
+      captureBar(true);
+      try {
+        const sys = await navigator.mediaDevices.getDisplayMedia({
+          video: { displaySurface: "monitor", width: { max: 320 }, frameRate: { max: 1 } } as MediaTrackConstraints,
+          audio: SYSTEM_AUDIO,
+          systemAudio: "include",
+          selfBrowserSurface: "exclude",
+          monitorTypeSurfaces: "include",
+        } as DisplayMediaStreamOptions);
+        sys.getVideoTracks().forEach((tr) => tr.stop());
+        const audio = sys.getAudioTracks()[0];
+        if (audio) {
+          stream.addTrack(audio);
+          this.cameraAudioTrack = audio;
+        } else captureBar(false);
+        this.cameraHasAudio.value = !!audio;
+      } catch {
+        captureBar(false);
+        this.cameraHasAudio.value = false;
+      }
+    }
     this.camera = stream;
     this.cameraOn.value = true;
     stream.getVideoTracks()[0].onended = () => void this.stopCamera();
     const map = new Map(this.cameras.value);
     map.set(this.selfId, stream);
     this.cameras.value = map;
-    for (const p of this.peers.values()) for (const t of stream.getVideoTracks()) p.pc.addTrack(t, stream);
+    for (const p of this.peers.values()) for (const t of stream.getTracks()) p.pc.addTrack(t, stream);
   }
 
   async stopCamera() {
@@ -776,6 +811,11 @@ export class VoiceSession {
     const s = this.camera;
     this.camera = null;
     this.cameraOn.value = false;
+    if (this.cameraAudioTrack) {
+      this.cameraAudioTrack = null;
+      captureBar(false);
+    }
+    this.cameraHasAudio.value = false;
     for (const p of this.peers.values()) {
       for (const sender of p.pc.getSenders()) if (sender.track && s.getTracks().includes(sender.track)) p.pc.removeTrack(sender);
     }

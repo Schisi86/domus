@@ -55,7 +55,7 @@ function DesktopTitleBar() {
     <header class="titlebar" data-tauri-drag-region>
       <div class="tb-brand" data-tauri-drag-region>
         <img src="/icon.png" alt="" draggable={false} />
-        <span data-tauri-drag-region>NexusTalk</span>
+        <span data-tauri-drag-region class="wordmark">Nex<b>Us</b></span>
       </div>
       <div class="tb-title ellipsis" data-tauri-drag-region>{contextTitle()}</div>
       <div class="tb-controls">

@@ -1,106 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <!-- NexusTalk "mechanical N": faceted metal plates lit by emerald energy. -->
+  <!-- NexUs: one continuous stroke forms the N – two points connected, the
+       meeting point glows. A vivid emerald → cyan → indigo squircle. -->
   <defs>
-    <radialGradient id="tile" cx="50%" cy="30%" r="78%">
-      <stop offset="0" stop-color="#173a2f"/>
-      <stop offset="0.5" stop-color="#0a1b15"/>
-      <stop offset="1" stop-color="#030806"/>
+    <linearGradient id="bg" x1="0.08" y1="0.02" x2="0.95" y2="1">
+      <stop offset="0" stop-color="#34f5b0"/>
+      <stop offset="0.45" stop-color="#10b5c8"/>
+      <stop offset="1" stop-color="#5b4cf0"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="30%" cy="12%" r="75%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#8dfad0"/>
-      <stop offset="0.45" stop-color="#16c47f"/>
-      <stop offset="1" stop-color="#04432e"/>
-    </linearGradient>
-    <linearGradient id="lite" x1="0" y1="0" x2="0.4" y2="1">
+    <radialGradient id="depth" cx="70%" cy="100%" r="80%">
+      <stop offset="0" stop-color="#1e1065" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#1e1065" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="0.3" stop-color="#d7e3df"/>
-      <stop offset="0.65" stop-color="#93a7a1"/>
-      <stop offset="1" stop-color="#c3d1cc"/>
+      <stop offset="1" stop-color="#e3f6ff"/>
     </linearGradient>
-    <linearGradient id="dark" x1="0" y1="0" x2="0.4" y2="1">
-      <stop offset="0" stop-color="#7d908a"/>
-      <stop offset="0.45" stop-color="#3c4a46"/>
-      <stop offset="1" stop-color="#1b2422"/>
-    </linearGradient>
-    <linearGradient id="energy" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#c8ffeb"/>
-      <stop offset="0.5" stop-color="#2ee59d"/>
-      <stop offset="1" stop-color="#0fae6c"/>
-    </linearGradient>
-    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="12" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="22" stdDeviation="26" flood-color="#14095c" flood-opacity="0.38"/>
     </filter>
-    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="5"/>
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="18"/>
     </filter>
-    <filter id="drop" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity="0.55"/>
-    </filter>
-    <pattern id="hex" width="56" height="48.5" patternUnits="userSpaceOnUse">
-      <path d="M14 0h28l14 24.25L42 48.5H14L0 24.25z" fill="none" stroke="#2ee59d" stroke-opacity="0.08" stroke-width="2"/>
-    </pattern>
-    <clipPath id="tileClip"><rect x="64" y="64" width="896" height="896" rx="210"/></clipPath>
-
-    <!-- plate outlines (reused for glow, fill and edge) -->
-    <path id="pL" d="M236 320 L286 236 L370 236 L370 706 L306 830 L236 786Z"/>
-    <path id="pR" d="M788 746 L738 830 L654 830 L654 360 L718 236 L788 280Z"/>
-    <path id="pD" d="M384 236 L488 236 L640 636 L640 830 L536 830 L384 430Z"/>
+    <clipPath id="sq"><rect x="40" y="40" width="944" height="944" rx="236"/></clipPath>
   </defs>
-
-  <!-- tile with machined rim -->
-  <rect x="64" y="64" width="896" height="896" rx="210" fill="url(#tile)"/>
-  <rect x="64" y="64" width="896" height="896" rx="210" fill="url(#hex)"/>
-  <g clip-path="url(#tileClip)">
-    <ellipse cx="512" cy="96" rx="560" ry="210" fill="#fff" opacity="0.06"/>
-    <ellipse cx="512" cy="560" rx="360" ry="330" fill="#2ee59d" opacity="0.07" filter="url(#soft)"/>
+  <g clip-path="url(#sq)">
+    <rect x="40" y="40" width="944" height="944" fill="url(#bg)"/>
+    <rect x="40" y="40" width="944" height="944" fill="url(#depth)"/>
+    <rect x="40" y="40" width="944" height="944" fill="url(#shine)"/>
   </g>
-  <rect x="80" y="80" width="864" height="864" rx="196" fill="none" stroke="url(#rim)" stroke-width="14"/>
-  <rect x="102" y="102" width="820" height="820" rx="176" fill="none" stroke="#fff" stroke-opacity="0.07" stroke-width="3"/>
-
-  <!-- emerald energy behind every plate -->
-  <g filter="url(#glow)" fill="none" stroke="url(#energy)" stroke-width="18" stroke-linejoin="round">
-    <use href="#pL"/>
-    <use href="#pR"/>
-    <use href="#pD"/>
+  <rect x="44" y="44" width="936" height="936" rx="232" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="6"/>
+  <g filter="url(#shadow)">
+    <path d="M318 712 V312 L706 712 V312" fill="none" stroke="url(#ink)" stroke-width="128" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-
-  <!-- metal plates: lit left facet, shaded right facet -->
-  <g filter="url(#drop)">
-    <use href="#pL" fill="url(#lite)"/>
-    <path d="M303 236 L370 236 L370 706 L306 830 L303 830Z" fill="url(#dark)"/>
-
-    <use href="#pR" fill="url(#lite)"/>
-    <path d="M721 241 L788 280 L788 746 L738 830 L721 830Z" fill="url(#dark)"/>
-
-    <use href="#pD" fill="url(#lite)"/>
-    <path d="M436 236 L488 236 L640 636 L640 830 L588 830 L436 430Z" fill="url(#dark)"/>
-  </g>
-
-  <!-- crisp edges -->
-  <g fill="none" stroke="#04110c" stroke-width="6" stroke-linejoin="round">
-    <use href="#pL"/><use href="#pR"/><use href="#pD"/>
-  </g>
-
-  <!-- machined details: grooves, bevel highlights, bolts -->
-  <g stroke-linecap="round" fill="none">
-    <path d="M244 420 L364 420 M244 600 L364 600" stroke="#04110c" stroke-width="7"/>
-    <path d="M244 428 L300 428 M244 608 L300 608" stroke="#fff" stroke-opacity="0.45" stroke-width="3"/>
-    <path d="M660 466 L780 466 M660 646 L780 646" stroke="#04110c" stroke-width="7"/>
-    <path d="M660 474 L716 474 M660 654 L716 654" stroke="#fff" stroke-opacity="0.45" stroke-width="3"/>
-    <path d="M292 246 L362 246 M394 246 L480 246" stroke="#fff" stroke-width="5" opacity="0.9"/>
-    <path d="M394 438 L538 818" stroke="#fff" stroke-opacity="0.25" stroke-width="4"/>
-  </g>
-  <g fill="#0b1712" stroke="#b4c5bf" stroke-width="3">
-    <circle cx="336" cy="300" r="10"/>
-    <circle cx="336" cy="520" r="10"/>
-    <circle cx="756" cy="560" r="10"/>
-    <circle cx="756" cy="770" r="10"/>
-  </g>
-
-  <!-- energy core on the blade -->
-  <g filter="url(#glow)">
-    <path d="M498 488 L526 488 L540 518 L526 548 L498 548 L484 518Z" fill="#2ee59d"/>
-    <path d="M503 498 L521 498 L530 518 L521 538 L503 538 L494 518Z" fill="#d4fff0"/>
-  </g>
+  <circle cx="706" cy="312" r="58" fill="#c9fff0" filter="url(#glow)" opacity="0.9"/>
+  <circle cx="706" cy="312" r="40" fill="#ffffff"/>
 </svg>

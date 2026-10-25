@@ -197,7 +197,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
           {v.deafened.value ? <Icon.HeadphonesOff /> : <Icon.Headphones />}
         </button>
         <button class={`round-btn${v.cameraOn.value ? " on" : ""}`} title={!canVideo ? t("common.noPermission") : v.cameraOn.value ? t("voice.cameraOff") : t("voice.cameraOnAction")} disabled={!canVideo} onClick={() => void (v.cameraOn.value ? v.stopCamera() : v.startCamera())}>
-          {v.cameraOn.value ? <Icon.Camera /> : <Icon.CameraOff />}
+          {v.cameraOn.value ? <Icon.Webcam /> : <Icon.WebcamOff />}
         </button>
         <ScreenShareControl v={v} variant="round" disabled={!canShare} />
         <ReactionButton v={v} />

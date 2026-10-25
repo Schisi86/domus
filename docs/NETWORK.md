@@ -17,7 +17,7 @@ Zwei verschiedene Dinge:
 1. **Server erreichbar** – der Client kann sich per TCP verbinden: Text, Präsenz, Dateien funktionieren.
 2. **Medienverbindung zwischen zwei Clients** – Audio/Video gehen *direkt* von Client zu Client (WebRTC/ICE). Das kann auch dann scheitern, wenn der Server erreichbar ist (z. B. beide Clients hinter strikter NAT/Firewall).
 
-NexusTalk zeigt beides getrennt an: Der Verbindungsstatus des Servers steht in der Seitenleiste/den Einstellungen, die Medienqualität (Latenz, Paketverlust, „über Relay“) im Sprachpanel und auf den Teilnehmerkacheln.
+NexUs zeigt beides getrennt an: Der Verbindungsstatus des Servers steht in der Seitenleiste/den Einstellungen, die Medienqualität (Latenz, Paketverlust, „über Relay“) im Sprachpanel und auf den Teilnehmerkacheln.
 
 ## Szenarien
 
@@ -31,8 +31,8 @@ NexusTalk zeigt beides getrennt an: Der Verbindungsstatus des Servers steht in d
 
 Manuelle Firewall-Regeln (PowerShell als Administrator), falls die Abfrage nicht erschien:
 ```powershell
-New-NetFirewallRule -DisplayName "NexusTalk TCP" -Direction Inbound -Protocol TCP -LocalPort 7878 -Action Allow -Profile Private
-New-NetFirewallRule -DisplayName "NexusTalk STUN/TURN" -Direction Inbound -Protocol UDP -LocalPort 3478 -Action Allow -Profile Private
+New-NetFirewallRule -DisplayName "NexUs TCP" -Direction Inbound -Protocol TCP -LocalPort 7878 -Action Allow -Profile Private
+New-NetFirewallRule -DisplayName "NexUs STUN/TURN" -Direction Inbound -Protocol UDP -LocalPort 3478 -Action Allow -Profile Private
 ```
 
 ### Internet – ohne Router-Einstellungen (ab 0.5.0)
@@ -50,7 +50,7 @@ Im Modus „Freunde einladen“ baut die App automatisch einen **Internet-Tunnel
 4. Registrierung auf „Nur mit Einladung“ oder „Freischaltung“ lassen.
 5. Mit TURN aktivieren, wenn Teilnehmer in restriktiven Netzen sind (Firmen, Mobilfunk-CGNAT). „Relay-IP“ = öffentliche IP des Servers.
 
-**Realistische Grenzen:** Hat der Server-Anschluss selbst keine öffentliche IPv4 (DS-Lite/CGNAT), funktioniert die Portweiterleitung nicht. Dann bleiben der Internet-Tunnel (oben), IPv6 (der Server lauscht dual-stack), ein VPS/Reverse-Proxy oder ein VPN (z. B. WireGuard). Kein zentraler Dienst von NexusTalk wird benötigt, aber ohne erreichbare Adresse kann auch kein Peer verbinden.
+**Realistische Grenzen:** Hat der Server-Anschluss selbst keine öffentliche IPv4 (DS-Lite/CGNAT), funktioniert die Portweiterleitung nicht. Dann bleiben der Internet-Tunnel (oben), IPv6 (der Server lauscht dual-stack), ein VPS/Reverse-Proxy oder ein VPN (z. B. WireGuard). Kein zentraler Dienst von NexUs wird benötigt, aber ohne erreichbare Adresse kann auch kein Peer verbinden.
 
 ### Hinter einem Reverse-Proxy
 `tls.enabled = false` und `bind = "127.0.0.1"` setzen, der Proxy terminiert TLS und leitet `/` inkl. WebSocket-Upgrade (`/api/v1/ws`) weiter. Clients verbinden sich dann mit `https://chat.example.org:443` (öffentlich vertrauenswürdiges Zertifikat → keine Fingerabdruck-Abfrage).

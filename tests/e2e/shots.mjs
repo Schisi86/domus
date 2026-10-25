@@ -14,7 +14,7 @@ const browser = await chromium.launch({ headless: true, args: ["--use-fake-ui-fo
 for (const combo of list) {
   const [theme, lang, view = "chat"] = combo.split(":");
   const ctx = await browser.newContext({ viewport: { width: 1360, height: 820 }, deviceScaleFactor: 1.5 });
-  const cfg = { servers: [{ id: "s1", address, name: "NexusTalk", username: "christian", token }], settings: { theme, language: lang, notifications: false } };
+  const cfg = { servers: [{ id: "s1", address, name: "NexUs", username: "christian", token }], settings: { theme, language: lang, notifications: false } };
   await ctx.addInitScript(([k, v]) => localStorage.setItem(k, v), ["nexustalk.config.shot", JSON.stringify(cfg)]);
   const page = await ctx.newPage();
   await page.goto("http://localhost:5173/?profile=shot");

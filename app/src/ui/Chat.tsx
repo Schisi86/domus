@@ -15,6 +15,7 @@ import { joinVoice, voice } from "../rtc/voice";
 import { ProfileCard, memberMenu, timeoutActive } from "./Members";
 import { Markdown, wrapSelection } from "./markdown";
 import { EmojiPicker } from "./EmojiPicker";
+import { shortcode, suggestEmoji } from "./shortcodes";
 
 export const jumpTarget = signal<{ serverId: string; channelId: number; messageId: number } | null>(null);
 /** Files dropped onto the message list, picked up by the composer. */
@@ -666,6 +667,7 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [sending, setSending] = useState(false);
   const [ac, setAc] = useState<{ query: string; index: number } | null>(null);
+  const [eac, setEac] = useState<{ query: string; index: number } | null>(null);
   const [emoji, setEmoji] = useState<DOMRect | null>(null);
   const ta = useRef<HTMLTextAreaElement>(null);
   const lastTyping = useRef(0);
@@ -764,6 +766,18 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
   const updateAc = (value: string, caret: number) => {
     const m = /(^|\s)@([A-Za-z0-9_.-]{0,32})$/.exec(value.slice(0, caret));
     setAc(m ? { query: m[2], index: 0 } : null);
+    const e = /(^|\s):([a-z0-9_+-]{2,24})$/i.exec(value.slice(0, caret));
+    setEac(e && !m ? { query: e[2], index: 0 } : null);
+  };
+  const emojiCandidates = eac ? suggestEmoji(eac.query) : [];
+  const pickEmoji = (emoji: string) => {
+    const el = ta.current!;
+    const caret = el.selectionStart;
+    const before = text.slice(0, caret).replace(/:([a-z0-9_+-]{2,24})$/i, `${emoji} `);
+    setText(before + text.slice(caret));
+    setEac(null);
+    updateSettings({ recentEmojis: [emoji, ...settings.value.recentEmojis.filter((x) => x !== emoji)].slice(0, 24) });
+    requestAnimationFrame(() => el.setSelectionRange(before.length, before.length));
   };
 
   const pickMention = (m: Member) => {
@@ -800,6 +814,20 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
+    if (eac && emojiCandidates.length) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const d = e.key === "ArrowDown" ? 1 : -1;
+        setEac({ ...eac, index: (eac.index + d + emojiCandidates.length) % emojiCandidates.length });
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        pickEmoji(emojiCandidates[eac.index][1]);
+        return;
+      }
+      if (e.key === "Escape") return setEac(null);
+    }
     if (ac && candidates.length) {
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         e.preventDefault();
@@ -831,6 +859,16 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
 
   const onInput = (e: Event) => {
     const el = e.target as HTMLTextAreaElement;
+    // A complete ":name:" turns into the emoji right away.
+    const full = /:([a-z0-9_+-]{2,24}):$/i.exec(el.value.slice(0, el.selectionStart));
+    const em = full && shortcode(full[1]);
+    if (full && em) {
+      const caret = el.selectionStart;
+      const before = el.value.slice(0, caret - full[0].length) + em;
+      const next = before + el.value.slice(caret);
+      el.value = next;
+      el.setSelectionRange(before.length, before.length);
+    }
     setText(el.value);
     updateAc(el.value, el.selectionStart);
     if (el.value && Date.now() - lastTyping.current > 4000 && canSend) {
@@ -846,6 +884,16 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
 
   return (
     <div class="composer-wrap">
+      {eac && emojiCandidates.length > 0 && (
+        <div class="autocomplete" role="listbox">
+          {emojiCandidates.map(([n, em], i) => (
+            <button key={n} class={i === eac.index ? "sel" : ""} onMouseDown={(e) => { e.preventDefault(); pickEmoji(em); }}>
+              <span style={{ fontSize: "18px", width: "22px", textAlign: "center" }}>{em}</span>
+              <span>:{n}:</span>
+            </button>
+          ))}
+        </div>
+      )}
       {ac && candidates.length > 0 && (
         <div class="autocomplete" role="listbox">
           {candidates.map((m, i) => (
@@ -1015,7 +1063,7 @@ function ResultList({ server, title, load, onClose, empty }: { server: ServerSto
 }
 
 /** Inbox: mentions on this server and messages saved for later (with reminders). */
-function InboxPanel({ server, onClose }: { server: ServerStore; onClose: () => void }) {
+export function InboxPanel({ server, onClose }: { server: ServerStore; onClose: () => void }) {
   const [tab, setTab] = useState<"mentions" | "later">("mentions");
   const [mentions, setMentions] = useState<Message[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -1034,13 +1082,10 @@ function InboxPanel({ server, onClose }: { server: ServerStore; onClose: () => v
       selectChannel(x.channelId);
     }
     jumpTarget.value = { serverId: x.serverId, channelId: x.channelId, messageId: x.messageId };
+    onClose();
   };
   return (
-    <aside class="members inbox" style={{ width: "340px" }} aria-label={t("inbox.title")}>
-      <div class="row" style={{ padding: "4px 4px 8px" }}>
-        <b class="grow">{t("inbox.title")}</b>
-        <IconButton title={t("common.close")} onClick={onClose}><Icon.X /></IconButton>
-      </div>
+    <div class="inbox" aria-label={t("inbox.title")}>
       <div class="tabs" style={{ marginBottom: "8px" }}>
         <button class={tab === "mentions" ? "active" : ""} onClick={() => setTab("mentions")}>{t("inbox.mentions")}</button>
         <button class={tab === "later" ? "active" : ""} onClick={() => setTab("later")}>{t("inbox.later")} {saved.length > 0 && <span class="badge">{saved.length}</span>}</button>
@@ -1051,7 +1096,15 @@ function InboxPanel({ server, onClose }: { server: ServerStore; onClose: () => v
           {!mentions && !err && <div style={{ padding: "12px" }}><Spinner /></div>}
           {mentions && !mentions.length && <div class="empty-hint">{t("inbox.noMentions")}</div>}
           {mentions?.map((m) => (
-            <div key={m.id} class="list-item" style={{ alignItems: "flex-start" }} onClick={() => jumpTo(server, m)}>
+            <div
+              key={m.id}
+              class="list-item"
+              style={{ alignItems: "flex-start" }}
+              onClick={() => {
+                jumpTo(server, m);
+                onClose();
+              }}
+            >
               <Avatar server={server} userId={m.author_id} name={server.memberName(m.author_id)} size={28} />
               <div class="grow" style={{ minWidth: "0px" }}>
                 <div class="row small">
@@ -1085,7 +1138,7 @@ function InboxPanel({ server, onClose }: { server: ServerStore; onClose: () => v
           })}
         </>
       )}
-    </aside>
+    </div>
   );
 }
 
@@ -1101,9 +1154,11 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
   const stick = useRef(true);
   const [reply, setReply] = useState<Message | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
-  const [panel, setPanel] = useState<{ kind: "search"; q: string } | { kind: "pins" } | { kind: "inbox" } | null>(null);
+  const [panel, setPanel] = useState<{ kind: "search"; q: string } | { kind: "pins" } | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [atBottom, setAtBottom] = useState(true);
+  const dense = settings.value.compact;
   const unreadFrom = useRef<number>(server.readStates.value[channelId] ?? 0);
   const perms = server.channelPerms(channelId);
   const canManage = has(perms, P.MANAGE_MESSAGES);
@@ -1156,6 +1211,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
     const el = scroller.current;
     if (!el) return;
     stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    if (stick.current !== atBottom) setAtBottom(stick.current);
     if (stick.current && windowFocused.value && !holding) void server.ack(channelId);
     if (el.scrollTop < 150 && log.hasMore.value && !log.loading.value && log.loaded) {
       const prevHeight = el.scrollHeight;
@@ -1189,6 +1245,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
     }
     const prev = msgs[i - 1];
     const compact =
+      !dense &&
       !!prev && prev.author_id === m.author_id && m.created_at - prev.created_at < GROUP_MS && fmtDay(prev.created_at) === day && !m.reply_preview && !(unreadShown && prev.id <= unreadFrom.current);
     items.push(
       <MessageItem
@@ -1224,10 +1281,6 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
           <IconButton title={t("chat.pins")} active={panel?.kind === "pins"} onClick={() => setPanel(panel?.kind === "pins" ? null : { kind: "pins" })}>
             <Icon.Pin />
           </IconButton>
-          <IconButton title={t("inbox.title")} active={panel?.kind === "inbox"} onClick={() => setPanel(panel?.kind === "inbox" ? null : { kind: "inbox" })}>
-            <Icon.Inbox />
-            {settings.value.saved.some((x) => x.remindAt) && <span class="dot-badge" />}
-          </IconButton>
           <div class="search-box">
             <input
               class="input"
@@ -1258,7 +1311,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
         )}
         {inThisCall && v && (v.screens.value.size > 0 || v.cameras.value.size > 0) && <CallStrip />}
         <div
-          class="messages"
+          class={`messages${dense ? " dense" : ""}`}
           ref={scroller}
           onScroll={onScroll}
           onDragOver={(e) => {
@@ -1283,6 +1336,17 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
           {log.loading.value && <div class="load-more"><Spinner /></div>}
           {items}
         </div>
+        {!atBottom && (
+          <button
+            class="jump-latest"
+            onClick={() => {
+              const el = scroller.current;
+              if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+            }}
+          >
+            {t("chat.jumpLatest")} ↓
+          </button>
+        )}
         <Composer server={server} channelId={channelId} reply={reply} clearReply={() => setReply(null)} onEditLast={editLast} />
       </div>
       {panel?.kind === "search" && (
@@ -1297,7 +1361,6 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
           }}
         />
       )}
-      {panel?.kind === "inbox" && <InboxPanel server={server} onClose={() => setPanel(null)} />}
       {panel?.kind === "pins" && (
         <ResultList
           server={server}

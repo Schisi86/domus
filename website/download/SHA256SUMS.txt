@@ -1,2 +1,2 @@
-f90f8e00fd0bf8e17951f726e538f727e3b31e959c7ff67b14459231977e3204  NexusTalk_0.7.0_x64-setup.exe
-3961418b44c61761bf334c9d713ffae3b3ff9a7b057d8b4f00ab22820bdfa2d7  nexustalk-server.exe
+c31a74dac554b2940bab56f3b829ddad1c641f55c2fffaa9b3c60de5c318664b  NexUs_0.8.0_x64-setup.exe
+b8d8a5a734f0c0c7b7d3403ea77dfc1557af4ef3dc026bc53d5e228eea11405b  nexustalk-server.exe

@@ -2,7 +2,7 @@
 
 import { useEffect } from "preact/hooks";
 import { activeChannelId, activeServer, activeServerId, contextMenu, dialog, homeDm, modal, openChannel, openModal, selectChannel, settings } from "../state/app";
-import { ContextMenu, EmptyState, Lightbox, Toasts } from "./components";
+import { ContextMenu, EmptyState, Lightbox, Resizer, Toasts } from "./components";
 import { Rail } from "./Rail";
 import { Sidebar } from "./Sidebar";
 import { ChatView } from "./Chat";
@@ -87,7 +87,12 @@ function Main() {
   return (
     <div class="main-body">
       <ChatView key={`${server.id}:${open.channelId}`} server={server} channelId={open.channelId} />
-      {settings.value.showMembers && <MemberList server={server} channelId={open.channelId} />}
+      {settings.value.showMembers && (
+        <>
+          <Resizer setting="membersWidth" edge="left" label={t("layout.resizeMembers")} />
+          <MemberList server={server} channelId={open.channelId} />
+        </>
+      )}
     </div>
   );
 }
@@ -119,6 +124,7 @@ export function App() {
         <Rail />
         <div class="shell">
           <Sidebar />
+          <Resizer setting="sidebarWidth" edge="right" label={t("layout.resizeSidebar")} />
           <main class="main" aria-label={t("app.content")}>
             <Main />
           </main>

@@ -110,15 +110,39 @@ function ScreenMenu({ v, anchor, onClose }: { v: VoiceSession; anchor: DOMRect; 
       <div class="screen-menu">
         <h4><Icon.Screen size={17} /> {sharing ? t("sc.titleLive") : t("sc.title")}</h4>
         <ScreenOptions viewers={viewers} />
-        <button
-          class="btn primary lg block"
-          onClick={() => {
-            onClose();
-            void (sharing ? v.applyScreenProfile() : v.startScreen());
-          }}
-        >
-          {sharing ? <><Icon.Check size={15} /> {t("sc.apply")}</> : <><Icon.Screen size={15} /> {t("sc.start")}</>}
-        </button>
+        {sharing ? (
+          <button
+            class="btn primary lg block"
+            onClick={() => {
+              onClose();
+              void v.applyScreenProfile();
+            }}
+          >
+            <Icon.Check size={15} /> {t("sc.apply")}
+          </button>
+        ) : (
+          <div class="share-start">
+            <button
+              class="btn primary lg"
+              onClick={() => {
+                onClose();
+                void v.startScreen("monitor");
+              }}
+            >
+              <Icon.Screen size={16} /> {t("sc.wholeScreen")}
+            </button>
+            <button
+              class="btn outline lg"
+              title={t("sc.otherContentHint")}
+              onClick={() => {
+                onClose();
+                void v.startScreen("window");
+              }}
+            >
+              <Icon.Copy size={15} /> {t("sc.otherContent")}
+            </button>
+          </div>
+        )}
       </div>
     </Popover>
   );
