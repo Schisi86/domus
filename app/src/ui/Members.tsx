@@ -8,7 +8,7 @@ import type { ServerStore } from "../state/server";
 import type { Member } from "../types";
 import { P } from "../types";
 import { errorText, fmtFull, presenceText, t } from "../i18n";
-import { Avatar, Icon, Modal, confirmDialog, copyText, promptDialog } from "./components";
+import { Avatar, Icon, Modal, bannerCss, confirmDialog, copyText, promptDialog } from "./components";
 import { joinVoice, voice } from "../rtc/voice";
 import { insertText } from "./Chat";
 
@@ -306,14 +306,23 @@ export function ProfileCard({ server, member }: { server: ServerStore; member: M
         )
       }
     >
-      <div class="row" style={{ gap: "14px" }}>
-        <Avatar server={server} userId={m.id} name={name} size={72} presence={m.presence} />
-        <div class="grow" style={{ minWidth: "0px" }}>
-          <h2 style={{ margin: "0px" }} class="ellipsis">{name}</h2>
-          <div class="muted selectable">@{m.username}</div>
-          <div class="faint small">{presenceText(m.presence)}{m.is_owner ? ` · ${t("member.owner")}` : ""}</div>
+      <div class="profile-head">
+        <div class="profile-banner big" style={{ background: bannerCss(m.banner, server.roleColor(m.id)) }} />
+        <div class="row profile-id" style={{ gap: "14px" }}>
+          <div class="profile-avatar"><Avatar server={server} userId={m.id} name={name} size={84} presence={m.presence} /></div>
+          <div class="grow" style={{ minWidth: "0px" }}>
+            <h2 style={{ margin: "0px" }} class="ellipsis">{name}</h2>
+            <div class="muted selectable">@{m.username}</div>
+            <div class="faint small">{presenceText(m.presence)}{m.is_owner ? ` · ${t("member.owner")}` : ""}</div>
+          </div>
         </div>
       </div>
+      {m.bio && (
+        <div>
+          <div class="label" style={{ marginBottom: "4px" }}>{t("profile.bio")}</div>
+          <div class="small selectable profile-bio">{m.bio}</div>
+        </div>
+      )}
       {timeoutActive(m) && (
         <div class="notice warn small row">
           <Icon.Clock size={16} />

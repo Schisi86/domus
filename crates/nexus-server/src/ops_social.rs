@@ -12,6 +12,15 @@ use crate::{auth, files, hub, ops_voice, store};
 struct ProfileReq {
     display_name: Option<String>,
     status_text: Option<String>,
+    bio: Option<String>,
+    banner: Option<String>,
+}
+
+/// Banner: empty or one/two "#rrggbb" colors separated by a comma.
+pub fn valid_banner(b: &str) -> bool {
+    b.is_empty()
+        || (b.split(',').count() <= 2
+            && b.split(',').all(|c| c.len() == 7 && c.starts_with('#') && c[1..].bytes().all(|x| x.is_ascii_hexdigit())))
 }
 
 pub async fn profile_update(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
@@ -26,11 +35,21 @@ pub async fn profile_update(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
         Some(s) => clean_text(&s, 128, false, "Statusmeldung")?,
         None => user.status_text.clone(),
     };
+    let bio = match r.bio {
+        Some(s) => clean_text(&s, 190, true, "Über mich")?,
+        None => user.bio.clone(),
+    };
+    let banner = match r.banner {
+        Some(b) if valid_banner(&b) => b.to_ascii_lowercase(),
+        Some(_) => return Err(ApiError::invalid("Banner: ungültige Farbe")),
+        None => user.banner.clone(),
+    };
     let u = ctx
         .st
         .db
         .call(move |c| {
             store::update_profile(c, uid, &display, &status)?;
+            store::set_bio_banner(c, uid, &bio, &banner)?;
             store::user_by_id(c, uid)
         })
         .await?

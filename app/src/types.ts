@@ -37,6 +37,8 @@ export interface User {
   status: string;
   presence?: Presence;
   created_at: number;
+  bio?: string;
+  banner?: string;
 }
 
 export interface Member {
@@ -51,6 +53,10 @@ export interface Member {
   status: string;
   /** End of a running timeout (ms), if any. */
   timeout_until?: number | null;
+  /** "Über mich" text. */
+  bio?: string;
+  /** Profile banner: "" or "#rrggbb[,#rrggbb]". */
+  banner?: string;
 }
 
 export interface Role {
@@ -136,6 +142,8 @@ export interface VoiceMember {
   /** Muted / deafened by a moderator. */
   server_muted?: boolean;
   server_deafened?: boolean;
+  /** Raised hand: time it was raised (ms). */
+  hand?: number | null;
   joined_at: number;
 }
 

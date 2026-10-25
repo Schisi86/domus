@@ -3,7 +3,7 @@
 import { signal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
-import { closeModal, lightbox, openDm, openModal, selectChannel, selectServer, settings, showMenu, startDm, toast, updateSettings, windowFocused } from "../state/app";
+import { closeModal, lightbox, openDm, openModal, removeSaved, saveForLater, selectChannel, selectServer, settings, showMenu, startDm, toast, updateSettings, windowFocused } from "../state/app";
 import type { ServerStore } from "../state/server";
 import type { Attachment, Member, Message, Poll } from "../types";
 import { has, P } from "../types";
@@ -79,6 +79,185 @@ function FileCard({ server, att }: { server: ServerStore; att: Attachment }) {
       </IconButton>
     </div>
   );
+}
+
+// ------------------------------------------------------------- voice messages
+
+const SPEEDS = [1, 1.5, 2];
+
+/** Peaks for the waveform (0..1), computed once per file. */
+const waveCache = new Map<string, Promise<{ peaks: number[]; duration: number } | null>>();
+function waveform(url: string, bars = 48) {
+  let p = waveCache.get(url);
+  if (!p) {
+    p = (async () => {
+      try {
+        const buf = await (await fetch(url)).arrayBuffer();
+        const ctx = new OfflineAudioContext(1, 1, 44100);
+        const audio = await ctx.decodeAudioData(buf);
+        const data = audio.getChannelData(0);
+        const step = Math.max(1, Math.floor(data.length / bars));
+        const peaks: number[] = [];
+        for (let i = 0; i < bars; i++) {
+          let m = 0;
+          for (let j = i * step; j < Math.min(data.length, (i + 1) * step); j += 16) m = Math.max(m, Math.abs(data[j]));
+          peaks.push(m);
+        }
+        const top = Math.max(0.01, ...peaks);
+        return { peaks: peaks.map((x) => Math.max(0.08, x / top)), duration: audio.duration };
+      } catch {
+        return null;
+      }
+    })();
+    waveCache.set(url, p);
+  }
+  return p;
+}
+
+function fmtClock(s: number) {
+  if (!isFinite(s) || s < 0) s = 0;
+  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+}
+
+/** Inline player for voice messages and audio files: waveform, seek, speed. */
+function AudioMessage({ server, att }: { server: ServerStore; att: Attachment }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [wave, setWave] = useState<{ peaks: number[]; duration: number } | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [pos, setPos] = useState(0);
+  const [speed, setSpeed] = useState(1);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const voiceMsg = /\.weba$/i.test(att.filename);
+  useEffect(() => {
+    let alive = true;
+    loadBlobUrl(server, `/api/v1/files/${att.id}`).then((u) => {
+      if (!alive || !u) return;
+      setUrl(u);
+      void waveform(u).then((w) => alive && setWave(w));
+    });
+    return () => {
+      alive = false;
+      audio.current?.pause();
+    };
+  }, [att.id]);
+  const el = () => {
+    if (!audio.current && url) {
+      const a = new Audio(url);
+      a.ontimeupdate = () => setPos(a.currentTime);
+      a.onended = () => {
+        setPlaying(false);
+        setPos(0);
+      };
+      a.onpause = () => setPlaying(false);
+      a.onplay = () => setPlaying(true);
+      const out = settings.value.outputDevice;
+      const sink = (a as HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> }).setSinkId;
+      if (sink && out) void sink.call(a, out).catch(() => {});
+      audio.current = a;
+    }
+    return audio.current;
+  };
+  const toggle = () => {
+    const a = el();
+    if (!a) return;
+    if (a.paused) {
+      // Only one voice message plays at a time.
+      document.dispatchEvent(new CustomEvent("nx-audio-play", { detail: a }));
+      a.playbackRate = speed;
+      void a.play().catch(() => {});
+    } else a.pause();
+  };
+  useEffect(() => {
+    const stop = (e: Event) => (e as CustomEvent).detail !== audio.current && audio.current?.pause();
+    document.addEventListener("nx-audio-play", stop);
+    return () => document.removeEventListener("nx-audio-play", stop);
+  }, []);
+  const duration = wave?.duration ?? 0;
+  const progress = duration ? Math.min(1, pos / duration) : 0;
+  const seek = (e: MouseEvent) => {
+    const a = el();
+    if (!a || !duration) return;
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    a.currentTime = Math.max(0, Math.min(duration, ((e.clientX - r.left) / r.width) * duration));
+    setPos(a.currentTime);
+  };
+  const cycleSpeed = () => {
+    const next = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length];
+    setSpeed(next);
+    if (audio.current) audio.current.playbackRate = next;
+  };
+  return (
+    <div class={`audio-msg${playing ? " playing" : ""}`}>
+      <button class="audio-play" onClick={toggle} disabled={!url} title={playing ? t("vm.pause") : t("vm.play")} aria-label={playing ? t("vm.pause") : t("vm.play")}>
+        {!url ? <Spinner /> : playing ? <Icon.Pause size={16} /> : <Icon.Play size={16} />}
+      </button>
+      <div class="audio-body">
+        {!voiceMsg && <div class="xs ellipsis audio-name" title={att.filename}>{att.filename}</div>}
+        <div class="wave" onClick={seek} role="slider" aria-valuemin={0} aria-valuemax={Math.round(duration)} aria-valuenow={Math.round(pos)} aria-label={t("vm.seek")}>
+          {(wave?.peaks ?? Array.from({ length: 48 }, () => 0.15)).map((h, i, arr) => (
+            <i key={i} class={i / arr.length < progress ? "on" : ""} style={{ height: `${Math.round(h * 100)}%` }} />
+          ))}
+        </div>
+      </div>
+      <span class="audio-time">{fmtClock(playing || pos ? pos : duration)}</span>
+      <button class="audio-speed" onClick={cycleSpeed} title={t("vm.speed")}>{speed}×</button>
+    </div>
+  );
+}
+
+/** Records a voice message in the composer (opus/webm, max. 5 minutes). */
+function useRecorder(onDone: (file: File) => void) {
+  const [state, setState] = useState<{ start: number; level: number[] } | null>(null);
+  const ref = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; cancel: boolean; timer: ReturnType<typeof setInterval>; ctx: AudioContext } | null>(null);
+  const start = async () => {
+    if (ref.current) return;
+    const st = settings.value;
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: st.inputDevice ? { exact: st.inputDevice } : undefined, echoCancellation: true, noiseSuppression: st.noiseSuppression, autoGainControl: true } });
+    } catch (e) {
+      return toast(t("vm.micFailed"), String(e), "error");
+    }
+    const type = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
+    const rec = new MediaRecorder(stream, { mimeType: type, audioBitsPerSecond: 48000 });
+    const chunks: Blob[] = [];
+    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    const ctx = new AudioContext();
+    const an = ctx.createAnalyser();
+    an.fftSize = 256;
+    ctx.createMediaStreamSource(stream).connect(an);
+    const buf = new Uint8Array(an.fftSize);
+    const begun = Date.now();
+    const timer = setInterval(() => {
+      an.getByteTimeDomainData(buf);
+      let m = 0;
+      for (const v of buf) m = Math.max(m, Math.abs(v - 128) / 128);
+      setState((s) => (s ? { start: s.start, level: [...s.level.slice(-31), Math.min(1, m * 1.6)] } : s));
+      if (Date.now() - begun > 5 * 60 * 1000) stop(false);
+    }, 90);
+    rec.onstop = () => {
+      const r = ref.current;
+      ref.current = null;
+      stream.getTracks().forEach((tr) => tr.stop());
+      clearInterval(timer);
+      void ctx.close();
+      setState(null);
+      if (!r || r.cancel || !chunks.length) return;
+      if (Date.now() - begun < 700) return toast(t("vm.tooShort"), undefined, "warn", 2500);
+      onDone(new File(chunks, `sprachnachricht-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.weba`, { type: "audio/webm" }));
+    };
+    ref.current = { rec, stream, chunks, cancel: false, timer, ctx };
+    rec.start(250);
+    setState({ start: Date.now(), level: [] });
+  };
+  const stop = (cancel: boolean) => {
+    const r = ref.current;
+    if (!r) return;
+    r.cancel = cancel;
+    if (r.rec.state !== "inactive") r.rec.stop();
+  };
+  useEffect(() => () => stop(true), []);
+  return { recording: state, start, stop };
 }
 
 // ------------------------------------------------------------- polls
@@ -314,6 +493,19 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
       ...(own && !msg.poll ? [{ label: t("common.edit"), onClick: () => { setDraft(msg.content); setEditing(msg.id); } }] : []),
       ...(canPin ? [{ label: msg.pinned_at ? t("chat.unpin") : t("chat.pin"), onClick: pin }] : []),
       ...(msg.poll && (own || canManage) && !(msg.poll.ends_at && msg.poll.ends_at <= Date.now()) ? [{ label: t("poll.end"), onClick: endPoll }] : []),
+      isSaved
+        ? { label: t("later.remove"), onClick: () => removeSaved(server.id, msg.id) }
+        : {
+            label: t("later.save"),
+            sub: [
+              { label: t("later.noReminder"), onClick: () => later(null) },
+              { separator: true, label: "" },
+              { label: t("later.in20"), onClick: () => later(20) },
+              { label: t("later.in60"), onClick: () => later(60) },
+              { label: t("later.in180"), onClick: () => later(180) },
+              { label: t("later.tomorrow"), onClick: () => later("tomorrow") },
+            ],
+          },
       { label: t("chat.markUnread"), onClick: markUnread },
       { separator: true, label: "" },
       { label: t("chat.copyText"), onClick: () => copyText(msg.content) },
@@ -322,6 +514,18 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
       ...(own || canManage ? [{ separator: true, label: "" }, { label: t("common.delete"), danger: true, onClick: remove }] : []),
     ]);
   const authorMenu = (e: MouseEvent) => author && memberMenu(e, server, author);
+  const later = (minutes: number | "tomorrow" | null) => {
+    let remindAt: number | null = null;
+    if (minutes === "tomorrow") {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      d.setHours(9, 0, 0, 0);
+      remindAt = d.getTime();
+    } else if (minutes) remindAt = Date.now() + minutes * 60_000;
+    saveForLater({ serverId: server.id, channelId: msg.channel_id, messageId: msg.id, author: msg.author_id, authorName: name, preview: (msg.poll?.question ?? msg.content) || msg.attachments.map((a) => a.filename).join(", "), remindAt });
+    toast(remindAt ? t("later.savedRemind", { time: fmtFull(remindAt) }) : t("later.saved"), undefined, "ok", 2500);
+  };
+  const isSaved = settings.value.saved.some((x) => x.serverId === server.id && x.messageId === msg.id);
 
   return (
     <div
@@ -395,7 +599,9 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
         )}
         {msg.attachments.length > 0 && (
           <div class="attachments">
-            {msg.attachments.map((a) => (a.mime.startsWith("image/") ? <LazyImage key={a.id} server={server} att={a} /> : <FileCard key={a.id} server={server} att={a} />))}
+            {msg.attachments.map((a) =>
+              a.mime.startsWith("image/") ? <LazyImage key={a.id} server={server} att={a} /> : a.mime.startsWith("audio/") ? <AudioMessage key={a.id} server={server} att={a} /> : <FileCard key={a.id} server={server} att={a} />,
+            )}
           </div>
         )}
         {msg.reactions.length > 0 && (
@@ -518,6 +724,21 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
     });
   }, [insertText.value]);
 
+  const sendVoice = async (file: File) => {
+    if (!canAttach) return toast(t("chat.noAttach"), t("chat.noAttachBody"), "warn");
+    setSending(true);
+    try {
+      const id = await server.upload(channelId, file, () => {});
+      const replyId = reply?.id ?? null;
+      clearReply();
+      await server.send(channelId, "", replyId, [id]);
+    } catch (e) {
+      toast(t("chat.sendFailed"), errorText(e), "error");
+    } finally {
+      setSending(false);
+    }
+  };
+  const voiceRec = useRecorder((f) => void sendVoice(f));
   const addFiles = (list: File[]) => {
     if (!canAttach) return toast(t("chat.noAttach"), t("chat.noAttachBody"), "warn");
     const ok: PendingFile[] = [];
@@ -661,6 +882,20 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
             ))}
           </div>
         )}
+        {voiceRec.recording && (
+          <div class="rec-bar" role="status">
+            <span class="rec-dot" />
+            <span class="rec-time">{fmtClock((Date.now() - voiceRec.recording.start) / 1000)}</span>
+            <div class="rec-level">
+              {Array.from({ length: 32 }, (_, i) => voiceRec.recording!.level[i - (32 - voiceRec.recording!.level.length)] ?? 0).map((v, i) => (
+                <i key={i} style={{ height: `${Math.max(8, Math.round(v * 100))}%` }} />
+              ))}
+            </div>
+            <span class="grow faint xs">{t("vm.recording")}</span>
+            <IconButton title={t("vm.cancel")} class="sm on-danger" onClick={() => voiceRec.stop(true)}><Icon.Trash /></IconButton>
+            <button class="btn sm primary" onClick={() => voiceRec.stop(false)}><Icon.Send size={14} class="icon flip" /> {t("vm.send")}</button>
+          </div>
+        )}
         <div class="composer-row">
           {canSend && (
             <IconButton
@@ -700,9 +935,15 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
               <Icon.Smile />
             </IconButton>
           )}
-          <IconButton title={t("chat.send")} disabled={!canSend || sending || cooldown > 0 || (!text.trim() && !files.length)} onClick={() => void send()}>
-            {sending ? <Spinner /> : <Icon.Send class="icon flip" />}
-          </IconButton>
+          {canSend && canAttach && !text.trim() && !files.length && !voiceRec.recording ? (
+            <IconButton title={t("vm.record")} disabled={sending || cooldown > 0} onClick={() => void voiceRec.start()}>
+              {sending ? <Spinner /> : <Icon.Mic />}
+            </IconButton>
+          ) : (
+            <IconButton title={t("chat.send")} disabled={!canSend || sending || cooldown > 0 || (!text.trim() && !files.length)} onClick={() => void send()}>
+              {sending ? <Spinner /> : <Icon.Send class="icon flip" />}
+            </IconButton>
+          )}
         </div>
       </div>
       {emoji && (
@@ -773,6 +1014,81 @@ function ResultList({ server, title, load, onClose, empty }: { server: ServerSto
   );
 }
 
+/** Inbox: mentions on this server and messages saved for later (with reminders). */
+function InboxPanel({ server, onClose }: { server: ServerStore; onClose: () => void }) {
+  const [tab, setTab] = useState<"mentions" | "later">("mentions");
+  const [mentions, setMentions] = useState<Message[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    if (tab !== "mentions") return;
+    setMentions(null);
+    server.rpc<{ messages: Message[] }>("mention.list", {}).then((r) => setMentions(r.messages), (e) => setErr(errorText(e)));
+  }, [tab]);
+  const saved = settings.value.saved;
+  const jumpSaved = (x: (typeof saved)[number]) => {
+    const s = server.id === x.serverId ? server : null;
+    if (!s) return;
+    if (s.dm(x.channelId)) openDm(s, x.channelId);
+    else {
+      selectServer(s.id);
+      selectChannel(x.channelId);
+    }
+    jumpTarget.value = { serverId: x.serverId, channelId: x.channelId, messageId: x.messageId };
+  };
+  return (
+    <aside class="members inbox" style={{ width: "340px" }} aria-label={t("inbox.title")}>
+      <div class="row" style={{ padding: "4px 4px 8px" }}>
+        <b class="grow">{t("inbox.title")}</b>
+        <IconButton title={t("common.close")} onClick={onClose}><Icon.X /></IconButton>
+      </div>
+      <div class="tabs" style={{ marginBottom: "8px" }}>
+        <button class={tab === "mentions" ? "active" : ""} onClick={() => setTab("mentions")}>{t("inbox.mentions")}</button>
+        <button class={tab === "later" ? "active" : ""} onClick={() => setTab("later")}>{t("inbox.later")} {saved.length > 0 && <span class="badge">{saved.length}</span>}</button>
+      </div>
+      {tab === "mentions" && (
+        <>
+          {err && <div class="error-text" style={{ padding: "8px" }}>{err}</div>}
+          {!mentions && !err && <div style={{ padding: "12px" }}><Spinner /></div>}
+          {mentions && !mentions.length && <div class="empty-hint">{t("inbox.noMentions")}</div>}
+          {mentions?.map((m) => (
+            <div key={m.id} class="list-item" style={{ alignItems: "flex-start" }} onClick={() => jumpTo(server, m)}>
+              <Avatar server={server} userId={m.author_id} name={server.memberName(m.author_id)} size={28} />
+              <div class="grow" style={{ minWidth: "0px" }}>
+                <div class="row small">
+                  <b class="ellipsis">{server.memberName(m.author_id)}</b>
+                  <span class="faint xs">{server.channel(m.channel_id) ? `#${server.channel(m.channel_id)!.name}` : "DM"} · {fmtStamp(m.created_at)}</span>
+                </div>
+                <div class="small muted inbox-text">{m.content}</div>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+      {tab === "later" && (
+        <>
+          {!saved.length && <div class="empty-hint">{t("inbox.noLater")}</div>}
+          {saved.map((x) => {
+            const here = x.serverId === server.id;
+            return (
+              <div key={`${x.serverId}:${x.messageId}`} class={`list-item${here ? "" : " dim"}`} style={{ alignItems: "flex-start" }} onClick={() => here && jumpSaved(x)}>
+                <div class="grow" style={{ minWidth: "0px" }}>
+                  <div class="row small">
+                    <b class="ellipsis">{x.authorName}</b>
+                    <span class="faint xs">{here ? (server.channel(x.channelId) ? `#${server.channel(x.channelId)!.name}` : "DM") : t("inbox.otherServer")}</span>
+                  </div>
+                  <div class="small muted inbox-text">{x.preview}</div>
+                  {x.remindAt && <div class="xs reminder-chip"><Icon.Clock size={11} /> {fmtFull(x.remindAt)}</div>}
+                </div>
+                <IconButton title={t("later.remove")} class="sm" onClick={(e) => { e.stopPropagation(); removeSaved(x.serverId, x.messageId); }}><Icon.Check /></IconButton>
+              </div>
+            );
+          })}
+        </>
+      )}
+    </aside>
+  );
+}
+
 // ------------------------------------------------------------- chat view
 
 export function ChatView({ server, channelId }: { server: ServerStore; channelId: number }) {
@@ -785,7 +1101,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
   const stick = useRef(true);
   const [reply, setReply] = useState<Message | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
-  const [panel, setPanel] = useState<{ kind: "search"; q: string } | { kind: "pins" } | null>(null);
+  const [panel, setPanel] = useState<{ kind: "search"; q: string } | { kind: "pins" } | { kind: "inbox" } | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [dragging, setDragging] = useState(false);
   const unreadFrom = useRef<number>(server.readStates.value[channelId] ?? 0);
@@ -908,6 +1224,10 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
           <IconButton title={t("chat.pins")} active={panel?.kind === "pins"} onClick={() => setPanel(panel?.kind === "pins" ? null : { kind: "pins" })}>
             <Icon.Pin />
           </IconButton>
+          <IconButton title={t("inbox.title")} active={panel?.kind === "inbox"} onClick={() => setPanel(panel?.kind === "inbox" ? null : { kind: "inbox" })}>
+            <Icon.Inbox />
+            {settings.value.saved.some((x) => x.remindAt) && <span class="dot-badge" />}
+          </IconButton>
           <div class="search-box">
             <input
               class="input"
@@ -977,6 +1297,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
           }}
         />
       )}
+      {panel?.kind === "inbox" && <InboxPanel server={server} onClose={() => setPanel(null)} />}
       {panel?.kind === "pins" && (
         <ResultList
           server={server}

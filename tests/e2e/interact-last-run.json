@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-25T00:09:22.544Z",
+  "date": "2026-10-25T02:29:44.976Z",
   "results": [
     {
       "name": "poll: member sees the new poll",
@@ -23,6 +23,31 @@
     },
     {
       "name": "mark unread: 'new' marker appears",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "voice message: arrives with a waveform player",
+      "ok": true,
+      "detail": "48 bars"
+    },
+    {
+      "name": "voice message: playable with duration",
+      "ok": true,
+      "detail": "0:03"
+    },
+    {
+      "name": "profile: banner gradient and bio shown",
+      "ok": true,
+      "detail": "linear-gradient(135deg, rgb(255, 42, 109), rgb(252, 238, 10)"
+    },
+    {
+      "name": "inbox: mention listed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "save for later: listed with reminder",
       "ok": true,
       "detail": ""
     },
@@ -53,6 +78,21 @@
     },
     {
       "name": "soundboard: sound sent (cooldown starts, no error)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "input sensitivity: mic runs through the gate",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "call reactions: emoji floats over the tile for others",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "raise hand: badge on the tile and in the channel list",
       "ok": true,
       "detail": ""
     },

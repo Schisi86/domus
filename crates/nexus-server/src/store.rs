@@ -26,6 +26,10 @@ pub struct User {
     pub presence_pref: String,
     pub created_at: i64,
     pub timeout_until: Option<i64>,
+    /// "Über mich" text.
+    pub bio: String,
+    /// Profile banner: "" or one/two colors "#rrggbb[,#rrggbb]".
+    pub banner: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -256,7 +260,7 @@ pub fn init_defaults(c: &mut Connection) -> ApiResult<bool> {
 // Users & sessions
 // ---------------------------------------------------------------------------
 
-const USER_COLS: &str = "id, username, display_name, avatar, status_text, is_owner, status, presence, created_at, timeout_until";
+const USER_COLS: &str = "id, username, display_name, avatar, status_text, is_owner, status, presence, created_at, timeout_until, bio, banner";
 
 fn row_user(r: &Row) -> rusqlite::Result<User> {
     Ok(User {
@@ -270,6 +274,8 @@ fn row_user(r: &Row) -> rusqlite::Result<User> {
         presence_pref: r.get(7)?,
         created_at: r.get(8)?,
         timeout_until: r.get(9)?,
+        bio: r.get(10)?,
+        banner: r.get(11)?,
     })
 }
 
@@ -282,7 +288,7 @@ pub fn user_by_name(c: &Connection, name: &str) -> ApiResult<Option<(User, Strin
     Ok(c.query_row(
         &format!("SELECT {USER_COLS}, password_hash FROM users WHERE username=?1 AND status != 'deleted'"),
         params![name],
-        |r| Ok((row_user(r)?, r.get::<_, String>(10)?)),
+        |r| Ok((row_user(r)?, r.get::<_, String>(12)?)),
     )
     .optional()?)
 }
@@ -328,6 +334,28 @@ pub fn set_avatar(c: &Connection, id: i64, avatar: Option<&str>) -> ApiResult<Op
     let old: Option<String> = c.query_row("SELECT avatar FROM users WHERE id=?1", params![id], |r| r.get(0))?;
     c.execute("UPDATE users SET avatar=?2 WHERE id=?1", params![id, avatar])?;
     Ok(old)
+}
+
+pub fn set_bio_banner(c: &Connection, id: i64, bio: &str, banner: &str) -> ApiResult<()> {
+    c.execute("UPDATE users SET bio=?2, banner=?3 WHERE id=?1", params![id, bio, banner])?;
+    Ok(())
+}
+
+/// Recent messages that mention the user, newest first, only in the given channels.
+pub fn mentions_of(c: &Connection, user_id: i64, channels: &[i64], limit: usize) -> ApiResult<Vec<Message>> {
+    if channels.is_empty() {
+        return Ok(Vec::new());
+    }
+    let ph = placeholders(channels.len());
+    let sql = format!(
+        "{MSG_SELECT} WHERE m.id IN (SELECT message_id FROM mentions WHERE user_id=?1) AND m.channel_id IN ({ph}) ORDER BY m.id DESC LIMIT {limit}"
+    );
+    let mut st = c.prepare(&sql)?;
+    let mut args: Vec<rusqlite::types::Value> = vec![user_id.into()];
+    args.extend(channels.iter().map(|x| rusqlite::types::Value::from(*x)));
+    let mut msgs = st.query_map(rusqlite::params_from_iter(args), row_message)?.collect::<Result<Vec<_>, _>>()?;
+    hydrate(c, &mut msgs)?;
+    Ok(msgs)
 }
 
 pub fn set_timeout(c: &Connection, id: i64, until: Option<i64>) -> ApiResult<()> {

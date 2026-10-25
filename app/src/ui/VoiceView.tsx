@@ -1,6 +1,32 @@
 // Voice channel view: participant tiles, screen shares, cameras, controls.
 
 import { useState } from "preact/hooks";
+import { toast } from "../state/app";
+import { errorText } from "../i18n";
+import { Popover } from "./components";
+
+const CALL_REACTIONS = ["👍", "❤️", "😂", "😮", "👏", "🎉", "🔥", "💯"];
+
+function ReactionButton({ v }: { v: NonNullable<typeof voice.value> }) {
+  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const send = (e: string) => v.react(e).catch((err) => toast(t("call.reactFailed"), errorText(err), "warn", 2000));
+  return (
+    <>
+      <button class={`round-btn${anchor ? " on" : ""}`} title={t("call.react")} onClick={(e) => setAnchor(anchor ? null : (e.currentTarget as HTMLElement).getBoundingClientRect())}>
+        <Icon.Smile />
+      </button>
+      {anchor && (
+        <Popover anchor={anchor} onClose={() => setAnchor(null)}>
+          <div class="call-reactions">
+            {CALL_REACTIONS.map((e) => (
+              <button key={e} onClick={() => void send(e)} title={e}>{e}</button>
+            ))}
+          </div>
+        </Popover>
+      )}
+    </>
+  );
+}
 import { openModal, settings } from "../state/app";
 import type { ServerStore } from "../state/server";
 import type { Channel } from "../types";
@@ -39,6 +65,8 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
   const focused = focus ? screens.find(([uid]) => `s${uid}` === focus) : undefined;
   const canShare = has(channel.perms, P.SCREEN_SHARE);
   const canVideo = has(channel.perms, P.VIDEO);
+  const handOrder = members.filter((m) => m.hand).sort((a, b) => (a.hand ?? 0) - (b.hand ?? 0)).map((m) => m.user_id);
+  const myHand = handOrder.includes(v.selfId);
 
   const participantTile = (uid: number) => {
     const m = members.find((x) => x.user_id === uid);
@@ -49,6 +77,16 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
       const mem = server.member(uid);
       if (mem) memberMenu(e, server, mem);
     };
+    const hand = m?.hand;
+    const floating = v.reactions.value.filter((r) => r.uid === uid);
+    const overlay = (
+      <>
+        {hand && <div class="hand-badge" title={t("call.handRaised")}>✋ {handOrder.indexOf(uid) + 1}</div>}
+        {floating.map((r) => (
+          <span key={r.id} class="float-emoji" style={{ left: `${r.x}%` }}>{r.emoji}</span>
+        ))}
+      </>
+    );
     const label = (
       <>
         {name}
@@ -63,6 +101,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
         <div class={`tile${speaking.has(uid) ? " speaking" : ""}`} key={`p${uid}`} onContextMenu={menu}>
           <VideoTile stream={cam} label="" muted />
           <div class="tile-label">{label}</div>
+          {overlay}
         </div>
       );
     }
@@ -70,6 +109,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
       <div class={`tile${speaking.has(uid) ? " speaking" : ""}`} key={`p${uid}`} onContextMenu={menu}>
         <Avatar server={server} userId={uid} name={name} size={80} speaking={speaking.has(uid)} />
         <div class="tile-label">{label}</div>
+        {overlay}
       </div>
     );
   };
@@ -83,6 +123,20 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
       onClick={() => setFocus(focus === `s${uid}` ? null : `s${uid}`)}
     >
       <div class="tile-tools">
+        {"pictureInPictureEnabled" in document && (
+          <IconButton
+            title={t("call.pip")}
+            onClick={(e) => {
+              e.stopPropagation();
+              const vid = (e.currentTarget as HTMLElement).closest(".tile")?.querySelector("video") as HTMLVideoElement | null;
+              if (!vid) return;
+              if (document.pictureInPictureElement === vid) void document.exitPictureInPicture();
+              else void vid.requestPictureInPicture().catch((err) => toast(t("call.pipFailed"), String(err), "warn"));
+            }}
+          >
+            <Icon.Pip />
+          </IconButton>
+        )}
         <IconButton
           title={t("voice.fullscreen")}
           onClick={(e) => {
@@ -108,6 +162,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
       <header class="main-head" style={{ background: "transparent" }}>
         <div class="chan-title"><Icon.Speaker /> {channel.name}</div>
         <div class="grow faint small">{v.state.value === "reconnecting" ? t("voice.restoring") : t("voice.participants", { n: members.length })}</div>
+        {handOrder.length > 0 && <div class="hand-count" title={handOrder.map((u) => server.memberName(u)).join(", ")}>✋ {handOrder.length}</div>}
         {v.sharingScreen.value && <ScreenQualityChip v={v} />}
       </header>
       {focused ? (
@@ -145,6 +200,10 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
           {v.cameraOn.value ? <Icon.Camera /> : <Icon.CameraOff />}
         </button>
         <ScreenShareControl v={v} variant="round" disabled={!canShare} />
+        <ReactionButton v={v} />
+        <button class={`round-btn${myHand ? " on" : ""}`} title={myHand ? t("call.lowerHand") : t("call.raiseHand")} onClick={() => void v.setHand(!myHand).catch(() => {})}>
+          <span style={{ fontSize: "18px", lineHeight: "1" }}>✋</span>
+        </button>
         <button class="round-btn" title={t("settings.voice")} onClick={() => openModal(<UserSettingsDialog tab="voice" />)}>
           <Icon.Gear />
         </button>

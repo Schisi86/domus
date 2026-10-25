@@ -36,6 +36,8 @@ pub struct VoiceMember {
     /// Muted / deafened by a moderator (only they can lift it).
     pub server_muted: bool,
     pub server_deafened: bool,
+    /// Raised hand (ms since epoch when raised), for "Hand heben".
+    pub hand: Option<i64>,
     pub joined_at: i64,
 }
 
@@ -44,6 +46,8 @@ pub struct VoiceRegistry {
     by_user: HashMap<i64, VoiceMember>,
     /// Soundboard: last sound per user (ms) for rate limiting.
     last_sound: HashMap<i64, i64>,
+    /// Call reactions: last reaction per user (ms).
+    last_reaction: HashMap<i64, i64>,
 }
 
 impl VoiceRegistry {
@@ -128,6 +132,7 @@ pub async fn join(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
             suppressed: !can_speak,
             server_muted: false,
             server_deafened: false,
+            hand: None,
             joined_at: now_ms(),
         };
         reg.by_user.insert(ctx.uid, m.clone());
@@ -155,6 +160,7 @@ pub fn force_leave(st: &AppState, uid: i64) {
 
 #[derive(Deserialize)]
 struct UpdateReq {
+    hand: Option<bool>,
     muted: Option<bool>,
     deafened: Option<bool>,
     video: Option<bool>,
@@ -185,6 +191,9 @@ pub async fn update(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
         }
         if let Some(v) = r.screen {
             m.screen = v;
+        }
+        if let Some(v) = r.hand {
+            m.hand = if v { m.hand.or(Some(now_ms())) } else { None };
         }
         m.suppressed = !can_speak;
         m.clone()
@@ -310,6 +319,35 @@ pub async fn sound(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     };
     ctx.require_in(channel_id, SPEAK)?;
     let ev = hub::event("voice.sound", &json!({ "channel_id": channel_id, "user_id": ctx.uid, "sound": r.sound }));
+    ctx.st.broadcast_channel(channel_id, &ev);
+    Ok(json!({}))
+}
+
+/// Call reactions: one every 600 ms per member.
+pub const REACTION_INTERVAL_MS: i64 = 600;
+
+#[derive(Deserialize)]
+struct ReactReq {
+    emoji: String,
+}
+
+/// Floating emoji reaction over the caller's tile, for everyone in the call.
+pub async fn react(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: ReactReq = parse(d)?;
+    if !crate::ops_chat::valid_emoji(&r.emoji) {
+        return Err(ApiError::invalid("Ungültiges Emoji"));
+    }
+    let channel_id = {
+        let mut reg = registry(&ctx.st);
+        let cid = reg.by_user.get(&ctx.uid).map(|m| m.channel_id).ok_or_else(|| ApiError::not_found("Sprachverbindung"))?;
+        let now = now_ms();
+        if reg.last_reaction.get(&ctx.uid).is_some_and(|t| now - t < REACTION_INTERVAL_MS) {
+            return Err(ApiError::rate_limited());
+        }
+        reg.last_reaction.insert(ctx.uid, now);
+        cid
+    };
+    let ev = hub::event("voice.reaction", &json!({ "channel_id": channel_id, "user_id": ctx.uid, "emoji": r.emoji }));
     ctx.st.broadcast_channel(channel_id, &ev);
     Ok(json!({}))
 }

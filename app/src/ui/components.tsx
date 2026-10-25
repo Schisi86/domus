@@ -400,6 +400,15 @@ export function Popover(props: { anchor: DOMRect; onClose: () => void; children:
   );
 }
 
+/** CSS background for a profile banner ("#a,#b" → gradient; empty → accent). */
+export function bannerCss(banner: string | undefined, fallback?: string) {
+  const parts = (banner ?? "").split(",").filter((c) => /^#[0-9a-f]{6}$/i.test(c));
+  if (parts.length === 2) return `linear-gradient(135deg, ${parts[0]}, ${parts[1]})`;
+  if (parts.length === 1) return parts[0];
+  const c = fallback || "var(--accent)";
+  return `linear-gradient(135deg, color-mix(in srgb, ${c} 75%, #000), color-mix(in srgb, ${c} 35%, #000))`;
+}
+
 export function copyText(text: string) {
   void navigator.clipboard?.writeText(text);
 }

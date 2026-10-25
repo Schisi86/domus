@@ -106,6 +106,14 @@ export function App() {
         if (!tg.closest("input, textarea, .selectable, .msg-text")) e.preventDefault();
       }}
     >
+      {settings.value.ambient && (
+        <div class="ambient" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <b class="stars" />
+        </div>
+      )}
       <TitleBar />
       <div class="app-body">
         <Rail />

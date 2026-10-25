@@ -369,6 +369,22 @@ pub async fn pins(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
 }
 
 #[derive(Deserialize)]
+struct MentionListReq {
+    #[serde(default)]
+    limit: Option<usize>,
+}
+
+/// Inbox: recent messages that mention me, in channels I can still see.
+pub async fn mention_list(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: MentionListReq = parse(d)?;
+    let limit = r.limit.unwrap_or(50).clamp(1, 100);
+    let channels: Vec<i64> = ctx.perms().visible_channels(ctx.uid).collect();
+    let uid = ctx.uid;
+    let msgs = ctx.st.db.call(move |c| store::mentions_of(c, uid, &channels, limit)).await?;
+    Ok(json!({ "messages": msgs }))
+}
+
+#[derive(Deserialize)]
 struct ForwardReq {
     message_id: i64,
     channel_id: i64,

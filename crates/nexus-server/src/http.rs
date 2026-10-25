@@ -255,7 +255,7 @@ async fn upload(
     let id = random_hex(16);
     let tmp = st.uploads_dir().join(format!("tmp-{id}"));
     let rec = files::receive(body, &tmp, max.min(quota.saturating_sub(used))).await?;
-    let mime = sniff_image(&rec.head).unwrap_or("application/octet-stream").to_string();
+    let mime = sniff_image(&rec.head).or_else(|| crate::util::sniff_audio(&rec.head, &filename)).unwrap_or("application/octet-stream").to_string();
     let dest = st.uploads_dir().join(&id);
     tokio::fs::rename(&tmp, &dest).await?;
     let (id2, fname, m2, size, uid, cid) = (id.clone(), filename.clone(), mime.clone(), rec.size as i64, user.id, q.channel_id);

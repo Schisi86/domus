@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.6.0)
+# Funktionsstand (Version 0.7.0)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -78,6 +78,19 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Fehlerprotokolle (Client + Server, rotierend) | ✅ |
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
+
+### Premium-Ausbau (neu in 0.7.0)
+| Funktion | Stand |
+|---|---|
+| **Soundboard mit echten Aufnahmen:** 16 Sounds von Pixabay (Pixabay Content License, Quellen in `app/public/sounds/CREDITS.md`), pro Sound im Pegel angeglichen, lange Sounds blenden aus; Rechtsklick hört nur für dich vor | ✅ Browser-E2E (Auslösen); Auswahl nach Länge, Pegel, Stille am Anfang und Beliebtheit – den Klang muss ein Mensch beurteilen |
+| **Lebendiger Hintergrund:** langsam wanderndes Licht in den Farben des Designs, feine Körnung, Sterne bei Galaxie/Mitternacht; pausiert bei verborgenem Fenster, respektiert „Bewegung reduzieren“, abschaltbar | ✅ Screenshots |
+| **Vier neue Designs** (Cyberpunk, Tiefsee, Galaxie, Royal Gold – jetzt 14) und **eigene Akzentfarbe** für jedes Design | ✅ Screenshots |
+| **Profil:** Banner mit Farbverlauf (Vorlagen oder eigene Farben), „Über mich“ (190 Zeichen), Live-Vorschau beim Bearbeiten | ✅ Rust-Integrationstest + Browser-E2E |
+| **Sprachnachrichten:** Aufnahme im Eingabefeld (Pegelanzeige, Timer, verwerfen/senden, max. 5 Minuten, Opus), Player mit Wellenform, Springen, 1×/1,5×/2×; normale Audiodateien (MP3, OGG, WAV) bekommen denselben Player | ✅ Browser-E2E (aufnehmen, senden, Wellenform, Dauer); Server erkennt `.weba` als Audio |
+| **Anruf-Reaktionen** (schwebende Emojis über der Kachel), **Hand heben** mit Reihenfolge (Kachel, Kanalliste, Zähler), **Bild-in-Bild** für Bildschirmübertragungen | ✅ Rust + Browser-E2E; 🟡 Bild-in-Bild nur, wenn WebView2 es anbietet (Knopf erscheint sonst nicht) |
+| **Eingabeempfindlichkeit (Noise-Gate)** im Audio-Thread (AudioWorklet) – automatisch (folgt dem Grundrauschen), manuell mit Schwelle, aus; Live-Pegel mit Schwellen-Marke in den Einstellungen; funktioniert auch im Hintergrund | ✅ Browser-E2E (Mikrofon läuft über das Gate, Audio kommt an, rtc.mjs 20/20); 🟡 Feinabstimmung mit echten Mikrofonen/Räumen nicht getestet |
+| **Posteingang:** Erwähnungen des Servers und „Für später“ (gespeicherte Nachrichten mit Erinnerung nach 20 min / 1 h / 3 h / morgen 9 Uhr – Toast, Systembenachrichtigung, Ton) | ✅ Rust + Browser-E2E; Erinnerungen werden nur auf diesem Gerät und nur bei laufender App ausgelöst |
+| Freie Ports werden für neue Server auf allen Netzwerkadressen geprüft (vorher nur 127.0.0.1 – ein anderes Programm auf 0.0.0.0 führte beim Freigeben zu „Port belegt“) | ✅ Unit-Test |
 
 ### Interaktion, Moderation und Sprache übers Internet (neu in 0.6.0)
 | Funktion | Stand |

@@ -15,7 +15,7 @@ import { UserSettingsDialog } from "./dialogs/UserSettings";
 import { errorText, presenceText, t } from "../i18n";
 import { ScreenShareControl } from "./ScreenShare";
 import { memberMenu } from "./Members";
-import { SOUNDBOARD } from "../sound";
+import { SOUNDBOARD, playBoard } from "../sound";
 import { useState } from "preact/hooks";
 
 function ConnBanner({ server }: { server: ServerStore }) {
@@ -61,6 +61,7 @@ function VoiceUsers({ server, channel }: { server: ServerStore; channel: Channel
           <Avatar server={server} userId={m.user_id} name={server.memberName(m.user_id)} size={20} speaking={speaking.has(m.user_id)} />
           <span class="ellipsis">{server.memberName(m.user_id)}</span>
           <span class="flags">
+            {m.hand && <span title={t("call.handRaised")}>✋</span>}
             {m.screen && <span class="live-badge" title={t("voice.sharingScreen")}>LIVE</span>}
             {m.video && <Icon.Camera title={t("voice.cameraOn")} />}
             {m.server_muted ? <span class="mod-flag"><Icon.MicOff title={t("mod.serverMuted")} /></span> : (m.muted || m.suppressed) && <Icon.MicOff title={t("voice.muted")} />}
@@ -274,7 +275,17 @@ function SoundboardButton({ v }: { v: NonNullable<typeof voice.value> }) {
             </div>
             <div class="sb-grid">
               {SOUNDBOARD.map((s) => (
-                <button key={s.id} class="sb-btn" disabled={cooling} onClick={() => void fire(s.id)} title={t(`board.${s.id}` as "board.airhorn")}>
+                <button
+                  key={s.id}
+                  class="sb-btn"
+                  disabled={cooling}
+                  onClick={() => void fire(s.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    void playBoard(s.id);
+                  }}
+                  title={`${t(`board.${s.id}` as "board.airhorn")} – ${t("board.previewHint")}`}
+                >
                   <span class="e">{s.emoji}</span>
                   <span class="xs ellipsis">{t(`board.${s.id}` as "board.airhorn")}</span>
                 </button>

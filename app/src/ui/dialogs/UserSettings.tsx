@@ -7,19 +7,28 @@ import type { ServerStore } from "../../state/server";
 import { errorText, lang, LANGS, presenceText, t, type Key } from "../../i18n";
 import { transport } from "../../net/transport";
 import { appInfo, autostart, isTauri, openFolder, quitApp, type AppInfo } from "../../platform";
-import { Avatar, Field, IconButton, Icon, LogoMark, Modal, Toggle, confirmDialog, promptDialog } from "../components";
+import { Avatar, Field, IconButton, Icon, LogoMark, Modal, Toggle, bannerCss, confirmDialog, promptDialog } from "../components";
 import { pickAndCropImage } from "../ImageCrop";
 import { voice } from "../../rtc/voice";
 import { ScreenOptions } from "../ScreenShare";
-import { THEMES } from "../../themes";
+import { THEMES, ACCENTS } from "../../themes";
 import { Flag } from "../flags";
 import { DonateCard } from "./About";
 import { ShortcutsDialog } from "../QuickSwitcher";
 import { AUTHOR, COPYRIGHT, HOMEPAGE, PRODUCT_SITE } from "../../brand";
 import { openExternal } from "../links";
 import { play, playDemo, playBoard } from "../../sound";
+import { createGate, dbToUnit, type Gate, type GateInfo } from "../../rtc/gate";
 
 type Tab = "account" | "voice" | "screen" | "notify" | "look" | "app" | "about";
+
+/** Banner presets (two-color gradients). */
+const BANNERS = ["#2ee59d,#14a0be", "#6b97ff,#9650ff", "#f472b6,#fb923c", "#fcee0a,#ff2a6d", "#38bdf8,#2dd4bf", "#c084fc,#f472b6", "#e8b54a,#7c5a1e", "#0f172a,#334155"];
+
+function splitBanner(b?: string): [string, string] {
+  const p = (b ?? "").split(",");
+  return [p[0] ?? "", p[1] ?? ""];
+}
 
 function Account() {
   const [sid, setSid] = useState(activeServer.value?.id ?? servers.value[0]?.id ?? "");
@@ -27,15 +36,20 @@ function Account() {
   const me = server?.me.value;
   const [display, setDisplay] = useState(me?.display_name ?? "");
   const [status, setStatus] = useState(me?.status_text ?? "");
+  const [bio, setBio] = useState(me?.bio ?? "");
+  const [banner, setBanner] = useState<[string, string]>(splitBanner(me?.banner));
   const [oldPw, setOldPw] = useState("");
   const [newPw, setNewPw] = useState("");
   useEffect(() => {
     setDisplay(me?.display_name ?? "");
     setStatus(me?.status_text ?? "");
+    setBio(me?.bio ?? "");
+    setBanner(splitBanner(me?.banner));
   }, [sid, me?.id]);
   if (!server || !me) return <div class="muted">{t("settings.noServer")}</div>;
 
-  const saveProfile = () => server.rpc("user.update", { display_name: display, status_text: status }).then(() => toast(t("settings.profileSaved"), undefined, "ok"), (e) => toast(t("common.error"), errorText(e), "error"));
+  const bannerValue = banner[0] ? (banner[1] ? `${banner[0]},${banner[1]}` : banner[0]) : "";
+  const saveProfile = () => server.rpc("user.update", { display_name: display, status_text: status, bio, banner: bannerValue }).then(() => toast(t("settings.profileSaved"), undefined, "ok"), (e) => toast(t("common.error"), errorText(e), "error"));
   const setPresence = (p: string) => server.rpc("user.presence", { presence: p }).then(() => (server.me.value = { ...me, presence: p as never }), (e) => toast(t("common.error"), errorText(e), "error"));
   const avatar = async () => {
     const img = await pickAndCropImage({ round: true });
@@ -107,6 +121,36 @@ function Account() {
         <Field label={t("settings.statusText")}><input class="input" maxLength={128} value={status} onInput={(e) => setStatus((e.target as HTMLInputElement).value)} /></Field>
         <button class="btn primary" onClick={() => void saveProfile()}>{t("common.save")}</button>
       </div>
+      <div class="card col profile-editor">
+        <div class="label" style={{ margin: "0px" }}>{t("profile.design")}</div>
+        <div class="row wrap" style={{ gap: "16px", alignItems: "flex-start" }}>
+          <div class="profile-preview">
+            <div class="profile-banner" style={{ background: bannerCss(bannerValue) }} />
+            <div class="profile-preview-body">
+              <Avatar server={server} userId={me.id} name={display || me.username} size={56} />
+              <b class="ellipsis">{display || me.username}</b>
+              {status && <div class="faint xs ellipsis">{status}</div>}
+              {bio && <div class="xs profile-bio">{bio}</div>}
+            </div>
+          </div>
+          <div class="col grow" style={{ gap: "10px", minWidth: "220px" }}>
+            <Field label={t("profile.banner")}>
+              <div class="accent-row">
+                {BANNERS.map((b) => (
+                  <button key={b} class={`accent-dot${bannerValue === b ? " active" : ""}`} style={{ background: bannerCss(b) }} title={b} onClick={() => setBanner(splitBanner(b))} />
+                ))}
+                <input type="color" value={banner[0] || "#2ee59d"} title={t("profile.color1")} onInput={(e) => setBanner([(e.target as HTMLInputElement).value, banner[1]])} />
+                <input type="color" value={banner[1] || "#14a0be"} title={t("profile.color2")} onInput={(e) => setBanner([banner[0] || "#2ee59d", (e.target as HTMLInputElement).value])} />
+                {banner[0] && <button class="btn sm ghost" onClick={() => setBanner(["", ""])}>{t("profile.reset")}</button>}
+              </div>
+            </Field>
+            <Field label={t("profile.bio")} hint={`${bio.length}/190`}>
+              <textarea class="input" rows={3} maxLength={190} value={bio} placeholder={t("profile.bioPh")} onInput={(e) => setBio((e.target as HTMLTextAreaElement).value)} />
+            </Field>
+            <div><button class="btn primary" onClick={() => void saveProfile()}>{t("common.save")}</button></div>
+          </div>
+        </div>
+      </div>
       <div class="card col">
         <div class="label">{t("settings.changePw")}</div>
         <div class="row wrap" style={{ gap: "10px" }}>
@@ -135,46 +179,61 @@ function useDevices() {
   return devices;
 }
 
-function MicTest() {
-  const [level, setLevel] = useState<number | null>(null);
+/** Live meter with the gate's threshold – what the others will hear. */
+function GateMeter() {
+  const s = settings.value;
+  const [info, setInfo] = useState<GateInfo | null>(null);
   const stop = useRef<(() => void) | null>(null);
+  const gate = useRef<Gate | null>(null);
   useEffect(() => () => stop.current?.(), []);
+  useEffect(() => gate.current?.configure(s.inputGate, s.gateThreshold), [s.inputGate, s.gateThreshold]);
   const toggle = async () => {
     if (stop.current) {
       stop.current();
       stop.current = null;
-      setLevel(null);
+      setInfo(null);
       return;
     }
-    const st = settings.value;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { deviceId: st.inputDevice ? { exact: st.inputDevice } : undefined, echoCancellation: st.echoCancellation, noiseSuppression: st.noiseSuppression, autoGainControl: st.autoGainControl },
+        audio: { deviceId: s.inputDevice ? { exact: s.inputDevice } : undefined, echoCancellation: s.echoCancellation, noiseSuppression: s.noiseSuppression, autoGainControl: s.autoGainControl },
       });
       const ctx = new AudioContext();
-      const an = ctx.createAnalyser();
-      an.fftSize = 512;
-      ctx.createMediaStreamSource(stream).connect(an);
-      const buf = new Uint8Array(an.fftSize);
-      const timer = setInterval(() => {
-        an.getByteTimeDomainData(buf);
-        let s = 0;
-        for (const v of buf) s += ((v - 128) / 128) ** 2;
-        setLevel(Math.min(1, Math.sqrt(s / buf.length) * 4));
-      }, 80);
+      gate.current = await createGate(ctx, stream, setInfo);
+      gate.current.configure(s.inputGate === "off" ? "off" : s.inputGate, s.gateThreshold);
       stop.current = () => {
-        clearInterval(timer);
         stream.getTracks().forEach((x) => x.stop());
         void ctx.close();
+        gate.current = null;
       };
     } catch (e) {
       toast(t("settings.micTestFailed"), String(e), "error");
     }
   };
+  const thr = info?.threshold ?? s.gateThreshold;
   return (
-    <div class="row">
-      <button class="btn" onClick={() => void toggle()}>{stop.current ? t("settings.stopTest") : t("settings.micTest")}</button>
-      <div class="meter grow"><div style={{ width: `${(level ?? 0) * 100}%` }} /></div>
+    <div class="col" style={{ gap: "8px" }}>
+      <div class="tabs">
+        {(["auto", "manual", "off"] as const).map((m) => (
+          <button key={m} class={s.inputGate === m ? "active" : ""} onClick={() => updateSettings({ inputGate: m })}>{t(`gate.${m}` as "gate.auto")}</button>
+        ))}
+      </div>
+      <div class="faint xs">{t(`gate.${s.inputGate}Desc` as "gate.autoDesc")}</div>
+      <div class="row">
+        <button class="btn" onClick={() => void toggle()}>{stop.current ? t("settings.stopTest") : t("settings.micTest")}</button>
+        <div class={`gate-meter grow${info?.open ? " open" : ""}`}>
+          <div class="fill" style={{ width: `${dbToUnit(info?.level ?? -100) * 100}%` }} />
+          {s.inputGate !== "off" && <div class="mark" style={{ left: `${dbToUnit(thr) * 100}%` }} title={`${Math.round(thr)} dB`} />}
+        </div>
+        <span class="xs faint" style={{ minWidth: "52px", textAlign: "end" }}>{info ? (info.open ? t("gate.open") : t("gate.closed")) : ""}</span>
+      </div>
+      {s.inputGate === "manual" && (
+        <div class="row" style={{ gap: "10px" }}>
+          <span class="label" style={{ margin: "0px", minWidth: "80px" }}>{t("gate.threshold")}</span>
+          <input class="range grow" type="range" min={-80} max={-10} step={1} value={s.gateThreshold} onInput={(e) => updateSettings({ gateThreshold: Number((e.target as HTMLInputElement).value) })} />
+          <span class="xs" style={{ minWidth: "52px", textAlign: "end" }}>{s.gateThreshold} dB</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -210,6 +269,7 @@ function Voice() {
   const set = (patch: Partial<Settings>) => {
     updateSettings(patch);
     if (v && ("inputDevice" in patch || "echoCancellation" in patch || "noiseSuppression" in patch || "autoGainControl" in patch)) void v.changeInputDevice();
+    if (v && ("inputGate" in patch || "gateThreshold" in patch)) v.updateGate();
     if (v && "outputDevice" in patch) v.refreshOutputs();
     if (v && ("pushToTalk" in patch || "globalPtt" in patch || "globalPttKey" in patch)) {
       v.applyMicEnabled();
@@ -235,10 +295,12 @@ function Voice() {
           </select>
         </Field>
       </div>
-      <MicTest />
       <div class="card col">
         <Toggle checked={s.echoCancellation} onChange={(x) => set({ echoCancellation: x })} label={t("settings.echo")} />
         <Toggle checked={s.noiseSuppression} onChange={(x) => set({ noiseSuppression: x })} label={t("settings.noise")} />
+        <Field label={t("gate.title")} hint={t("gate.hint")}>
+          <GateMeter />
+        </Field>
         <Toggle checked={s.autoGainControl} onChange={(x) => set({ autoGainControl: x })} label={t("settings.agc")} />
         <div class="faint xs">{t("settings.audioHint")}</div>
       </div>
@@ -351,6 +413,16 @@ function Look() {
         </div>
       </Field>
       <Toggle checked={s.followSystemTheme} onChange={(x) => updateSettings({ followSystemTheme: x })} label={t("settings.followSystem")} desc={t("settings.followSystemDesc")} />
+      <Field label={t("look.accent")} hint={t("look.accentHint")}>
+        <div class="accent-row">
+          <button class={`accent-dot auto${!s.accent ? " active" : ""}`} title={t("look.accentAuto")} onClick={() => updateSettings({ accent: "" })} />
+          {ACCENTS.map((c) => (
+            <button key={c} class={`accent-dot${s.accent === c ? " active" : ""}`} style={{ background: c }} title={c} onClick={() => updateSettings({ accent: c })} />
+          ))}
+          <input type="color" value={s.accent || "#2ee59d"} title={t("look.accentCustom")} onInput={(e) => updateSettings({ accent: (e.target as HTMLInputElement).value })} />
+        </div>
+      </Field>
+      <Toggle checked={s.ambient} onChange={(x) => updateSettings({ ambient: x })} label={t("look.ambient")} desc={t("look.ambientDesc")} />
       <Field label={t("lang.title")}>
         <div class="flag-picker" style={{ width: "auto", padding: "0px" }}>
           {LANGS.map((l) => (

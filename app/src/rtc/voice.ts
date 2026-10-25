@@ -12,7 +12,8 @@ import type { IceConfig, VoiceMember } from "../types";
 import { errorText, t } from "../i18n";
 import { isTauri, log, tauriInvoke } from "../platform";
 import { normalizeAddress } from "../net/transport";
-import { play, playBoard } from "../sound";
+import { play, playBoard, preloadBoard } from "../sound";
+import { createGate, type Gate } from "./gate";
 
 export type StreamKind = "mic" | "screen" | "camera";
 
@@ -109,8 +110,14 @@ export class VoiceSession {
   /** Muted / deafened by a moderator. */
   serverMuted = signal(false);
   serverDeafened = signal(false);
+  /** Floating call reactions (shown for a few seconds over the tile). */
+  reactions = signal<{ id: number; uid: number; emoji: string; x: number }[]>([]);
+  private reactionSeq = 0;
 
   private mic: MediaStream | null = null;
+  /** Unprocessed microphone (the gated copy in `mic` is what peers get). */
+  private rawMic: MediaStream | null = null;
+  private gate: Gate | null = null;
   private screen: MediaStream | null = null;
   private camera: MediaStream | null = null;
   private peers = new Map<number, Peer>();
@@ -137,6 +144,7 @@ export class VoiceSession {
   // ------------------------------------------------------------- lifecycle
 
   private async start() {
+    preloadBoard();
     await this.openMic();
     voiceHooks.add(this.hook);
     window.addEventListener("keydown", this.keyDown);
@@ -150,7 +158,7 @@ export class VoiceSession {
   private async openMic() {
     const st = settings.value;
     try {
-      this.mic = await navigator.mediaDevices.getUserMedia({
+      this.rawMic = await navigator.mediaDevices.getUserMedia({
         audio: {
           deviceId: st.inputDevice ? { exact: st.inputDevice } : undefined,
           echoCancellation: st.echoCancellation,
@@ -160,10 +168,12 @@ export class VoiceSession {
         },
         video: false,
       });
+      this.mic = this.rawMic;
       this.hasMic.value = true;
-      this.setupAnalyser();
+      await this.setupAnalyser();
     } catch (e) {
       this.mic = null;
+      this.rawMic = null;
       this.hasMic.value = false;
       const name = (e as DOMException)?.name;
       const msg =
@@ -177,18 +187,37 @@ export class VoiceSession {
     this.applyMicEnabled();
   }
 
-  private setupAnalyser() {
-    if (!this.mic) return;
+  /** Audio chain: microphone → input-sensitivity gate → peers; analyser on the gated signal. */
+  private async setupAnalyser() {
+    if (!this.rawMic) return;
     try {
-      this.audioCtx?.close();
+      void this.audioCtx?.close();
       this.audioCtx = new AudioContext();
-      const src = this.audioCtx.createMediaStreamSource(this.mic);
       this.analyser = this.audioCtx.createAnalyser();
       this.analyser.fftSize = 512;
-      src.connect(this.analyser);
+      this.gate = null;
+      const st = settings.value;
+      if (st.inputGate !== "off") {
+        try {
+          this.gate = await createGate(this.audioCtx, this.rawMic);
+          this.gate.configure(st.inputGate, st.gateThreshold);
+          this.mic = this.gate.stream;
+        } catch (e) {
+          log("warn", `input gate unavailable: ${e}`);
+          this.mic = this.rawMic;
+        }
+      }
+      this.audioCtx.createMediaStreamSource(this.mic!).connect(this.analyser);
     } catch {
       this.analyser = null;
     }
+  }
+
+  /** Applies changed input-sensitivity settings without reconnecting. */
+  updateGate() {
+    const st = settings.value;
+    if (this.gate && st.inputGate !== "off") this.gate.configure(st.inputGate, st.gateThreshold);
+    else void this.changeInputDevice();
   }
 
   private async joinChannel(rejoin: boolean) {
@@ -236,8 +265,8 @@ export class VoiceSession {
     for (const p of this.peers.values()) p.close();
     this.peers.clear();
     if (this.screen) captureBar(false);
-    for (const s of [this.mic, this.screen, this.camera]) s?.getTracks().forEach((t) => t.stop());
-    this.mic = this.screen = this.camera = null;
+    for (const s of [this.mic, this.rawMic, this.screen, this.camera]) s?.getTracks().forEach((t) => t.stop());
+    this.mic = this.rawMic = this.screen = this.camera = null;
     void this.audioCtx?.close();
     this.screens.value = new Map();
     this.cameras.value = new Map();
@@ -446,6 +475,11 @@ export class VoiceSession {
           void joinVoice(this.server, to);
         } else toast(t("voice.kickedTitle"), t("voice.kickedBody", { name: by }), "warn");
       });
+    } else if (ev === "voice.reaction" && d.channel_id === this.channelId) {
+      if (settings.value.localMute[`${this.server.id}:${d.user_id}`]) return;
+      const r = { id: ++this.reactionSeq, uid: d.user_id as number, emoji: String(d.emoji), x: 20 + Math.random() * 60 };
+      this.reactions.value = [...this.reactions.value.slice(-24), r];
+      setTimeout(() => (this.reactions.value = this.reactions.value.filter((x) => x.id !== r.id)), 3200);
     } else if (ev === "voice.sound" && d.channel_id === this.channelId) {
       const st = settings.value;
       if (st.soundboard && !this.deafened.value && !st.localMute[`${this.server.id}:${d.user_id}`]) playBoard(d.sound);
@@ -523,6 +557,19 @@ export class VoiceSession {
     this.applyMicEnabled();
   }
 
+  /** Sends a floating reaction to everyone in the call. */
+  async react(emoji: string) {
+    await this.server.rpc("voice.react", { emoji });
+  }
+
+  handRaised() {
+    return !!this.server.voice.value.get(this.selfId)?.hand;
+  }
+
+  async setHand(up: boolean) {
+    await this.server.rpc("voice.update", { hand: up });
+  }
+
   /** Plays a soundboard sound for everyone in the channel. */
   async playSound(id: string) {
     await this.server.rpc("voice.sound", { sound: id });
@@ -570,6 +617,7 @@ export class VoiceSession {
   /** Switches the microphone without renegotiation (replaceTrack). */
   async changeInputDevice() {
     const old = this.mic;
+    const oldRaw = this.rawMic;
     await this.openMic();
     const track = this.mic?.getAudioTracks()[0] ?? null;
     for (const p of this.peers.values()) {
@@ -578,6 +626,7 @@ export class VoiceSession {
       else if (track && this.mic) p.pc.addTrack(track, this.mic);
     }
     old?.getTracks().forEach((t) => t.stop());
+    if (oldRaw !== this.rawMic) oldRaw?.getTracks().forEach((t) => t.stop());
   }
 
   // ------------------------------------------------------------- screen & camera

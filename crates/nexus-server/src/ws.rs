@@ -327,6 +327,8 @@ async fn dispatch(ctx: &mut Ctx, op: &str, d: Value) -> ApiResult<Value> {
         "voice.moderate" => ops_voice::moderate(ctx, d).await,
         "voice.move" => ops_voice::move_member(ctx, d).await,
         "voice.sound" => ops_voice::sound(ctx, d).await,
+        "voice.react" => ops_voice::react(ctx, d).await,
+        "mention.list" => ops_chat::mention_list(ctx, d).await,
         "rtc.signal" => ops_voice::signal(ctx, d).await,
         _ => Err(ApiError::bad(format!("Unbekannte Operation: {op}"))),
     }
@@ -348,6 +350,8 @@ pub fn member_json(st: &AppState, pc: &PermCache, u: &User) -> Value {
         "presence": st.hub.public_presence(u.id),
         "status": u.status,
         "timeout_until": pc.timeout_until(u.id),
+        "bio": u.bio,
+        "banner": u.banner,
     })
 }
 

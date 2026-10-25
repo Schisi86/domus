@@ -18,11 +18,19 @@ export interface Settings {
   /** one of THEMES (themes.ts) */
   theme: string;
   followSystemTheme: boolean;
+  /** Personal accent color ("" = the design's own). */
+  accent: string;
+  /** Slowly drifting light in the background. */
+  ambient: boolean;
   scale: number;
   inputDevice: string;
   outputDevice: string;
   videoDevice: string;
   echoCancellation: boolean;
+  /** Input sensitivity: automatic, fixed threshold or off. */
+  inputGate: "auto" | "manual" | "off";
+  /** Manual threshold in dBFS. */
+  gateThreshold: number;
   noiseSuppression: boolean;
   autoGainControl: boolean;
   pushToTalk: boolean;
@@ -50,6 +58,8 @@ export interface Settings {
   localMute: Record<string, boolean>;
   /** `${serverId}:${userId}` → private note, only stored on this device. */
   notes: Record<string, string>;
+  /** "Für später": saved messages with optional reminder (this device only). */
+  saved: SavedItem[];
   /** Play soundboard sounds from others. */
   soundboard: boolean;
   soundboardVolume: number;
@@ -59,6 +69,43 @@ export interface Settings {
   showMembers: boolean;
   lastChannel: Record<string, number>;
 }
+
+export interface SavedItem {
+  serverId: string;
+  channelId: number;
+  messageId: number;
+  author: number;
+  authorName: string;
+  preview: string;
+  savedAt: number;
+  /** Reminder time (ms); cleared once it fired. */
+  remindAt?: number | null;
+}
+
+/** Saves a message for later, optionally with a reminder. */
+export function saveForLater(item: Omit<SavedItem, "savedAt">) {
+  const rest = settings.value.saved.filter((x) => !(x.serverId === item.serverId && x.messageId === item.messageId));
+  updateSettings({ saved: [{ ...item, savedAt: Date.now() }, ...rest].slice(0, 200) });
+}
+
+export function removeSaved(serverId: string, messageId: number) {
+  updateSettings({ saved: settings.value.saved.filter((x) => !(x.serverId === serverId && x.messageId === messageId)) });
+}
+
+/** Fires due reminders: system notification, toast and chime. */
+function checkReminders() {
+  const now = Date.now();
+  const due = settings.value.saved.filter((x) => x.remindAt && x.remindAt <= now);
+  if (!due.length) return;
+  for (const d of due) {
+    const text = `${d.authorName}: ${d.preview}`.slice(0, 180);
+    toast(t("later.reminder"), text, "info", 12000);
+    void notify(t("later.reminder"), text);
+    playChime();
+  }
+  updateSettings({ saved: settings.value.saved.map((x) => (x.remindAt && x.remindAt <= now ? { ...x, remindAt: null } : x)) });
+}
+setInterval(checkReminders, 15000);
 
 export type ScreenRes = "720" | "1080" | "1440" | "2160" | "source";
 export interface ScreenOpts {
@@ -111,6 +158,11 @@ export const defaultSettings: Settings = {
   notifyVoiceJoin: true,
   muted: {},
   userVolume: {},
+  saved: [],
+  inputGate: "auto",
+  gateThreshold: -50,
+  accent: "",
+  ambient: true,
   localMute: {},
   notes: {},
   soundboard: true,
@@ -127,7 +179,7 @@ export const minimizeToTray = signal(true);
 
 export function updateSettings(patch: Partial<Settings>) {
   settings.value = { ...settings.value, ...patch };
-  if ("theme" in patch || "followSystemTheme" in patch) applyTheme(settings.value.theme, settings.value.followSystemTheme);
+  if ("theme" in patch || "followSystemTheme" in patch || "accent" in patch) applyTheme(settings.value.theme, settings.value.followSystemTheme, settings.value.accent);
   if ("language" in patch) void setLang(settings.value.language || detectLang());
   schedulePersist();
 }
@@ -374,7 +426,7 @@ export async function initApp() {
   delete (stored as Record<string, unknown>).screenProfile;
   delete (stored as Record<string, unknown>).screenManual;
   settings.value = { ...defaultSettings, ...stored };
-  applyTheme(settings.value.theme, settings.value.followSystemTheme);
+  applyTheme(settings.value.theme, settings.value.followSystemTheme, settings.value.accent);
   await setLang(settings.value.language || detectLang());
   hostAutostart.value = config.host_autostart;
   minimizeToTray.value = config.minimize_to_tray;

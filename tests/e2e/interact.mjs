@@ -150,6 +150,43 @@ try {
   const sep = await waitFor(() => pb.locator(".unread-sep").count());
   check("mark unread: 'new' marker appears", !!sep);
 
+  // ------------------------------------------------------------ voice message
+  await pb.locator(".composer-row .icon-btn[title='Sprachnachricht aufnehmen']").click();
+  await pb.locator(".rec-bar").waitFor();
+  await sleep(1800);
+  await shot(pb, "voice-record.png");
+  await pb.locator(".rec-bar .btn.primary").click();
+  const vm = await waitFor(() => pa.locator(".audio-msg .wave i").count(), 20000);
+  check("voice message: arrives with a waveform player", vm > 10, `${vm} bars`);
+  const playable = await waitFor(async () => !(await pa.locator(".audio-msg .audio-play").last().isDisabled()));
+  const dur = await waitFor(async () => {
+    const t = (await pa.locator(".audio-msg .audio-time").last().textContent()) ?? "";
+    return t !== "0:00" && t ? t : null;
+  });
+  check("voice message: playable with duration", !!playable && !!dur, dur ?? "");
+  await shot(pa, "voice-message.png");
+
+  // ------------------------------------------------------------ profile, inbox, save for later
+  await wsCall(b.token, "user.update", { bio: "Strategie-Fan 🎲", banner: "#ff2a6d,#fcee0a" });
+  await pa.locator(".members .member", { hasText: "bob" }).click();
+  const prof = await waitFor(async () => (await pa.locator(".modal .profile-bio").textContent())?.includes("Strategie-Fan"));
+  const bannerBg = await pa.locator(".modal .profile-banner").evaluate((el) => getComputedStyle(el).backgroundImage);
+  check("profile: banner gradient and bio shown", !!prof && bannerBg.includes("gradient"), bannerBg.slice(0, 60));
+  await shot(pa, "profile.png");
+  await pa.keyboard.press("Escape");
+  await wsCall(a.token, "message.send", { channel_id: await pa.evaluate(() => window.__nexus.servers.value[0].channels.value.find((c) => c.name === "allgemein").id), content: "@bob kannst du später drüberschauen?" });
+  await pb.locator(".main-head .icon-btn[title='Posteingang']").click();
+  const mention = await waitFor(() => pb.locator(".inbox .list-item", { hasText: "später drüberschauen" }).count());
+  check("inbox: mention listed", !!mention);
+  const target = pb.locator(".msg", { hasText: "später drüberschauen" }).last();
+  await target.click({ button: "right" });
+  await menuPath(pb, ["Für später speichern", "In 1 Stunde erinnern"]);
+  await pb.locator(".inbox .tabs button", { hasText: "Für später" }).click();
+  const saved = await waitFor(() => pb.locator(".inbox .list-item .reminder-chip").count());
+  check("save for later: listed with reminder", !!saved);
+  await shot(pb, "inbox.png");
+  await pb.locator(".main-head .icon-btn[title='Posteingang']").click();
+
   // ------------------------------------------------------------ user menu: timeout
   await pa.locator(".members .member", { hasText: "bob" }).click({ button: "right" });
   await pa.locator(".menu button", { hasText: "Moderation" }).hover();
@@ -189,6 +226,23 @@ try {
   const errToast = await pb.locator(".toast", { hasText: "Sound" }).count();
   check("soundboard: sound sent (cooldown starts, no error)", !!cooling && !errToast);
   await pb.keyboard.press("Escape");
+
+  // ------------------------------------------------------------ call reactions, raised hand, input gate
+  const gated = await pb.evaluate(() => !!window.__nexus.voice.value.gate);
+  check("input sensitivity: mic runs through the gate", gated);
+  await pa.locator(".chan", { hasText: "Allgemein" }).filter({ has: pa.locator("svg") }).last().click();
+  await pb.locator(".chan", { hasText: "Allgemein" }).filter({ has: pb.locator("svg") }).last().click();
+  await pb.locator(".voice-controls .round-btn[title='Reagieren']").click();
+  await pb.locator(".call-reactions button", { hasText: "🎉" }).click();
+  const floated = await waitFor(() => pa.locator(".tile .float-emoji", { hasText: "🎉" }).count(), 5000, 100);
+  check("call reactions: emoji floats over the tile for others", !!floated);
+  await pb.keyboard.press("Escape");
+  await pb.locator(".voice-controls .round-btn[title='Hand heben']").click();
+  const hand = await waitFor(() => pa.locator(".tile .hand-badge").count());
+  const sideHand = await pa.locator(".voice-user", { hasText: "bob" }).textContent();
+  check("raise hand: badge on the tile and in the channel list", !!hand && (sideHand ?? "").includes("✋"));
+  await shot(pa, "call.png");
+  await pb.locator(".voice-controls .round-btn[title='Hand senken']").click();
 
   const voiceUser = pa.locator(".voice-user", { hasText: "bob" });
   await voiceUser.waitFor();

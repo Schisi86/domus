@@ -144,172 +144,75 @@ export function playDemo() {
 }
 
 // ------------------------------------------------------------- soundboard
-// Short fun sounds everyone in a voice channel hears (like Discord's
-// soundboard). Also synthesized: nothing to download, nothing to license.
+// Short sounds everyone in a voice channel hears (like Discord's soundboard).
+// Recordings from Pixabay (Pixabay Content License, see public/sounds/CREDITS.md),
+// levelled per sound; long ones fade out so the board stays snappy.
 
 export const SOUNDBOARD = [
-  { id: "airhorn", emoji: "📯" },
-  { id: "tada", emoji: "🎉" },
-  { id: "rimshot", emoji: "🥁" },
-  { id: "applause", emoji: "👏" },
-  { id: "sad", emoji: "🎺" },
-  { id: "crickets", emoji: "🦗" },
-  { id: "bell", emoji: "🔔" },
-  { id: "boing", emoji: "🌀" },
+  { id: "airhorn", emoji: "📯", gain: 1.57 },
+  { id: "tada", emoji: "🎉", gain: 1.23 },
+  { id: "rimshot", emoji: "🥁", gain: 1.47 },
+  { id: "applause", emoji: "👏", gain: 0.84, max: 4.5 },
+  { id: "sad", emoji: "🎺", gain: 1.35 },
+  { id: "crickets", emoji: "🦗", gain: 2.2, max: 3.5 },
+  { id: "bell", emoji: "🔔", gain: 0.97 },
+  { id: "boing", emoji: "🌀", gain: 0.87 },
+  { id: "laugh", emoji: "😂", gain: 0.91 },
+  { id: "wow", emoji: "😮", gain: 2.18 },
+  { id: "drumroll", emoji: "🪘", gain: 0.92 },
+  { id: "levelup", emoji: "⭐", gain: 1.16 },
+  { id: "wrong", emoji: "❌", gain: 0.9 },
+  { id: "kaching", emoji: "💰", gain: 0.9 },
+  { id: "gong", emoji: "🔊", gain: 1.13, max: 4.5 },
+  { id: "dramatic", emoji: "😱", gain: 2.07 },
 ] as const;
 export type BoardSound = (typeof SOUNDBOARD)[number]["id"];
 
-function boardOut(volume: number) {
-  const { ctx } = engine();
-  const g = ctx.createGain();
-  g.gain.value = volume;
-  g.connect(ctx.destination);
-  return { ctx, out: g };
+const decoded = new Map<string, Promise<AudioBuffer | null>>();
+
+function load(id: string) {
+  let p = decoded.get(id);
+  if (!p) {
+    p = fetch(`/sounds/${id}.mp3`)
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+      .then((b) => engine().ctx.decodeAudioData(b))
+      .catch(() => null);
+    decoded.set(id, p);
+  }
+  return p;
 }
 
-function voice(ctx: AudioContext, out: AudioNode, type: OscillatorType, freq: number, t0: number, dur: number, gain: number, cutoff = 2400) {
-  const o = ctx.createOscillator();
-  o.type = type;
-  o.frequency.setValueAtTime(freq, t0);
-  const lp = ctx.createBiquadFilter();
-  lp.type = "lowpass";
-  lp.frequency.value = cutoff;
-  const env = ctx.createGain();
-  env.gain.setValueAtTime(0, t0);
-  env.gain.linearRampToValueAtTime(gain, t0 + 0.02);
-  env.gain.setValueAtTime(gain, t0 + Math.max(0.03, dur - 0.08));
-  env.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  o.connect(lp).connect(env).connect(out);
-  o.start(t0);
-  o.stop(t0 + dur + 0.05);
-  return o;
+/** Decodes all sounds ahead of time so the first click plays instantly. */
+export function preloadBoard() {
+  for (const s of SOUNDBOARD) void load(s.id);
 }
-
-function noiseBuffer(ctx: AudioContext, seconds: number) {
-  const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * seconds), ctx.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  return buf;
-}
-
-function noiseHit(ctx: AudioContext, out: AudioNode, t0: number, dur: number, gain: number, type: BiquadFilterType, freq: number, q = 1) {
-  const src = ctx.createBufferSource();
-  src.buffer = noiseBuffer(ctx, dur + 0.05);
-  const f = ctx.createBiquadFilter();
-  f.type = type;
-  f.frequency.value = freq;
-  f.Q.value = q;
-  const env = ctx.createGain();
-  env.gain.setValueAtTime(gain, t0);
-  env.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  src.connect(f).connect(env).connect(out);
-  src.start(t0);
-  src.stop(t0 + dur + 0.05);
-}
-
-function tom(ctx: AudioContext, out: AudioNode, t0: number, from: number, gain: number) {
-  const o = ctx.createOscillator();
-  o.frequency.setValueAtTime(from, t0);
-  o.frequency.exponentialRampToValueAtTime(from * 0.45, t0 + 0.25);
-  const env = ctx.createGain();
-  env.gain.setValueAtTime(gain, t0);
-  env.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.3);
-  o.connect(env).connect(out);
-  o.start(t0);
-  o.stop(t0 + 0.35);
-}
-
-const BOARD: Record<BoardSound, (ctx: AudioContext, out: AudioNode) => void> = {
-  airhorn: (ctx, out) => {
-    const t = ctx.currentTime;
-    [[0, 0.16], [0.2, 0.16], [0.4, 0.75]].forEach(([at, d]) => {
-      for (const f of [466, 470, 698, 932]) voice(ctx, out, "sawtooth", f, t + at, d, 0.07, 2600);
-    });
-  },
-  tada: (ctx, out) => {
-    const t = ctx.currentTime;
-    for (const f of [392, 494, 587]) voice(ctx, out, "sawtooth", f, t, 0.14, 0.06, 1800);
-    for (const f of [523, 659, 784, 1046]) voice(ctx, out, "sawtooth", f, t + 0.16, 0.9, 0.055, 2200);
-  },
-  rimshot: (ctx, out) => {
-    const t = ctx.currentTime;
-    tom(ctx, out, t, 220, 0.5);
-    tom(ctx, out, t + 0.18, 160, 0.55);
-    noiseHit(ctx, out, t + 0.42, 0.9, 0.35, "highpass", 6000);
-  },
-  applause: (ctx, out) => {
-    const t = ctx.currentTime;
-    for (let i = 0; i < 90; i++) {
-      const at = Math.random() * 2.2;
-      const fade = at < 0.3 ? at / 0.3 : at > 1.6 ? Math.max(0, (2.2 - at) / 0.6) : 1;
-      noiseHit(ctx, out, t + at, 0.05, 0.25 * fade, "bandpass", 1200 + Math.random() * 1800, 1.5);
-    }
-  },
-  sad: (ctx, out) => {
-    const t = ctx.currentTime;
-    const notes = [293.7, 277.2, 261.6];
-    notes.forEach((f, i) => voice(ctx, out, "sawtooth", f, t + i * 0.42, 0.4, 0.1, 1200));
-    const last = voice(ctx, out, "sawtooth", 246.9, t + 1.26, 1.2, 0.1, 1200);
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 6;
-    const depth = ctx.createGain();
-    depth.gain.value = 6;
-    lfo.connect(depth).connect(last.frequency);
-    lfo.start(t + 1.4);
-    lfo.stop(t + 2.5);
-  },
-  crickets: (ctx, out) => {
-    const t = ctx.currentTime;
-    for (let c = 0; c < 4; c++) {
-      for (let p = 0; p < 3; p++) voice(ctx, out, "sine", 4400, t + c * 0.55 + p * 0.05, 0.035, 0.08, 8000);
-    }
-  },
-  bell: (ctx, out) => {
-    const t = ctx.currentTime;
-    for (const [m, lv] of [[1, 0.25], [2.76, 0.08], [5.4, 0.04]] as const) {
-      const o = ctx.createOscillator();
-      o.frequency.value = 1320 * m;
-      const env = ctx.createGain();
-      env.gain.setValueAtTime(lv, t);
-      env.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
-      o.connect(env).connect(out);
-      o.start(t);
-      o.stop(t + 1.7);
-    }
-  },
-  boing: (ctx, out) => {
-    const t = ctx.currentTime;
-    const o = ctx.createOscillator();
-    o.type = "triangle";
-    o.frequency.setValueAtTime(140, t);
-    o.frequency.exponentialRampToValueAtTime(620, t + 0.12);
-    o.frequency.exponentialRampToValueAtTime(180, t + 0.7);
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 18;
-    const depth = ctx.createGain();
-    depth.gain.value = 40;
-    lfo.connect(depth).connect(o.frequency);
-    const env = ctx.createGain();
-    env.gain.setValueAtTime(0.3, t);
-    env.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
-    o.connect(env).connect(out);
-    o.start(t);
-    lfo.start(t);
-    o.stop(t + 0.85);
-    lfo.stop(t + 0.85);
-  },
-};
 
 export function isBoardSound(id: string): id is BoardSound {
   return SOUNDBOARD.some((s) => s.id === id);
 }
 
 /** Plays a soundboard sound locally at the soundboard volume. */
-export function playBoard(id: string, volume = settings.value.soundboardVolume) {
-  if (!isBoardSound(id)) return;
+export async function playBoard(id: string, volume = settings.value.soundboardVolume) {
+  const meta = SOUNDBOARD.find((s) => s.id === id);
+  if (!meta) return;
   try {
-    const { ctx, out } = boardOut(Math.max(0, Math.min(1, volume)) * 1.4);
-    BOARD[id](ctx, out);
+    const buf = await load(id);
+    if (!buf) return;
+    const { ctx } = engine();
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    const level = Math.max(0, Math.min(1, volume)) * meta.gain;
+    const t0 = ctx.currentTime;
+    g.gain.setValueAtTime(level, t0);
+    const max = "max" in meta ? meta.max : 0;
+    if (max && buf.duration > max) {
+      g.gain.setValueAtTime(level, t0 + max - 0.6);
+      g.gain.linearRampToValueAtTime(0.0001, t0 + max);
+      src.stop(t0 + max + 0.05);
+    }
+    src.connect(g).connect(ctx.destination);
+    src.start(t0);
   } catch {
     /* audio unavailable */
   }

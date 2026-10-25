@@ -106,6 +106,22 @@ pub fn sanitize_filename(name: &str) -> String {
 
 /// Recognizes common image formats by magic bytes. Anything else is served as
 /// an opaque download.
+/// Audio formats for voice messages and audio files (shown with a player).
+pub fn sniff_audio(head: &[u8], filename: &str) -> Option<&'static str> {
+    let lower = filename.to_ascii_lowercase();
+    if head.starts_with(b"\x1a\x45\xdf\xa3") && (lower.ends_with(".weba") || lower.ends_with(".opus")) {
+        Some("audio/webm")
+    } else if head.starts_with(b"OggS") {
+        Some("audio/ogg")
+    } else if head.starts_with(b"ID3") || (head.len() > 1 && head[0] == 0xFF && head[1] & 0xE0 == 0xE0 && lower.ends_with(".mp3")) {
+        Some("audio/mpeg")
+    } else if head.len() >= 12 && &head[0..4] == b"RIFF" && &head[8..12] == b"WAVE" {
+        Some("audio/wav")
+    } else {
+        None
+    }
+}
+
 pub fn sniff_image(head: &[u8]) -> Option<&'static str> {
     if head.starts_with(b"\x89PNG\r\n\x1a\n") {
         Some("image/png")

@@ -895,3 +895,62 @@ async fn polls_forwarding_slowmode_and_mark_unread() {
     assert_eq!(again["read_states"][general.to_string()].as_i64(), Some(pid - 1));
     ts.stop().await;
 }
+
+#[tokio::test]
+async fn profiles_call_reactions_inbox_and_voice_messages() {
+    let (ts, ep, owner, member) = setup("premium").await;
+    let (mut a, ready_a) = Client::connect(&ep, &owner).await;
+    let (mut b, ready_b) = Client::connect(&ep, &member).await;
+    let (ida, idb) = (ready_a["me"]["id"].as_i64().unwrap(), ready_b["me"]["id"].as_i64().unwrap());
+    let general = channel_id(&ready_a, "allgemein");
+    let voice = channel_id(&ready_a, "Allgemein");
+
+    // Profile: bio and banner colors, visible to others.
+    b.req("user.update", json!({ "bio": "Spielt gern Strategie 🎲", "banner": "#FF00AA,#00ccff" })).await.unwrap();
+    loop {
+        let ev = a.event("member.updated").await;
+        if ev["id"] == idb {
+            assert_eq!((ev["bio"].as_str(), ev["banner"].as_str()), (Some("Spielt gern Strategie 🎲"), Some("#ff00aa,#00ccff")));
+            break;
+        }
+    }
+    assert_eq!(code(&b.req("user.update", json!({ "banner": "red; background:url(x)" })).await.unwrap_err()), "VALIDATION");
+    assert_eq!(code(&b.req("user.update", json!({ "bio": "x".repeat(300) })).await.unwrap_err()), "VALIDATION");
+
+    // Inbox: mentions of me, newest first.
+    a.req("message.send", json!({ "channel_id": general, "content": "Hallo @member, schau mal" })).await.unwrap();
+    a.req("message.send", json!({ "channel_id": general, "content": "ohne Erwähnung" })).await.unwrap();
+    let last = a.req("message.send", json!({ "channel_id": general, "content": "@member nochmal" })).await.unwrap();
+    let inbox = b.req("mention.list", json!({})).await.unwrap();
+    let list = inbox["messages"].as_array().unwrap();
+    assert_eq!(list.len(), 2);
+    assert_eq!(list[0]["id"], last["id"]);
+
+    // Call: raise hand and floating reactions.
+    a.req("voice.join", json!({ "channel_id": voice })).await.unwrap();
+    b.req("voice.join", json!({ "channel_id": voice })).await.unwrap();
+    let st = b.req("voice.update", json!({ "hand": true })).await.unwrap();
+    assert!(st["hand"].as_i64().is_some());
+    let raised_at = st["hand"].as_i64();
+    let st = b.req("voice.update", json!({ "hand": true })).await.unwrap();
+    assert_eq!(st["hand"].as_i64(), raised_at, "raising again keeps the queue position");
+    let st = b.req("voice.update", json!({ "hand": false })).await.unwrap();
+    assert!(st["hand"].is_null());
+    b.req("voice.react", json!({ "emoji": "🎉" })).await.unwrap();
+    let ev = a.event("voice.reaction").await;
+    assert_eq!((ev["user_id"].as_i64(), ev["emoji"].as_str()), (Some(idb), Some("🎉")));
+    assert_eq!(code(&b.req("voice.react", json!({ "emoji": "👍" })).await.unwrap_err()), "RATE_LIMITED");
+    assert_eq!(code(&a.req("voice.react", json!({ "emoji": "hallo" })).await.unwrap_err()), "VALIDATION");
+    let _ = ida;
+
+    // Voice message: an audio/webm upload is recognized as audio.
+    let mut weba = b"\x1a\x45\xdf\xa3".to_vec();
+    weba.extend_from_slice(&[0u8; 200]);
+    let r = ep.upload(&format!("/api/v1/files?channel_id={general}&filename=sprachnachricht.weba"), &member, weba, |_, _| {}).await.unwrap();
+    let up: Value = serde_json::from_slice(&r.body).unwrap();
+    assert_eq!(up["mime"], "audio/webm");
+    let r = ep.upload(&format!("/api/v1/files?channel_id={general}&filename=video.webm"), &member, b"\x1a\x45\xdf\xa3rest".to_vec(), |_, _| {}).await.unwrap();
+    let up: Value = serde_json::from_slice(&r.body).unwrap();
+    assert_eq!(up["mime"], "application/octet-stream", "only voice-message files count as audio");
+    ts.stop().await;
+}

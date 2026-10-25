@@ -193,6 +193,11 @@ const MIGRATIONS: &[&str] = &[
     UPDATE roles SET permissions = permissions | 491520
         WHERE (permissions & 2048) != 0 AND (permissions & 1073741824) = 0;
     "#,
+    // v4: profile bio and banner colors
+    r#"
+    ALTER TABLE users ADD COLUMN bio TEXT NOT NULL DEFAULT '';
+    ALTER TABLE users ADD COLUMN banner TEXT NOT NULL DEFAULT '';
+    "#,
 ];
 
 pub const SCHEMA_VERSION: i64 = MIGRATIONS.len() as i64;

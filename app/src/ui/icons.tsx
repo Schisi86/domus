@@ -89,3 +89,6 @@ export const ChevronRight = I(<path d="m9 6 6 6-6 6" />);
 export const Hammer = I(<><path d="m15 12-8.5 8.5a2.1 2.1 0 0 1-3-3L12 9" /><path d="m17.6 15 4.4-4.4-6.6-6.6L11 8.4z" /></>);
 export const UserMinus = I(<><circle cx="9" cy="8" r="4" /><path d="M2 21a7 7 0 0 1 14 0M16 11h6" /></>);
 export const Note = I(<><path d="M5 3h10l4 4v14H5z" /><path d="M9 9h6M9 13h6M9 17h4" /></>);
+export const Pause = I(<><rect x="6" y="4" width="4" height="16" rx="1.2" /><rect x="14" y="4" width="4" height="16" rx="1.2" /></>);
+export const Pip = I(<><rect x="2" y="4" width="20" height="16" rx="2" /><rect x="12" y="11" width="8" height="6" rx="1" /></>);
+export const Inbox = I(<><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></>);

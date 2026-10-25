@@ -450,12 +450,24 @@ fn apply_slot(cfg: &mut Config, slot: u16) {
     cfg.media.relay_port_max = cfg.media.relay_port_min + RELAY_SPAN;
 }
 
+/// Addresses a port must be free on: the chosen one plus all interfaces (IPv4
+/// and IPv6), so a "this PC only" server can later be opened to the network
+/// and does not clash with other programs listening everywhere.
+fn probe_addrs(ip: IpAddr) -> [IpAddr; 3] {
+    [ip, IpAddr::V4(Ipv4Addr::UNSPECIFIED), IpAddr::V6(std::net::Ipv6Addr::UNSPECIFIED)]
+}
+
+/// Only "address in use" counts as taken (no IPv6 on the machine is fine).
+fn bind_ok<T>(r: std::io::Result<T>) -> bool {
+    !matches!(r, Err(e) if e.kind() == std::io::ErrorKind::AddrInUse || e.kind() == std::io::ErrorKind::PermissionDenied)
+}
+
 fn tcp_free(ip: IpAddr, port: u16) -> bool {
-    std::net::TcpListener::bind(SocketAddr::new(ip, port)).is_ok()
+    probe_addrs(ip).into_iter().all(|a| bind_ok(std::net::TcpListener::bind(SocketAddr::new(a, port))))
 }
 
 fn udp_free(ip: IpAddr, port: u16) -> bool {
-    std::net::UdpSocket::bind(SocketAddr::new(ip, port)).is_ok()
+    probe_addrs(ip).into_iter().all(|a| bind_ok(std::net::UdpSocket::bind(SocketAddr::new(a, port))))
 }
 
 fn new_id() -> String {
@@ -620,6 +632,16 @@ mod tests {
         assert!(again.check_ports(&b.id, &clash).is_err());
         assert!(again.check_ports(&b.id, &cb).is_ok());
         let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn ports_taken_on_all_interfaces_are_skipped() {
+        // Something listens on every interface (like another server program).
+        let other = std::net::TcpListener::bind("0.0.0.0:0").unwrap();
+        let port = other.local_addr().unwrap().port();
+        assert!(!tcp_free(IpAddr::V4(Ipv4Addr::LOCALHOST), port), "loopback alone would look free on Windows");
+        drop(other);
+        assert!(tcp_free(IpAddr::V4(Ipv4Addr::LOCALHOST), port));
     }
 
     #[test]
