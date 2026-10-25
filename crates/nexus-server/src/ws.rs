@@ -273,6 +273,10 @@ async fn dispatch(ctx: &mut Ctx, op: &str, d: Value) -> ApiResult<Value> {
         "reaction.remove" => ops_chat::reaction_remove(ctx, d).await,
         "message.pin" => ops_chat::pin(ctx, d).await,
         "message.pins" => ops_chat::pins(ctx, d).await,
+        "message.forward" => ops_chat::forward(ctx, d).await,
+        "poll.create" => ops_chat::poll_create(ctx, d).await,
+        "poll.vote" => ops_chat::poll_vote(ctx, d).await,
+        "poll.end" => ops_chat::poll_end(ctx, d).await,
         // structure & administration
         "channel.create" => ops_admin::channel_create(ctx, d).await,
         "channel.update" => ops_admin::channel_update(ctx, d).await,
@@ -290,6 +294,8 @@ async fn dispatch(ctx: &mut Ctx, op: &str, d: Value) -> ApiResult<Value> {
         "member.approve" => ops_admin::member_approve(ctx, d).await,
         "member.reject" => ops_admin::member_reject(ctx, d).await,
         "member.ban" => ops_admin::member_ban(ctx, d).await,
+        "member.kick" => ops_admin::member_kick(ctx, d).await,
+        "member.timeout" => ops_admin::member_timeout(ctx, d).await,
         "member.unban" => ops_admin::member_unban(ctx, d).await,
         "invite.create" => ops_admin::invite_create(ctx, d).await,
         "invite.list" => ops_admin::invite_list(ctx, d).await,
@@ -318,6 +324,9 @@ async fn dispatch(ctx: &mut Ctx, op: &str, d: Value) -> ApiResult<Value> {
         "voice.join" => ops_voice::join(ctx, d).await,
         "voice.leave" => ops_voice::leave(ctx, d).await,
         "voice.update" => ops_voice::update(ctx, d).await,
+        "voice.moderate" => ops_voice::moderate(ctx, d).await,
+        "voice.move" => ops_voice::move_member(ctx, d).await,
+        "voice.sound" => ops_voice::sound(ctx, d).await,
         "rtc.signal" => ops_voice::signal(ctx, d).await,
         _ => Err(ApiError::bad(format!("Unbekannte Operation: {op}"))),
     }
@@ -338,6 +347,7 @@ pub fn member_json(st: &AppState, pc: &PermCache, u: &User) -> Value {
         "roles": pc.roles_of(u.id),
         "presence": st.hub.public_presence(u.id),
         "status": u.status,
+        "timeout_until": pc.timeout_until(u.id),
     })
 }
 
@@ -367,7 +377,10 @@ pub fn ice_config(st: &AppState) -> Value {
     let turn = (m.turn_enabled)
         .then(|| auth::turn_credentials(&st.turn_secret, 12 * 3600))
         .flatten()
-        .map(|(u, p)| json!({ "port": m.udp_port, "username": u, "credential": p }));
+        .map(|(u, p)| {
+            let public = st.turn_public.read().unwrap_or_else(|e| e.into_inner()).clone();
+            json!({ "port": m.udp_port, "tcp": true, "public": public, "username": u, "credential": p })
+        });
     json!({
         "stun_port": (m.stun_enabled || m.turn_enabled).then_some(m.udp_port),
         "turn": turn,

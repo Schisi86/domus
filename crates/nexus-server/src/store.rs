@@ -25,6 +25,7 @@ pub struct User {
     pub status: String,
     pub presence_pref: String,
     pub created_at: i64,
+    pub timeout_until: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -53,6 +54,8 @@ pub struct Channel {
     pub category_id: Option<i64>,
     pub position: i64,
     pub last_message_id: Option<i64>,
+    pub slowmode: i64,
+    pub user_limit: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -91,6 +94,24 @@ pub struct Message {
     pub attachments: Vec<Attachment>,
     pub reactions: Vec<Reaction>,
     pub pinned_at: Option<i64>,
+    /// Original author when the message was forwarded.
+    pub forwarded_from: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub poll: Option<Poll>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Poll {
+    pub question: String,
+    pub options: Vec<PollOption>,
+    pub multi: bool,
+    pub ends_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct PollOption {
+    pub text: String,
+    pub voters: Vec<i64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -235,7 +256,7 @@ pub fn init_defaults(c: &mut Connection) -> ApiResult<bool> {
 // Users & sessions
 // ---------------------------------------------------------------------------
 
-const USER_COLS: &str = "id, username, display_name, avatar, status_text, is_owner, status, presence, created_at";
+const USER_COLS: &str = "id, username, display_name, avatar, status_text, is_owner, status, presence, created_at, timeout_until";
 
 fn row_user(r: &Row) -> rusqlite::Result<User> {
     Ok(User {
@@ -248,6 +269,7 @@ fn row_user(r: &Row) -> rusqlite::Result<User> {
         status: r.get(6)?,
         presence_pref: r.get(7)?,
         created_at: r.get(8)?,
+        timeout_until: r.get(9)?,
     })
 }
 
@@ -260,7 +282,7 @@ pub fn user_by_name(c: &Connection, name: &str) -> ApiResult<Option<(User, Strin
     Ok(c.query_row(
         &format!("SELECT {USER_COLS}, password_hash FROM users WHERE username=?1 AND status != 'deleted'"),
         params![name],
-        |r| Ok((row_user(r)?, r.get::<_, String>(9)?)),
+        |r| Ok((row_user(r)?, r.get::<_, String>(10)?)),
     )
     .optional()?)
 }
@@ -306,6 +328,11 @@ pub fn set_avatar(c: &Connection, id: i64, avatar: Option<&str>) -> ApiResult<Op
     let old: Option<String> = c.query_row("SELECT avatar FROM users WHERE id=?1", params![id], |r| r.get(0))?;
     c.execute("UPDATE users SET avatar=?2 WHERE id=?1", params![id, avatar])?;
     Ok(old)
+}
+
+pub fn set_timeout(c: &Connection, id: i64, until: Option<i64>) -> ApiResult<()> {
+    c.execute("UPDATE users SET timeout_until=?2 WHERE id=?1", params![id, until])?;
+    Ok(())
 }
 
 pub fn set_presence_pref(c: &Connection, id: i64, presence: &str) -> ApiResult<()> {
@@ -484,14 +511,21 @@ pub fn load_perm_cache(c: &Connection) -> ApiResult<PermCache> {
         }
     }
     {
-        let mut st = c.prepare("SELECT id, kind FROM channels")?;
+        let mut st = c.prepare("SELECT id, kind, slowmode, user_limit FROM channels")?;
         let mut rows = st.query([])?;
         while let Some(r) = rows.next()? {
             let kind: String = r.get(1)?;
             pc.channels.insert(
                 r.get(0)?,
-                ChannelInfo { is_dm: kind == "dm", voice: kind != "text", ..Default::default() },
+                ChannelInfo { is_dm: kind == "dm", voice: kind != "text", slowmode: r.get(2)?, user_limit: r.get(3)?, ..Default::default() },
             );
+        }
+    }
+    {
+        let mut st = c.prepare("SELECT id, timeout_until FROM users WHERE timeout_until > ?1 AND status='active'")?;
+        let mut rows = st.query(params![now_ms()])?;
+        while let Some(r) = rows.next()? {
+            pc.timeouts.insert(r.get(0)?, r.get(1)?);
         }
     }
     {
@@ -542,7 +576,7 @@ pub fn delete_category(c: &Connection, id: i64) -> ApiResult<bool> {
 }
 
 const CHANNEL_SELECT: &str = "SELECT c.id, c.kind, c.name, c.topic, c.category_id, c.position,
-    (SELECT max(m.id) FROM messages m WHERE m.channel_id = c.id) FROM channels c";
+    (SELECT max(m.id) FROM messages m WHERE m.channel_id = c.id), c.slowmode, c.user_limit FROM channels c";
 
 fn row_channel(r: &Row) -> rusqlite::Result<Channel> {
     Ok(Channel {
@@ -553,6 +587,8 @@ fn row_channel(r: &Row) -> rusqlite::Result<Channel> {
         category_id: r.get(4)?,
         position: r.get(5)?,
         last_message_id: r.get(6)?,
+        slowmode: r.get(7)?,
+        user_limit: r.get(8)?,
     })
 }
 
@@ -581,8 +617,8 @@ pub fn create_channel(c: &Connection, kind: &str, name: &str, topic: &str, categ
 
 pub fn update_channel(c: &Connection, ch: &Channel) -> ApiResult<()> {
     c.execute(
-        "UPDATE channels SET name=?2, topic=?3, category_id=?4, position=?5 WHERE id=?1 AND kind != 'dm'",
-        params![ch.id, ch.name, ch.topic, ch.category_id, ch.position],
+        "UPDATE channels SET name=?2, topic=?3, category_id=?4, position=?5, slowmode=?6, user_limit=?7 WHERE id=?1 AND kind != 'dm'",
+        params![ch.id, ch.name, ch.topic, ch.category_id, ch.position, ch.slowmode, ch.user_limit],
     )?;
     Ok(())
 }
@@ -668,7 +704,7 @@ pub fn list_dms(c: &Connection, user_id: i64) -> ApiResult<Vec<DmChannel>> {
 // ---------------------------------------------------------------------------
 
 const MSG_SELECT: &str = "SELECT m.id, m.channel_id, m.author_id, m.content, m.reply_to, m.created_at, m.edited_at,
-    r.id, r.author_id, substr(r.content, 1, 160), m.pinned_at FROM messages m LEFT JOIN messages r ON r.id = m.reply_to";
+    r.id, r.author_id, substr(r.content, 1, 160), m.pinned_at, m.forwarded_from FROM messages m LEFT JOIN messages r ON r.id = m.reply_to";
 
 fn row_message(r: &Row) -> rusqlite::Result<Message> {
     let rid: Option<i64> = r.get(7)?;
@@ -684,6 +720,8 @@ fn row_message(r: &Row) -> rusqlite::Result<Message> {
             Some(id) => Some(ReplyPreview { id, author_id: r.get(8)?, content: r.get(9)? }),
             None => None,
         },
+        forwarded_from: r.get(11)?,
+        poll: None,
         mentions: Vec::new(),
         attachments: Vec::new(),
         reactions: Vec::new(),
@@ -745,7 +783,99 @@ fn hydrate(c: &Connection, msgs: &mut [Message]) -> ApiResult<()> {
             }
         }
     }
+    {
+        let mut st = c.prepare(&format!("SELECT message_id, question, options, multi, ends_at FROM polls WHERE message_id IN ({ph})"))?;
+        let mut rows = st.query(rusqlite::params_from_iter(ids.iter()))?;
+        while let Some(r) = rows.next()? {
+            if let Some(i) = idx.get(&r.get::<_, i64>(0)?) {
+                let texts: Vec<String> = serde_json::from_str(&r.get::<_, String>(2)?).unwrap_or_default();
+                msgs[*i].poll = Some(Poll {
+                    question: r.get(1)?,
+                    options: texts.into_iter().map(|text| PollOption { text, voters: Vec::new() }).collect(),
+                    multi: r.get(3)?,
+                    ends_at: r.get(4)?,
+                });
+            }
+        }
+    }
+    if msgs.iter().any(|m| m.poll.is_some()) {
+        let mut st = c.prepare(&format!("SELECT message_id, user_id, option FROM poll_votes WHERE message_id IN ({ph}) ORDER BY rowid"))?;
+        let mut rows = st.query(rusqlite::params_from_iter(ids.iter()))?;
+        while let Some(r) = rows.next()? {
+            if let Some(i) = idx.get(&r.get::<_, i64>(0)?) {
+                let opt: usize = r.get::<_, i64>(2)? as usize;
+                if let Some(o) = msgs[*i].poll.as_mut().and_then(|p| p.options.get_mut(opt)) {
+                    o.voters.push(r.get(1)?);
+                }
+            }
+        }
+    }
     Ok(())
+}
+
+pub const MAX_POLL_OPTIONS: usize = 10;
+
+/// Creates a message carrying a poll.
+pub fn insert_poll(
+    c: &mut Connection,
+    channel_id: i64,
+    author_id: i64,
+    question: &str,
+    options: &[String],
+    multi: bool,
+    ends_at: Option<i64>,
+) -> ApiResult<Message> {
+    let tx = c.transaction()?;
+    tx.execute(
+        "INSERT INTO messages (channel_id, author_id, content, created_at) VALUES (?1, ?2, ?3, ?4)",
+        params![channel_id, author_id, question, now_ms()],
+    )?;
+    let id = tx.last_insert_rowid();
+    let opts = serde_json::to_string(options).map_err(|_| ApiError::internal())?;
+    tx.execute(
+        "INSERT INTO polls (message_id, question, options, multi, ends_at) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![id, question, opts, multi, ends_at],
+    )?;
+    tx.commit()?;
+    get_message(c, id)?.ok_or_else(ApiError::internal)
+}
+
+/// Replaces a member's votes in a poll.
+pub fn vote_poll(c: &mut Connection, message_id: i64, user_id: i64, options: &[usize]) -> ApiResult<()> {
+    let tx = c.transaction()?;
+    tx.execute("DELETE FROM poll_votes WHERE message_id=?1 AND user_id=?2", params![message_id, user_id])?;
+    for o in options {
+        tx.execute(
+            "INSERT OR IGNORE INTO poll_votes (message_id, user_id, option) VALUES (?1, ?2, ?3)",
+            params![message_id, user_id, *o as i64],
+        )?;
+    }
+    tx.commit()?;
+    Ok(())
+}
+
+pub fn end_poll(c: &Connection, message_id: i64) -> ApiResult<()> {
+    c.execute("UPDATE polls SET ends_at=?2 WHERE message_id=?1", params![message_id, now_ms()])?;
+    Ok(())
+}
+
+/// Copies a message into another channel; `new_ids` are the already copied
+/// attachment files (same order as `src.attachments`).
+pub fn forward_message(c: &mut Connection, src: &Message, channel_id: i64, user_id: i64, new_ids: &[String]) -> ApiResult<Message> {
+    let tx = c.transaction()?;
+    tx.execute(
+        "INSERT INTO messages (channel_id, author_id, content, created_at, forwarded_from) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![channel_id, user_id, src.content, now_ms(), src.forwarded_from.unwrap_or(src.author_id)],
+    )?;
+    let id = tx.last_insert_rowid();
+    for (a, new_id) in src.attachments.iter().zip(new_ids) {
+        tx.execute(
+            "INSERT INTO attachments (id, message_id, channel_id, uploader_id, filename, size, mime, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![new_id, id, channel_id, user_id, a.filename, a.size, a.mime, now_ms()],
+        )?;
+    }
+    tx.commit()?;
+    get_message(c, id)?.ok_or_else(ApiError::internal)
 }
 
 /// Maximum distinct reactions per message.
@@ -1006,6 +1136,16 @@ pub fn set_read(c: &Connection, user_id: i64, channel_id: i64, message_id: i64) 
     c.execute(
         "INSERT INTO read_states (user_id, channel_id, last_read_id) VALUES (?1, ?2, ?3)
          ON CONFLICT(user_id, channel_id) DO UPDATE SET last_read_id = max(last_read_id, excluded.last_read_id)",
+        params![user_id, channel_id, message_id],
+    )?;
+    Ok(())
+}
+
+/// Sets the read marker exactly (used for "mark as unread").
+pub fn set_read_exact(c: &Connection, user_id: i64, channel_id: i64, message_id: i64) -> ApiResult<()> {
+    c.execute(
+        "INSERT INTO read_states (user_id, channel_id, last_read_id) VALUES (?1, ?2, ?3)
+         ON CONFLICT(user_id, channel_id) DO UPDATE SET last_read_id = excluded.last_read_id",
         params![user_id, channel_id, message_id],
     )?;
     Ok(())

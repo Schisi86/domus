@@ -11,6 +11,7 @@ import { VideoTile } from "./Chat";
 import { endVoice, joinVoice, voice, voiceBusy } from "../rtc/voice";
 import { ScreenQualityChip, ScreenShareControl } from "./ScreenShare";
 import { UserSettingsDialog } from "./dialogs/UserSettings";
+import { memberMenu } from "./Members";
 
 export function VoiceView({ server, channel }: { server: ServerStore; channel: Channel }) {
   const v = voice.value;
@@ -44,25 +45,29 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
     const cam = cams.get(uid);
     const st = stats.get(uid);
     const name = server.memberName(uid);
+    const menu = (e: MouseEvent) => {
+      const mem = server.member(uid);
+      if (mem) memberMenu(e, server, mem);
+    };
     const label = (
       <>
         {name}
-        {(m?.muted || m?.suppressed) && <Icon.MicOff size={13} />}
-        {m?.deafened && <Icon.HeadphonesOff size={13} />}
+        {(m?.muted || m?.suppressed || m?.server_muted) && <span class={m?.server_muted ? "mod-flag" : ""}><Icon.MicOff size={13} /></span>}
+        {(m?.deafened || m?.server_deafened) && <span class={m?.server_deafened ? "mod-flag" : ""}><Icon.HeadphonesOff size={13} /></span>}
         {st && st.quality !== "good" && <span class={`status ${st.quality === "connecting" ? "ok" : st.quality}`} title={st.rtt ? `${st.rtt} ms` : st.state}>●</span>}
         {st?.relay && <span class="xs" title={t("voice.relayHint")}>Relay</span>}
       </>
     );
     if (cam) {
       return (
-        <div class={`tile${speaking.has(uid) ? " speaking" : ""}`} key={`p${uid}`}>
+        <div class={`tile${speaking.has(uid) ? " speaking" : ""}`} key={`p${uid}`} onContextMenu={menu}>
           <VideoTile stream={cam} label="" muted />
           <div class="tile-label">{label}</div>
         </div>
       );
     }
     return (
-      <div class={`tile${speaking.has(uid) ? " speaking" : ""}`} key={`p${uid}`}>
+      <div class={`tile${speaking.has(uid) ? " speaking" : ""}`} key={`p${uid}`} onContextMenu={menu}>
         <Avatar server={server} userId={uid} name={name} size={80} speaking={speaking.has(uid)} />
         <div class="tile-label">{label}</div>
       </div>
@@ -122,6 +127,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
       {v.sharingScreen.value && <div class="notice warn" style={{ margin: "0 14px 6px" }}>🔴 {v.screenHasAudio.value ? t("voice.sharingNoticeAudio") : t("voice.sharingNotice")}</div>}
       {!v.hasMic.value && <div class="notice warn" style={{ margin: "0 14px 6px" }}>{t("voice.noMicNotice")}</div>}
       {v.suppressed.value && <div class="notice" style={{ margin: "0 14px 6px" }}>{t("voice.suppressed")}</div>}
+      {(v.serverMuted.value || v.serverDeafened.value) && <div class="notice warn" style={{ margin: "0 14px 6px" }}>{v.serverDeafened.value ? t("voice.serverDeafenedBody") : t("voice.serverMutedBody")}</div>}
       {settings.value.pushToTalk && v.hasMic.value && (
         <div class="faint small" style={{ textAlign: "center" }}>
           {t("voice.pttHint", { key: (settings.value.globalPtt ? settings.value.globalPttKey : settings.value.pttKey).replace(/^Key/, "") })}
@@ -129,8 +135,8 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
         </div>
       )}
       <div class="voice-controls">
-        <button class={`round-btn${v.muted.value || !v.hasMic.value ? " off" : ""}`} title={v.muted.value ? t("voice.unmute") : t("voice.mute")} disabled={!v.hasMic.value} onClick={() => void v.setMuted(!v.muted.value)}>
-          {v.muted.value || !v.hasMic.value ? <Icon.MicOff /> : <Icon.Mic />}
+        <button class={`round-btn${v.muted.value || !v.hasMic.value || v.serverMuted.value ? " off" : ""}`} title={v.muted.value ? t("voice.unmute") : t("voice.mute")} disabled={!v.hasMic.value} onClick={() => void v.setMuted(!v.muted.value)}>
+          {v.muted.value || !v.hasMic.value || v.serverMuted.value ? <Icon.MicOff /> : <Icon.Mic />}
         </button>
         <button class={`round-btn${v.deafened.value ? " off" : ""}`} title={v.deafened.value ? t("voice.undeafen") : t("voice.deafen")} onClick={() => void v.setDeafened(!v.deafened.value)}>
           {v.deafened.value ? <Icon.HeadphonesOff /> : <Icon.Headphones />}

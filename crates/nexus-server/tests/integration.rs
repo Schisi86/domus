@@ -735,3 +735,163 @@ async fn reactions_and_pins() {
     assert!(pins["messages"].as_array().unwrap().is_empty());
     ts.stop().await;
 }
+
+/// Registers one more member with a fresh invite and returns (token, user id).
+async fn extra_member(ep: &Endpoint, admin: &mut Client, name: &str) -> (String, i64) {
+    let inv = admin.req("invite.create", json!({ "max_uses": 1 })).await.unwrap();
+    let (s, r) = register(ep, name, inv["code"].as_str()).await;
+    assert_eq!(s, 200, "{r}");
+    let token = r["token"].as_str().unwrap().to_string();
+    let (_, ready) = Client::connect(ep, &token).await;
+    (token, ready["me"]["id"].as_i64().unwrap())
+}
+
+#[tokio::test]
+async fn timeout_kick_and_voice_moderation() {
+    let (ts, ep, owner, member) = setup("moderation").await;
+    let (mut a, ready_a) = Client::connect(&ep, &owner).await;
+    let (mut b, ready_b) = Client::connect(&ep, &member).await;
+    let (ida, idb) = (ready_a["me"]["id"].as_i64().unwrap(), ready_b["me"]["id"].as_i64().unwrap());
+    let general = channel_id(&ready_a, "allgemein");
+    let voice = channel_id(&ready_a, "Allgemein");
+
+    // Timeout: no writing or reacting, visible to everyone, lifted again.
+    let t = a.req("member.timeout", json!({ "user_id": idb, "minutes": 10, "reason": "Spam" })).await.unwrap();
+    assert!(t["timeout_until"].as_i64().unwrap() > 0);
+    loop {
+        let ev = a.event("member.updated").await;
+        if ev["id"] == idb {
+            assert!(ev["timeout_until"].as_i64().is_some());
+            break;
+        }
+    }
+    let e = b.req("message.send", json!({ "channel_id": general, "content": "darf ich?" })).await.unwrap_err();
+    assert_eq!(code(&e), "PERMISSION_DENIED");
+    let m = a.req("message.send", json!({ "channel_id": general, "content": "Regeln lesen" })).await.unwrap();
+    assert_eq!(code(&b.req("reaction.add", json!({ "message_id": m["id"], "emoji": "👍" })).await.unwrap_err()), "PERMISSION_DENIED");
+    assert_eq!(code(&b.req("member.timeout", json!({ "user_id": ida, "minutes": 5 })).await.unwrap_err()), "PERMISSION_DENIED");
+    // Joining voice works, but only listening.
+    let j = b.req("voice.join", json!({ "channel_id": voice })).await.unwrap();
+    assert_eq!((j["self"]["suppressed"].as_bool(), j["self"]["muted"].as_bool()), (Some(true), Some(true)));
+    a.req("member.timeout", json!({ "user_id": idb, "minutes": 0 })).await.unwrap();
+    b.req("message.send", json!({ "channel_id": general, "content": "danke" })).await.unwrap();
+    let st = b.req("voice.update", json!({ "muted": false })).await.unwrap();
+    assert_eq!((st["suppressed"].as_bool(), st["muted"].as_bool()), (Some(false), Some(false)), "speaking allowed again");
+    assert_eq!(code(&a.req("member.timeout", json!({ "user_id": idb, "minutes": 99999 })).await.unwrap_err()), "VALIDATION");
+
+    // Server mute / deafen: the member cannot lift it.
+    a.req("voice.join", json!({ "channel_id": voice })).await.unwrap();
+    let m = a.req("voice.moderate", json!({ "user_id": idb, "mute": true, "deafen": true })).await.unwrap();
+    assert_eq!((m["server_muted"].as_bool(), m["server_deafened"].as_bool()), (Some(true), Some(true)));
+    let st = b.req("voice.update", json!({ "muted": false, "deafened": false })).await.unwrap();
+    assert_eq!((st["muted"].as_bool(), st["deafened"].as_bool()), (Some(true), Some(true)));
+    assert_eq!(code(&b.req("voice.moderate", json!({ "user_id": ida, "mute": true })).await.unwrap_err()), "PERMISSION_DENIED");
+    assert_eq!(code(&b.req("voice.sound", json!({ "sound": "airhorn" })).await.unwrap_err()), "PERMISSION_DENIED", "no sounds while muted");
+    a.req("voice.moderate", json!({ "user_id": idb, "mute": false, "deafen": false })).await.unwrap();
+    let st = b.req("voice.update", json!({ "muted": false, "deafened": false })).await.unwrap();
+    assert_eq!((st["muted"].as_bool(), st["deafened"].as_bool()), (Some(false), Some(false)));
+
+    // Soundboard: everyone in the channel hears it, with a short cooldown.
+    b.req("voice.sound", json!({ "sound": "airhorn" })).await.unwrap();
+    let ev = a.event("voice.sound").await;
+    assert_eq!((ev["user_id"].as_i64(), ev["sound"].as_str()), (Some(idb), Some("airhorn")));
+    assert_eq!(code(&b.req("voice.sound", json!({ "sound": "tada" })).await.unwrap_err()), "RATE_LIMITED");
+    assert_eq!(code(&a.req("voice.sound", json!({ "sound": "Bad Name" })).await.unwrap_err()), "VALIDATION");
+
+    // Move to another channel; then a user limit keeps others out.
+    let lounge = a.req("channel.create", json!({ "kind": "voice", "name": "Lounge" })).await.unwrap()["id"].as_i64().unwrap();
+    a.req("voice.move", json!({ "user_id": idb, "channel_id": lounge })).await.unwrap();
+    let mv = b.event("voice.moved").await;
+    assert_eq!(mv["channel_id"].as_i64(), Some(lounge));
+    b.req("voice.join", json!({ "channel_id": lounge })).await.unwrap();
+    a.req("channel.update", json!({ "channel_id": lounge, "user_limit": 1 })).await.unwrap();
+    let (third, _) = extra_member(&ep, &mut a, "dritter").await;
+    let (mut c, _) = Client::connect(&ep, &third).await;
+    assert_eq!(code(&c.req("voice.join", json!({ "channel_id": lounge })).await.unwrap_err()), "VOICE_FULL");
+    a.req("voice.join", json!({ "channel_id": lounge })).await.expect("moderators may exceed the limit");
+    assert_eq!(code(&a.req("channel.update", json!({ "channel_id": lounge, "user_limit": 500 })).await.unwrap_err()), "VALIDATION");
+    // Disconnect.
+    a.req("voice.move", json!({ "user_id": idb, "channel_id": null })).await.unwrap();
+    let mv = b.event("voice.moved").await;
+    assert!(mv["channel_id"].is_null());
+
+    // Kick: signed out, must be approved again.
+    a.req("member.kick", json!({ "user_id": idb, "reason": "Test" })).await.unwrap();
+    let mut closed = false;
+    for _ in 0..10 {
+        if b.frame(Duration::from_secs(2)).await.is_none() {
+            closed = true;
+            break;
+        }
+    }
+    assert!(closed, "kicked client is disconnected");
+    let (s, e) = login(&ep, "member", "geheim123").await;
+    assert_eq!((s, code(&e["error"])), (403, "ACCOUNT_PENDING"));
+    a.req("member.approve", json!({ "user_id": idb })).await.unwrap();
+    assert_eq!(login(&ep, "member", "geheim123").await.0, 200);
+    let _ = c.req("ping", json!({})).await;
+    ts.stop().await;
+}
+
+#[tokio::test]
+async fn polls_forwarding_slowmode_and_mark_unread() {
+    let (ts, ep, owner, member) = setup("polls").await;
+    let (mut a, ready_a) = Client::connect(&ep, &owner).await;
+    let (mut b, ready_b) = Client::connect(&ep, &member).await;
+    let idb = ready_b["me"]["id"].as_i64().unwrap();
+    let general = channel_id(&ready_a, "allgemein");
+
+    // Polls
+    let e = a.req("poll.create", json!({ "channel_id": general, "question": "Wann?", "options": ["Heute"] })).await.unwrap_err();
+    assert_eq!(code(&e), "VALIDATION");
+    let p = a.req("poll.create", json!({ "channel_id": general, "question": "Wann spielen wir?", "options": ["Freitag", "Samstag", ""], "hours": 24 })).await.unwrap();
+    let pid = p["id"].as_i64().unwrap();
+    assert_eq!(p["poll"]["options"].as_array().unwrap().len(), 2, "empty answers are dropped");
+    let ev = b.event("message.created").await;
+    assert_eq!(ev["message"]["poll"]["question"], "Wann spielen wir?");
+    let v = b.req("poll.vote", json!({ "message_id": pid, "options": [1] })).await.unwrap();
+    assert_eq!(v["poll"]["options"][1]["voters"], json!([idb]));
+    loop {
+        let ev = a.event("message.updated").await;
+        if ev["id"] == pid {
+            assert_eq!(ev["poll"]["options"][1]["voters"], json!([idb]));
+            break;
+        }
+    }
+    assert_eq!(code(&b.req("poll.vote", json!({ "message_id": pid, "options": [0, 1] })).await.unwrap_err()), "VALIDATION", "single choice");
+    let v = b.req("poll.vote", json!({ "message_id": pid, "options": [0] })).await.unwrap();
+    assert_eq!((v["poll"]["options"][0]["voters"].clone(), v["poll"]["options"][1]["voters"].clone()), (json!([idb]), json!([])), "vote changed");
+    assert_eq!(code(&b.req("poll.end", json!({ "message_id": pid })).await.unwrap_err()), "PERMISSION_DENIED");
+    a.req("poll.end", json!({ "message_id": pid })).await.unwrap();
+    assert_eq!(code(&b.req("poll.vote", json!({ "message_id": pid, "options": [1] })).await.unwrap_err()), "VALIDATION", "ended");
+
+    // Forwarding with a file: new copy, original author noted.
+    let other = a.req("channel.create", json!({ "kind": "text", "name": "Zweiter" })).await.unwrap()["id"].as_i64().unwrap();
+    let r = ep.upload(&format!("/api/v1/files?channel_id={general}&filename=notiz.txt"), &member, b"hallo datei".to_vec(), |_, _| {}).await.unwrap();
+    let fid = serde_json::from_slice::<Value>(&r.body).unwrap()["id"].as_str().unwrap().to_string();
+    let orig = b.req("message.send", json!({ "channel_id": general, "content": "Schau mal", "attachments": [fid] })).await.unwrap();
+    let fw = a.req("message.forward", json!({ "message_id": orig["id"], "channel_id": other })).await.unwrap();
+    assert_eq!((fw["forwarded_from"].as_i64(), fw["content"].as_str(), fw["channel_id"].as_i64()), (Some(idb), Some("Schau mal"), Some(other)));
+    let new_fid = fw["attachments"][0]["id"].as_str().unwrap();
+    assert_ne!(new_fid, fid);
+    let dl = ep.request("GET", &format!("/api/v1/files/{new_fid}"), Some(&member), None, None).await.unwrap();
+    assert_eq!((dl.status, dl.body.as_slice()), (200, b"hallo datei".as_slice()));
+    assert_eq!(code(&a.req("message.forward", json!({ "message_id": pid, "channel_id": other })).await.unwrap_err()), "VALIDATION", "no polls");
+
+    // Slow mode for members; moderators are exempt.
+    a.req("channel.update", json!({ "channel_id": general, "slowmode": 30 })).await.unwrap();
+    b.req("message.send", json!({ "channel_id": general, "content": "eins" })).await.unwrap();
+    let e = b.req("message.send", json!({ "channel_id": general, "content": "zwei" })).await.unwrap_err();
+    assert_eq!(code(&e), "RATE_LIMITED");
+    assert!(e["msg"].as_str().unwrap().contains("Slow-Mode"));
+    a.req("message.send", json!({ "channel_id": general, "content": "eins" })).await.unwrap();
+    a.req("message.send", json!({ "channel_id": general, "content": "zwei" })).await.unwrap();
+
+    // Mark as unread moves the read marker back.
+    let last = a.req("message.send", json!({ "channel_id": general, "content": "neu" })).await.unwrap()["id"].as_i64().unwrap();
+    b.req("channel.ack", json!({ "channel_id": general, "message_id": last })).await.unwrap();
+    b.req("channel.ack", json!({ "channel_id": general, "message_id": pid - 1, "unread": true })).await.unwrap();
+    let (_, again) = Client::connect(&ep, &member).await;
+    assert_eq!(again["read_states"][general.to_string()].as_i64(), Some(pid - 1));
+    ts.stop().await;
+}

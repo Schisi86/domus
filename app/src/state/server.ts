@@ -293,6 +293,12 @@ export class ServerStore {
     }
   }
 
+  /** Moves the read marker back so the channel shows as unread from `messageId` on. */
+  async markUnread(cid: number, messageId: number) {
+    this.readStates.value = { ...this.readStates.value, [cid]: messageId - 1 };
+    await this.rpc("channel.ack", { channel_id: cid, message_id: messageId - 1, unread: true });
+  }
+
   async ack(cid: number) {
     const last = this.lastMessageId(cid);
     if (!last || (this.readStates.value[cid] ?? 0) >= last || !this.conn.ready) return;

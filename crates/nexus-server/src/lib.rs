@@ -58,11 +58,15 @@ pub struct AppState {
     pub perms: RwLock<PermCache>,
     pub hub: Hub,
     pub voice: Mutex<ops_voice::VoiceRegistry>,
+    /// Slow mode: (user, channel) -> time of the last message.
+    pub last_sent: Mutex<std::collections::HashMap<(i64, i64), i64>>,
     pub auth_limiter: ratelimit::IpLimiter,
     /// Uploads (attachments, avatars, icon) per IP.
     pub upload_limiter: ratelimit::IpLimiter,
     pub started: Instant,
     pub turn_secret: String,
+    /// Public TURN-over-TCP address (e.g. through the desktop app's internet tunnel).
+    pub turn_public: RwLock<Option<String>>,
     pub fingerprint: Option<String>,
     pub control: tokio::sync::watch::Sender<Control>,
     cpu_sample: Mutex<Option<(Instant, Duration)>>,
@@ -334,8 +338,10 @@ pub async fn start(cfg: Config, data_dir: &Path) -> Result<RunningServer, StartE
         perms: RwLock::new(perm_cache),
         hub: Hub::default(),
         voice: Mutex::new(Default::default()),
+        last_sent: Mutex::new(Default::default()),
         started: Instant::now(),
         turn_secret,
+        turn_public: RwLock::new(None),
         fingerprint: tls.as_ref().map(|t| t.fingerprint.clone()),
         control,
         cpu_sample: Mutex::new(None),

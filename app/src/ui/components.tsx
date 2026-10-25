@@ -1,8 +1,8 @@
 // Reusable UI building blocks of the design system.
 
 import type { ButtonHTMLAttributes, ComponentChildren } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
-import { closeDialog, closeModal, contextMenu, dialog, dismissToast, lightbox, openDialog, toasts } from "../state/app";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { closeDialog, closeModal, contextMenu, dialog, dismissToast, lightbox, openDialog, toasts, type MenuItem } from "../state/app";
 import type { ServerStore } from "../state/server";
 import { transport } from "../net/transport";
 import * as Icon from "./icons";
@@ -142,22 +142,22 @@ export function confirmDialog(opts: { title: string; body: ComponentChildren; co
   });
 }
 
-function PromptBody(props: { label: string; password?: boolean; onValue: (v: string) => void; onSubmit: () => void }) {
+function PromptBody(props: { label: string; password?: boolean; initial?: string; onValue: (v: string) => void; onSubmit: () => void }) {
   return (
     <Field label={props.label}>
       {props.password ? (
         <input class="input" autoFocus type="password" onInput={(e) => props.onValue((e.target as HTMLInputElement).value)} onKeyDown={(e) => e.key === "Enter" && props.onSubmit()} />
       ) : (
-        <input class="input" autoFocus onInput={(e) => props.onValue((e.target as HTMLInputElement).value)} onKeyDown={(e) => e.key === "Enter" && props.onSubmit()} />
+        <input class="input" autoFocus value={props.initial} onInput={(e) => props.onValue((e.target as HTMLInputElement).value)} onKeyDown={(e) => e.key === "Enter" && props.onSubmit()} />
       )}
     </Field>
   );
 }
 
 /** Asks for a single value; resolves to null when cancelled. */
-export function promptDialog(opts: { title: string; label: string; body?: ComponentChildren; password?: boolean; confirm?: string; danger?: boolean }): Promise<string | null> {
+export function promptDialog(opts: { title: string; label: string; body?: ComponentChildren; password?: boolean; confirm?: string; danger?: boolean; value?: string }): Promise<string | null> {
   return new Promise((resolve) => {
-    let value = "";
+    let value = opts.value ?? "";
     const done = (v: string | null) => {
       closeDialog();
       resolve(v);
@@ -175,7 +175,7 @@ export function promptDialog(opts: { title: string; label: string; body?: Compon
         }
       >
         {opts.body && <div class="muted small">{opts.body}</div>}
-        <PromptBody label={opts.label} password={opts.password} onValue={(v) => (value = v)} onSubmit={() => done(value)} />
+        <PromptBody label={opts.label} password={opts.password} initial={opts.value} onValue={(v) => (value = v)} onSubmit={() => done(value)} />
       </Modal>,
     );
   });
@@ -271,24 +271,62 @@ export function ContextMenu() {
   if (!m) return null;
   return (
     <div ref={ref} class="menu" style={{ left: `${pos?.x ?? m.x}px`, top: `${pos?.y ?? m.y}px`, visibility: pos ? "visible" : "hidden" }} onMouseDown={(e) => e.stopPropagation()} role="menu">
-      {m.items.map((it, i) =>
+      <MenuItems items={m.items} />
+    </div>
+  );
+}
+
+/** Submenu next to its entry; flips to the other side or upwards near the window edge. */
+function Flyout({ items }: { items: MenuItem[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [cls, setCls] = useState("");
+  useLayoutEffect(() => {
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    setCls(`${r.right > window.innerWidth - 8 ? " left" : ""}${r.bottom > window.innerHeight - 8 ? " up" : ""}`);
+  }, []);
+  return (
+    <div ref={ref} class={`menu flyout${cls}`} role="menu">
+      <MenuItems items={items} />
+    </div>
+  );
+}
+
+/** Menu entries; entries with `sub` open a flyout to the side. */
+function MenuItems({ items }: { items: MenuItem[] }) {
+  const [open, setOpen] = useState<number | null>(null);
+  return (
+    <>
+      {items.map((it, i) =>
         it.separator ? (
           <hr key={i} />
+        ) : it.heading ? (
+          <div key={i} class="menu-heading">{it.label}</div>
+        ) : it.sub ? (
+          <div key={i} class="menu-sub" onMouseEnter={() => setOpen(i)} onMouseLeave={() => setOpen((o) => (o === i ? null : o))}>
+            <button role="menuitem" aria-haspopup="menu" aria-expanded={open === i} class={`${it.danger ? "danger" : ""}${open === i ? " open" : ""}`} onClick={() => setOpen(open === i ? null : i)}>
+              <span class="grow">{it.label}</span>
+              <Icon.ChevronRight size={14} />
+            </button>
+            {open === i && <Flyout items={it.sub} />}
+          </div>
         ) : (
           <button
             key={i}
-            role="menuitem"
+            role={it.checked === undefined ? "menuitem" : "menuitemcheckbox"}
+            aria-checked={it.checked}
             class={it.danger ? "danger" : ""}
             onClick={() => {
               contextMenu.value = null;
               it.onClick?.();
             }}
           >
-            {it.label}
+            <span class="grow">{it.label}</span>
+            {it.checked && <Icon.Check size={14} />}
           </button>
         ),
       )}
-    </div>
+    </>
   );
 }
 

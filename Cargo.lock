@@ -2877,7 +2877,7 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "nexus-net"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "futures-util",
  "hex",
@@ -2893,9 +2893,10 @@ dependencies = [
 
 [[package]]
 name = "nexus-server"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "argon2",
+ "async-trait",
  "axum",
  "axum-server",
  "base64 0.22.1",
@@ -2926,7 +2927,7 @@ dependencies = [
 
 [[package]]
 name = "nexustalk"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "base64 0.22.1",
  "bore-cli",
@@ -2934,6 +2935,7 @@ dependencies = [
  "igd-next",
  "nexus-net",
  "nexus-server",
+ "rusqlite",
  "serde",
  "serde_json",
  "tauri",
@@ -2946,6 +2948,8 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tokio",
  "tracing",
+ "turn",
+ "webrtc-util",
  "windows-sys 0.61.2",
 ]
 

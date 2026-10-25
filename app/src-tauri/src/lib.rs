@@ -6,6 +6,7 @@
 //! * `store` – client configuration with DPAPI-encrypted session tokens
 //! * tray icon, single instance, autostart, media permission handling
 
+mod capture_bar;
 mod host;
 mod net;
 mod reach;
@@ -182,6 +183,7 @@ pub fn run() {
             host::host_rename,
             host::host_set_autostart,
             host::host_set_relay,
+            capture_bar::capture_bar_hide,
             host::host_config,
             host::host_config_save,
             host::host_config_reset,

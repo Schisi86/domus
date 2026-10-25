@@ -180,7 +180,14 @@ impl HostInstance {
             let mut first = Some(first_tx);
             let mut cfg = cfg;
             loop {
-                let server = match nexus_server::start(cfg.clone(), &data_dir).await {
+                // With the internet tunnel, voice/video also needs a relay that is
+                // reachable through it: TURN (UDP locally, TCP through the tunnel).
+                let tunnel_on = cfg.is_exposed() && tunnel::load(&data_dir).enabled;
+                let mut run = cfg.clone();
+                if tunnel_on {
+                    run.media.turn_enabled = true;
+                }
+                let server = match nexus_server::start(run, &data_dir).await {
                     Ok(s) => s,
                     Err(e) => {
                         let msg = e.to_string();
@@ -212,13 +219,21 @@ impl HostInstance {
                 // Reachable from the network: open the router ports as well.
                 let upnp = cfg.is_exposed().then(|| spawn_upnp(live.clone(), &cfg));
                 // Internet relay for connections without port forwarding (CGNAT).
-                let relay = (cfg.is_exposed() && tunnel::load(&data_dir).enabled).then(|| tunnel::spawn(relay_state.clone(), data_dir.clone(), cfg.port));
+                let relay = tunnel_on.then(|| {
+                    let state = server.state.clone();
+                    [
+                        tunnel::spawn(relay_state.clone(), data_dir.clone(), cfg.port, tunnel::Slot::Server, |_| {}),
+                        tunnel::spawn(relay_state.clone(), data_dir.clone(), cfg.media.udp_port, tunnel::Slot::Turn, move |addr| {
+                            *state.turn_public.write().unwrap_or_else(|e| e.into_inner()) = addr;
+                        }),
+                    ]
+                });
                 let stop = tokio::select! {
                     _ = &mut stop_rx => true,
                     _ = server.restart_requested() => false,
                 };
-                if let Some(task) = relay {
-                    task.abort();
+                if let Some(tasks) = relay {
+                    tasks.iter().for_each(|t| t.abort());
                     *lock(&relay_state) = None;
                 }
                 if let Some(task) = upnp {
@@ -632,6 +647,96 @@ mod tests {
         let _ = std::fs::remove_dir_all(&base);
     }
 
+    /// Voice relay through the internet tunnel: two TURN-over-TCP clients reach
+    /// the embedded TURN server via bore.pub, allocate relay ports and exchange
+    /// data through them (the path friends behind CGNAT take for voice).
+    /// `cargo test -p nexustalk turn_through_relay -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn turn_through_relay() {
+        use webrtc_util::Conn;
+        let base = temp_base("turnrelay");
+        let m = HostManager::load(base.clone(), false);
+        let a = m.create("Turn".into(), false).unwrap();
+        let inst = m.get(&a.id).unwrap();
+        let mut cfg = Config::load(&inst.config_path()).unwrap();
+        cfg.media.turn_enabled = true;
+        cfg.media.relay_ip = "127.0.0.1".into();
+        inst.save_config(&cfg).unwrap();
+        tauri::async_runtime::block_on(async {
+            inst.start().await.unwrap();
+            let relay: Arc<Mutex<Option<RelayStatus>>> = Arc::default();
+            let task = tunnel::spawn(relay.clone(), inst.data_dir.clone(), cfg.media.udp_port, tunnel::Slot::Turn, |_| {});
+            let mut addr = None;
+            for _ in 0..100 {
+                addr = lock(&relay).as_ref().and_then(|r| r.turn_address.clone());
+                if addr.is_some() {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+            }
+            let addr = addr.expect("TURN tunnel address");
+            println!("TURN through {addr}");
+            // Credentials as the server hands them out (shared secret in the database).
+            let secret: String = rusqlite::Connection::open(inst.data_dir.join("nexus.db"))
+                .unwrap()
+                .query_row("SELECT value FROM settings WHERE key='turn_secret'", [], |r| r.get(0))
+                .unwrap();
+            let creds = turn::auth::generate_long_term_credentials(&secret, std::time::Duration::from_secs(600)).unwrap();
+            let mut relayed = Vec::new();
+            let mut clients = Vec::new();
+            for _ in 0..2 {
+                let stream = tokio::net::TcpStream::connect(addr.as_str()).await.unwrap();
+                let (local, remote) = (stream.local_addr().unwrap(), stream.peer_addr().unwrap());
+                let conn = Arc::new(nexus_server::media::TcpTurnConn::new(stream, local, remote));
+                let client = turn::client::Client::new(turn::client::ClientConfig {
+                    stun_serv_addr: addr.clone(),
+                    turn_serv_addr: addr.clone(),
+                    username: creds.0.clone(),
+                    password: creds.1.clone(),
+                    realm: "nexustalk".into(),
+                    software: String::new(),
+                    rto_in_ms: 0,
+                    conn,
+                    vnet: None,
+                })
+                .await
+                .unwrap();
+                client.listen().await.unwrap();
+                let r = tokio::time::timeout(std::time::Duration::from_secs(10), client.allocate()).await.expect("allocate in time").unwrap();
+                println!("relayed address {}", r.local_addr().unwrap());
+                relayed.push(r);
+                clients.push(client);
+            }
+            let (ra, rb) = (relayed.remove(0), relayed.remove(0));
+            let (addr_a, addr_b) = (ra.local_addr().unwrap(), rb.local_addr().unwrap());
+            // Permissions are created by sending once in each direction.
+            let _ = rb.send_to(b"hi", addr_a).await;
+            ra.send_to(b"voice packet", addr_b).await.unwrap();
+            let mut buf = [0u8; 64];
+            let mut got = None;
+            for _ in 0..5 {
+                match tokio::time::timeout(std::time::Duration::from_secs(2), rb.recv_from(&mut buf)).await {
+                    Ok(Ok((n, from))) if &buf[..n] == b"voice packet" => {
+                        got = Some(from);
+                        break;
+                    }
+                    _ => {
+                        let _ = rb.send_to(b"hi", addr_a).await;
+                        ra.send_to(b"voice packet", addr_b).await.unwrap();
+                    }
+                }
+            }
+            assert_eq!(got, Some(addr_a), "data arrived through both relays");
+            for c in clients {
+                let _ = c.close().await;
+            }
+            task.abort();
+            m.stop_all().await;
+        });
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
     /// Full internet path through the public relay: hosted server → bore.pub →
     /// pinned TLS client (HTTP + WebSocket).
     /// `cargo test -p nexustalk server_through_relay -- --ignored --nocapture`
@@ -646,7 +751,7 @@ mod tests {
             let st = m.status(&a.id).unwrap();
             let fp = st.fingerprint.clone().expect("TLS fingerprint");
             let relay: Arc<Mutex<Option<RelayStatus>>> = Arc::default();
-            let task = tunnel::spawn(relay.clone(), PathBuf::from(&st.data_dir), st.port);
+            let task = tunnel::spawn(relay.clone(), PathBuf::from(&st.data_dir), st.port, tunnel::Slot::Server, |_| {});
             let mut addr = None;
             for _ in 0..100 {
                 addr = lock(&relay).as_ref().and_then(|r| r.address.clone());

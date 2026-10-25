@@ -147,6 +147,11 @@ try {
       return h?.relay?.address ?? null;
     }, 40000);
     check("exposed server gets a public relay address", !!relayAddr?.startsWith("bore.pub:"), relayAddr ?? "none");
+    const turnAddr = await waitFor(async () => {
+      const h = (await page.evaluate(() => window.__TAURI_INTERNALS__.invoke("host_list"))).find((x) => x.id === idA);
+      return h?.relay?.turn_address ?? null;
+    }, 30000);
+    check("voice relay (TURN over TCP) gets its own tunnel", !!turnAddr?.startsWith("bore.pub:") && turnAddr !== relayAddr, turnAddr ?? "none");
     const netLink = await waitFor(async () => {
       const t = await page.locator(".invite-link").first().textContent({ timeout: 500 });
       return t?.includes("bore.pub") ? t : null;

@@ -17,7 +17,7 @@ import { DonateCard } from "./About";
 import { ShortcutsDialog } from "../QuickSwitcher";
 import { AUTHOR, COPYRIGHT, HOMEPAGE, PRODUCT_SITE } from "../../brand";
 import { openExternal } from "../links";
-import { play, playDemo } from "../../sound";
+import { play, playDemo, playBoard } from "../../sound";
 
 type Tab = "account" | "voice" | "screen" | "notify" | "look" | "app" | "about";
 
@@ -305,6 +305,13 @@ function Notify() {
         <div class="row" style={{ gap: "10px", opacity: s.uiSounds ? 1 : 0.5 }}>
           <span class="label" style={{ margin: "0px", minWidth: "80px" }}>{t("snd.volume")}</span>
           <input class="range grow" type="range" min={0.1} max={1} step={0.05} value={s.uiVolume} disabled={!s.uiSounds} onChange={(e) => { updateSettings({ uiVolume: Number((e.target as HTMLInputElement).value) }); play("join", true); }} />
+        </div>
+      </div>
+      <div class="card col">
+        <Toggle checked={s.soundboard} onChange={(x) => updateSettings({ soundboard: x })} label={t("board.setting")} desc={t("board.settingDesc")} />
+        <div class="row" style={{ gap: "10px", opacity: s.soundboard ? 1 : 0.5 }}>
+          <span class="label" style={{ margin: "0px", minWidth: "80px" }}>{t("snd.volume")}</span>
+          <input class="range grow" type="range" min={0.05} max={1} step={0.05} value={s.soundboardVolume} disabled={!s.soundboard} onChange={(e) => { const v = Number((e.target as HTMLInputElement).value); updateSettings({ soundboardVolume: v }); playBoard("bell", v); }} />
         </div>
       </div>
       <div class="card col">

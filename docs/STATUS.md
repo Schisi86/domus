@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.5.0)
+# Funktionsstand (Version 0.6.0)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -79,6 +79,20 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
 
+### Interaktion, Moderation und Sprache übers Internet (neu in 0.6.0)
+| Funktion | Stand |
+|---|---|
+| **Sprache/Video über den Internet-Tunnel:** Der eingebaute TURN-Relay nimmt jetzt auch TCP an (RFC 5766, gleiche Portnummer wie UDP). Freigegebene Server in der Desktop-App schalten TURN automatisch ein und bekommen einen zweiten Tunnel (`bore.pub:PORT`) nur für den Medien-Relay; Clients erhalten diese Adresse mit den TURN-Zugangsdaten | ✅ Rust: TURN-Allokation über TCP (lokal) und **über das echte Relay im Internet** (zwei Clients tauschen Daten über ihre Relay-Adressen); Browser-E2E `turn.mjs` 5/5: Chromium nutzt nur TURN/TCP, Audio und Datenkanal kommen an; Desktop-E2E: eigener Tunnel für TURN; 🟡 kein Test mit einem zweiten Gerät in einem fremden Netz |
+| Systemton beim Bildschirmteilen ohne die eigene Wiedergabe (`restrictOwnAudio`), damit niemand sich selbst als Echo hört | 🟡 Hinweis an WebView2; ob die installierte WebView2-Version ihn unterstützt, wurde nicht geprüft |
+| WebView2-Leiste „… teilt Ihren Bildschirm · Freigabe beenden · Ausblenden“ wird während einer Übertragung ausgeblendet (Stopp bleibt in der App) | ✅ in der echten WebView2 geprüft: Leiste erscheint ohne, verschwindet mit der neuen Funktion |
+| **Personen-Menü** (Rechtsklick überall: Mitgliederliste, Chat, Sprachkanal) mit Untermenüs: Profil, Nachricht, Anrufen, Erwähnen, private Notiz, Lautstärke bis 200 %, „Für mich stummschalten“, Freundschaft, Blockieren, Moderation, Sprachkanal, IDs kopieren | ✅ Browser-E2E `interact.mjs` |
+| **Moderation:** Auszeit (60 s bis 1 Woche; kein Schreiben, Reagieren, Sprechen – DMs bleiben), Kicken (abmelden, Konto muss neu freigeschaltet werden), serverseitig stummschalten/taub schalten, in anderen Sprachkanal verschieben, trennen; vier neue Rechte (Kicken, Auszeit, Stummschalten, Verschieben), Rangfolge wird geprüft, Audit-Protokoll | ✅ Rust-Integrationstest + Browser-E2E |
+| **Umfragen** (2–10 Antworten, Einfach-/Mehrfachauswahl, Laufzeit 1 h bis 1 Woche oder offen, Live-Ergebnis, Stimme ändern/zurückziehen, vorzeitig beenden) | ✅ Rust-Integrationstest + Browser-E2E |
+| **Weiterleiten** von Nachrichten samt Dateien in Kanäle oder DMs („Weitergeleitet · ursprünglich von …“) | ✅ Rust-Integrationstest (Datei wird kopiert) + Browser-E2E |
+| **Als ungelesen markieren** | ✅ Rust + Browser-E2E |
+| **Slow-Mode** je Textkanal (5 s bis 6 h, Moderatoren ausgenommen, Countdown im Eingabefeld) und **Personenlimit** je Sprachkanal (Anzeige 2/5) | ✅ Rust + Browser-E2E |
+| **Soundboard** im Sprachkanal (8 synthetische Sounds, alle im Kanal hören sie, 3 s Abklingzeit, abschaltbar und Lautstärke in den Einstellungen) | ✅ Rust (Zustellung, Rate-Limit, gesperrt bei Stummschaltung) + Browser-E2E (Auslösen); Klang manuell zu beurteilen |
+
 ### Internet-Einladungen ohne Router-Einstellungen (neu in 0.5.0)
 | Funktion | Stand |
 |---|---|
@@ -93,7 +107,7 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 * Inhalte bleiben TLS-verschlüsselt zwischen App und Server (Fingerabdruck im Link). Der Relay-Betreiber sieht IP-Adressen und Datenmengen, aber keine Inhalte.
 * Der Relay-Port ist öffentlich erreichbar. Wer ihn errät, landet beim Server; die Standard-Registrierung „Nur mit Einladung“ schützt davor.
 * Über den Tunnel kommen für den Server alle Teilnehmer von `127.0.0.1`. Das Verbindungslimit pro IP gilt dort deshalb nicht (nur das Gesamtlimit), und die Login-Bremse (6/min, 10 auf einmal) teilen sich alle Tunnel-Nutzer.
-* Sprache und Video laufen per WebRTC direkt zwischen den Teilnehmern, nicht durch den Tunnel. Der eingebaute TURN-Server ist hinter CGNAT nicht erreichbar. Bei ungünstigen NAT-Kombinationen kann Sprache deshalb scheitern, obwohl Chat funktioniert.
+* Sprache und Video laufen per WebRTC möglichst direkt zwischen den Teilnehmern. Seit 0.6.0 gibt es als Rückfallebene den TURN-Relay über einen eigenen Tunnel; dann laufen die (DTLS-SRTP-verschlüsselten) Medien über bore.pub und den Host-PC – mit etwas mehr Verzögerung und Upload-Last beim Host.
 * Getestet wurde der Weg durch das echte Relay im Internet, der Test-Client lief aber auf demselben PC. Ein zweites Gerät in einem fremden Netz stand nicht zur Verfügung.
 
 ### Erreichbarkeit für andere (neu in 0.4.1)

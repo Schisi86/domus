@@ -3,16 +3,16 @@
 import { signal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
-import { lightbox, openDm, openModal, selectChannel, selectServer, settings, showMenu, startDm, toast, updateSettings, windowFocused } from "../state/app";
+import { closeModal, lightbox, openDm, openModal, selectChannel, selectServer, settings, showMenu, startDm, toast, updateSettings, windowFocused } from "../state/app";
 import type { ServerStore } from "../state/server";
-import type { Attachment, Member, Message } from "../types";
+import type { Attachment, Member, Message, Poll } from "../types";
 import { has, P } from "../types";
 import { errorText, fmtBytes, fmtDay, fmtFull, fmtStamp, fmtTime, t } from "../i18n";
-import { Avatar, IconButton, Icon, ProgressBar, Spinner, confirmDialog, copyText, loadBlobUrl } from "./components";
+import { Avatar, Field, IconButton, Icon, Modal, ProgressBar, Spinner, Toggle, confirmDialog, copyText, loadBlobUrl } from "./components";
 import { transport } from "../net/transport";
 import { pickFiles } from "../platform";
 import { joinVoice, voice } from "../rtc/voice";
-import { ProfileCard } from "./Members";
+import { ProfileCard, memberMenu, timeoutActive } from "./Members";
 import { Markdown, wrapSelection } from "./markdown";
 import { EmojiPicker } from "./EmojiPicker";
 
@@ -20,7 +20,9 @@ export const jumpTarget = signal<{ serverId: string; channelId: number; messageI
 /** Files dropped onto the message list, picked up by the composer. */
 const droppedFiles = signal<File[]>([]);
 /** Text inserted by the emoji picker of the composer. */
-const insertText = signal<string | null>(null);
+export const insertText = signal<string | null>(null);
+/** "Mark as unread": keeps the marker in place until the channel is left. */
+const unreadHold = signal<{ serverId: string; channelId: number; from: number } | null>(null);
 const GROUP_MS = 7 * 60 * 1000;
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "🎉", "👀"];
 
@@ -79,6 +81,179 @@ function FileCard({ server, att }: { server: ServerStore; att: Attachment }) {
   );
 }
 
+// ------------------------------------------------------------- polls
+
+function PollView({ server, msg, poll, me, canVote }: { server: ServerStore; msg: Message; poll: Poll; me: number; canVote: boolean }) {
+  const [busy, setBusy] = useState(false);
+  const ended = poll.ends_at !== null && poll.ends_at <= Date.now();
+  const mine = poll.options.map((o, i) => (o.voters.includes(me) ? i : -1)).filter((i) => i >= 0);
+  const voters = new Set(poll.options.flatMap((o) => o.voters));
+  const total = poll.options.reduce((n, o) => n + o.voters.length, 0);
+  const max = Math.max(0, ...poll.options.map((o) => o.voters.length));
+  const vote = async (i: number) => {
+    if (ended || !canVote || busy) return;
+    const next = poll.multi ? (mine.includes(i) ? mine.filter((x) => x !== i) : [...mine, i]) : mine.includes(i) ? [] : [i];
+    setBusy(true);
+    try {
+      await server.rpc("poll.vote", { message_id: msg.id, options: next });
+    } catch (e) {
+      toast(t("poll.voteFailed"), errorText(e), "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div class={`poll${ended ? " ended" : ""}`}>
+      <div class="poll-q"><Icon.Poll size={16} /> <span class="grow">{poll.question}</span></div>
+      <div class="faint xs">{poll.multi ? t("poll.multiHint") : t("poll.singleHint")}</div>
+      <div class="poll-options">
+        {poll.options.map((o, i) => {
+          const pct = total ? Math.round((o.voters.length / total) * 100) : 0;
+          const picked = mine.includes(i);
+          const winner = ended && o.voters.length === max && max > 0;
+          return (
+            <button
+              key={i}
+              class={`poll-opt${picked ? " picked" : ""}${winner ? " winner" : ""}`}
+              disabled={ended || !canVote || busy}
+              title={o.voters.length ? o.voters.map((u) => server.memberName(u)).join(", ") : t("poll.noVotes")}
+              onClick={() => void vote(i)}
+              aria-pressed={picked}
+            >
+              <span class="poll-bar" style={{ width: `${pct}%` }} />
+              <span class={`poll-check${poll.multi ? " multi" : ""}`}>{picked && <Icon.Check size={12} />}</span>
+              <span class="grow ellipsis">{o.text}</span>
+              <span class="poll-count">{o.voters.length} · {pct} %</span>
+            </button>
+          );
+        })}
+      </div>
+      <div class="poll-foot faint xs">
+        {t("poll.votes", { n: voters.size })} ·{" "}
+        {ended ? t("poll.ended") : poll.ends_at ? t("poll.endsAt", { time: fmtFull(poll.ends_at) }) : t("poll.open")}
+      </div>
+    </div>
+  );
+}
+
+const POLL_HOURS: [number, string][] = [
+  [1, "poll.h1"],
+  [4, "poll.h4"],
+  [24, "poll.h24"],
+  [72, "poll.h72"],
+  [168, "poll.h168"],
+  [0, "poll.hOpen"],
+];
+
+function PollDialog({ server, channelId }: { server: ServerStore; channelId: number }) {
+  const [question, setQuestion] = useState("");
+  const [options, setOptions] = useState(["", ""]);
+  const [multi, setMulti] = useState(false);
+  const [hours, setHours] = useState(24);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const filled = options.filter((o) => o.trim()).length;
+  const create = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await server.rpc("poll.create", { channel_id: channelId, question, options, multi, hours });
+      closeModal();
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Modal
+      title={t("poll.create")}
+      footer={
+        <>
+          <button class="btn ghost" onClick={closeModal}>{t("common.cancel")}</button>
+          <button class="btn primary" disabled={busy || !question.trim() || filled < 2} onClick={() => void create()}>{t("poll.post")}</button>
+        </>
+      }
+    >
+      <Field label={t("poll.question")} error={error}>
+        <input class="input" autoFocus maxLength={300} value={question} placeholder={t("poll.questionPh")} onInput={(e) => setQuestion((e.target as HTMLInputElement).value)} />
+      </Field>
+      <div class="col" style={{ gap: "6px" }}>
+        <div class="label" style={{ margin: "0px" }}>{t("poll.answers")}</div>
+        {options.map((o, i) => (
+          <div class="row" key={i}>
+            <input
+              class="input grow"
+              maxLength={80}
+              value={o}
+              placeholder={t("poll.answerPh", { n: i + 1 })}
+              onInput={(e) => {
+                const v = (e.target as HTMLInputElement).value;
+                const next = options.map((x, j) => (j === i ? v : x));
+                // A new empty field appears as soon as the last one is used.
+                if (i === next.length - 1 && v && next.length < 10) next.push("");
+                setOptions(next);
+              }}
+            />
+            {options.length > 2 && (
+              <IconButton title={t("common.remove")} class="sm" onClick={() => setOptions(options.filter((_, j) => j !== i))}><Icon.X /></IconButton>
+            )}
+          </div>
+        ))}
+      </div>
+      <Field label={t("poll.duration")}>
+        <select class="select" value={hours} onChange={(e) => setHours(Number((e.target as HTMLSelectElement).value))}>
+          {POLL_HOURS.map(([h, k]) => <option key={h} value={h}>{t(k as "poll.h1")}</option>)}
+        </select>
+      </Field>
+      <Toggle checked={multi} onChange={setMulti} label={t("poll.multi")} desc={t("poll.multiDesc")} />
+    </Modal>
+  );
+}
+
+/** Forward a message to another channel or a DM of the same server. */
+function ForwardDialog({ server, msg }: { server: ServerStore; msg: Message }) {
+  const [filter, setFilter] = useState("");
+  const [busy, setBusy] = useState<number | null>(null);
+  const q = filter.trim().toLowerCase();
+  const targets = [
+    ...server.channels.value.filter((c) => c.kind === "text" && has(c.perms, P.SEND_MESSAGES)).map((c) => ({ id: c.id, label: `# ${c.name}`, dm: false, uid: 0 })),
+    ...server.dms.value.map((d) => ({ id: d.channel_id, label: server.memberName(d.user_id), dm: true, uid: d.user_id })),
+  ].filter((x) => x.id !== msg.channel_id && (!q || x.label.toLowerCase().includes(q)));
+  const send = async (cid: number) => {
+    setBusy(cid);
+    try {
+      await server.rpc("message.forward", { message_id: msg.id, channel_id: cid });
+      toast(t("fwd.done"), undefined, "ok", 2500);
+      closeModal();
+    } catch (e) {
+      toast(t("fwd.failed"), errorText(e), "error");
+      setBusy(null);
+    }
+  };
+  return (
+    <Modal title={t("fwd.title")} sub={t("fwd.sub")}>
+      <div class="card small fwd-preview">
+        <b>{server.memberName(msg.forwarded_from ?? msg.author_id)}</b>
+        <div class="ellipsis muted">{msg.content || t("fwd.attachments", { n: msg.attachments.length })}</div>
+      </div>
+      <input class="input" autoFocus placeholder={t("fwd.search")} value={filter} onInput={(e) => setFilter((e.target as HTMLInputElement).value)} />
+      <div class="col fwd-list">
+        {targets.map((x) => (
+          <div class="list-item" key={x.id}>
+            {x.dm ? <Avatar server={server} userId={x.uid} name={x.label} size={24} /> : <Icon.Hash size={18} />}
+            <span class="grow ellipsis">{x.label}</span>
+            <button class="btn sm primary" disabled={busy !== null} onClick={() => void send(x.id)}>
+              {busy === x.id ? <Spinner /> : t("fwd.send")}
+            </button>
+          </div>
+        ))}
+        {!targets.length && <div class="faint small">{t("fwd.none")}</div>}
+      </div>
+    </Modal>
+  );
+}
+
 // ------------------------------------------------------------- message item
 
 interface ItemProps {
@@ -126,17 +301,27 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
       toast(t("chat.editFailed"), errorText(e), "error");
     }
   };
+  const endPoll = () => server.rpc("poll.end", { message_id: msg.id }).catch((e) => toast(t("common.error"), errorText(e), "error"));
+  const markUnread = () => {
+    unreadHold.value = { serverId: server.id, channelId: msg.channel_id, from: msg.id - 1 };
+    void server.markUnread(msg.channel_id, msg.id).catch((e) => toast(t("common.error"), errorText(e), "error"));
+  };
   const menu = (e: MouseEvent) =>
     showMenu(e, [
       { label: t("chat.reply"), onClick: () => onReply(msg) },
       ...(canReact ? [{ label: t("chat.addReaction"), onClick: () => setPicker((e.target as HTMLElement).getBoundingClientRect()) }] : []),
-      { label: t("chat.copyText"), onClick: () => copyText(msg.content) },
-      ...(own ? [{ label: t("common.edit"), onClick: () => { setDraft(msg.content); setEditing(msg.id); } }] : []),
+      ...(!msg.poll ? [{ label: t("fwd.action"), onClick: () => openModal(<ForwardDialog server={server} msg={msg} />) }] : []),
+      ...(own && !msg.poll ? [{ label: t("common.edit"), onClick: () => { setDraft(msg.content); setEditing(msg.id); } }] : []),
       ...(canPin ? [{ label: msg.pinned_at ? t("chat.unpin") : t("chat.pin"), onClick: pin }] : []),
+      ...(msg.poll && (own || canManage) && !(msg.poll.ends_at && msg.poll.ends_at <= Date.now()) ? [{ label: t("poll.end"), onClick: endPoll }] : []),
+      { label: t("chat.markUnread"), onClick: markUnread },
+      { separator: true, label: "" },
+      { label: t("chat.copyText"), onClick: () => copyText(msg.content) },
       ...(!own ? [{ label: t("member.sendDm"), onClick: () => void startDm(server, msg.author_id).catch((er) => toast(t("common.error"), errorText(er), "error")) }] : []),
       { label: t("chat.copyId"), onClick: () => copyText(String(msg.id)) },
       ...(own || canManage ? [{ separator: true, label: "" }, { label: t("common.delete"), danger: true, onClick: remove }] : []),
     ]);
+  const authorMenu = (e: MouseEvent) => author && memberMenu(e, server, author);
 
   return (
     <div
@@ -148,7 +333,7 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
         {compact ? (
           <div class="time" title={fmtFull(msg.created_at)}>{fmtTime(msg.created_at)}</div>
         ) : (
-          <div style={{ cursor: "pointer" }} onClick={() => author && openModal(<ProfileCard server={server} member={author} />)}>
+          <div style={{ cursor: "pointer" }} onClick={() => author && openModal(<ProfileCard server={server} member={author} />)} onContextMenu={authorMenu}>
             <Avatar server={server} userId={msg.author_id} name={name} size={38} />
           </div>
         )}
@@ -163,13 +348,21 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
         )}
         {!compact && (
           <div class="msg-meta">
-            <span class="msg-author" style={color ? { color } : undefined} onClick={() => author && openModal(<ProfileCard server={server} member={author} />)}>
+            <span class="msg-author" style={color ? { color } : undefined} onClick={() => author && openModal(<ProfileCard server={server} member={author} />)} onContextMenu={authorMenu}>
               {name}
             </span>
+            {timeoutActive(author) && <span class="timeout-mark" title={t("mod.timeoutUntil", { time: fmtFull(author!.timeout_until!) })}><Icon.Clock size={12} /></span>}
             <span class="msg-time" title={fmtFull(msg.created_at)}>{fmtStamp(msg.created_at)}</span>
           </div>
         )}
-        {editing ? (
+        {msg.forwarded_from != null && (
+          <div class="msg-forwarded">
+            <Icon.Forward size={13} /> {t("fwd.label", { name: server.memberName(msg.forwarded_from) })}
+          </div>
+        )}
+        {msg.poll ? (
+          <PollView server={server} msg={msg} poll={msg.poll} me={me} canVote={canReact || !!server.dm(msg.channel_id)} />
+        ) : editing ? (
           <div class="composer" style={{ marginTop: "4px" }}>
             <textarea
               value={draft}
@@ -234,7 +427,9 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
           ))}
           {canReact && <IconButton title={t("chat.addReaction")} class="sm" onClick={(e) => setPicker((e.currentTarget as HTMLElement).getBoundingClientRect())}><Icon.Smile /></IconButton>}
           <IconButton title={t("chat.reply")} class="sm" onClick={() => onReply(msg)}><Icon.Reply class="icon flip" /></IconButton>
-          {own && <IconButton title={t("common.edit")} class="sm" onClick={() => { setDraft(msg.content); setEditing(msg.id); }}><Icon.Edit /></IconButton>}
+          {own && !msg.poll && <IconButton title={t("common.edit")} class="sm" onClick={() => { setDraft(msg.content); setEditing(msg.id); }}><Icon.Edit /></IconButton>}
+          {!msg.poll && <IconButton title={t("fwd.action")} class="sm" onClick={() => openModal(<ForwardDialog server={server} msg={msg} />)}><Icon.Forward /></IconButton>}
+          <IconButton title={t("chat.more")} class="sm" onClick={(e) => menu(e as unknown as MouseEvent)}><Icon.More /></IconButton>
           {canPin && <IconButton title={msg.pinned_at ? t("chat.unpin") : t("chat.pin")} class="sm" active={!!msg.pinned_at} onClick={pin}><Icon.Pin /></IconButton>}
           {(own || canManage) && <IconButton title={t("common.delete")} class="sm on-danger" onClick={remove}><Icon.Trash /></IconButton>}
         </div>
@@ -275,7 +470,27 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
   const maxUpload = (server.info.value?.max_upload_mb ?? 25) * 1024 * 1024;
   const ch = server.channel(channelId);
   const dm = server.dm(channelId);
-  const placeholder = !canSend ? t("chat.noSendPerm") : ch ? t("chat.placeholderChannel", { name: ch.name }) : dm ? t("chat.placeholderDm", { name: server.memberName(dm.user_id) }) : t("chat.placeholder");
+  const meMember = server.me.value ? server.member(server.me.value.id) : undefined;
+  const timedOut = !dm && timeoutActive(meMember);
+  const slow = ch?.slowmode ?? 0;
+  const slowExempt = has(perms, P.MANAGE_MESSAGES);
+  const [cooldown, setCooldown] = useState(0);
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
+  const placeholder = timedOut
+    ? t("mod.youTimedOut", { time: fmtTime(meMember!.timeout_until!) })
+    : !canSend
+      ? t("chat.noSendPerm")
+      : cooldown > 0
+        ? t("chat.slowWait", { s: cooldown })
+        : ch
+          ? t("chat.placeholderChannel", { name: ch.name })
+          : dm
+            ? t("chat.placeholderDm", { name: server.memberName(dm.user_id) })
+            : t("chat.placeholder");
 
   useEffect(() => {
     ta.current?.focus();
@@ -354,6 +569,7 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
       setFiles([]);
       const replyId = reply?.id ?? null;
       clearReply();
+      if (slow > 0 && !slowExempt) setCooldown(slow);
       await server.send(channelId, content, replyId, ids);
     } catch (e) {
       toast(t("chat.sendFailed"), errorText(e), "error");
@@ -384,7 +600,7 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
     }
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
       e.preventDefault();
-      void send();
+      if (cooldown <= 0) void send();
     } else if (e.key === "Escape" && reply) clearReply();
     else if (e.key === "ArrowUp" && !text) {
       e.preventDefault();
@@ -446,9 +662,18 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
           </div>
         )}
         <div class="composer-row">
-          {canAttach && (
-            <IconButton title={t("chat.attach")} disabled={!canSend || sending} onClick={async () => addFiles(await pickFiles())}>
-              <Icon.Paperclip />
+          {canSend && (
+            <IconButton
+              title={t("chat.plus")}
+              disabled={sending}
+              onClick={(e) =>
+                showMenu(e as unknown as MouseEvent, [
+                  ...(canAttach ? [{ label: t("chat.attach"), onClick: async () => addFiles(await pickFiles()) }] : []),
+                  { label: t("poll.create"), onClick: () => openModal(<PollDialog server={server} channelId={channelId} />) },
+                ])
+              }
+            >
+              <Icon.Plus />
             </IconButton>
           )}
           <textarea
@@ -475,7 +700,7 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
               <Icon.Smile />
             </IconButton>
           )}
-          <IconButton title={t("chat.send")} disabled={!canSend || sending || (!text.trim() && !files.length)} onClick={() => void send()}>
+          <IconButton title={t("chat.send")} disabled={!canSend || sending || cooldown > 0 || (!text.trim() && !files.length)} onClick={() => void send()}>
             {sending ? <Spinner /> : <Icon.Send class="icon flip" />}
           </IconButton>
         </div>
@@ -489,6 +714,11 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
             insertText.value = e;
           }}
         />
+      )}
+      {slow > 0 && canSend && (
+        <div class="slowmode-hint" title={slowExempt ? t("chat.slowExempt") : undefined}>
+          <Icon.Clock size={12} /> {t("chat.slowmode", { d: fmtSlow(slow) })}{slowExempt ? ` · ${t("chat.slowExemptShort")}` : ""}
+        </div>
       )}
       <div class="typing" aria-live="polite">
         {typingUsers.length === 1 && t("chat.typing1", { name: typingUsers[0] })}
@@ -574,9 +804,15 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
     if (el && stick.current) el.scrollTop = el.scrollHeight;
   }, [msgs.length, msgs[msgs.length - 1]?.id]);
 
+  const hold = unreadHold.value;
+  const holding = !!hold && hold.serverId === server.id && hold.channelId === channelId;
+  if (holding) unreadFrom.current = hold.from;
+  useEffect(() => () => {
+    if (unreadHold.value?.channelId === channelId) unreadHold.value = null;
+  }, [channelId]);
   useEffect(() => {
-    if (stick.current && windowFocused.value && ready && msgs.length) void server.ack(channelId);
-  }, [msgs.length, windowFocused.value, ready]);
+    if (!holding && stick.current && windowFocused.value && ready && msgs.length) void server.ack(channelId);
+  }, [msgs.length, windowFocused.value, ready, holding]);
 
   useEffect(() => {
     const j = jumpTarget.value;
@@ -604,7 +840,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
     const el = scroller.current;
     if (!el) return;
     stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
-    if (stick.current && windowFocused.value) void server.ack(channelId);
+    if (stick.current && windowFocused.value && !holding) void server.ack(channelId);
     if (el.scrollTop < 150 && log.hasMore.value && !log.loading.value && log.loaded) {
       const prevHeight = el.scrollHeight;
       const n = await server.loadOlder(channelId).catch(() => 0);
@@ -631,7 +867,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
       items.push(<div class="day-sep" key={`d-${m.created_at}-${i}`}>{day}</div>);
       lastDay = day;
     }
-    if (!unreadShown && unreadFrom.current && m.id > unreadFrom.current && m.author_id !== me && !m.pending) {
+    if (!unreadShown && (unreadFrom.current || holding) && m.id > unreadFrom.current && m.author_id !== me && !m.pending) {
       unreadShown = true;
       items.push(<div class="unread-sep" key="unread">{t("chat.new")}</div>);
     }
@@ -765,6 +1001,10 @@ function CallStrip() {
       ))}
     </div>
   );
+}
+
+function fmtSlow(s: number) {
+  return s < 60 ? `${s} s` : s < 3600 ? `${Math.round(s / 60)} min` : `${Math.round(s / 3600)} h`;
 }
 
 export function VideoTile({ stream, label, muted, onClick, children }: { stream: MediaStream; label: string; muted?: boolean; onClick?: () => void; children?: ComponentChildren }) {

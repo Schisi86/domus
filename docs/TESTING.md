@@ -80,7 +80,21 @@ Echte Weboberfläche, echter Server, 3–4 Clients in Chromium mit virtuellem Mi
 | Verlassen/erneuter Beitritt baut Medien neu auf | ✅ |
 | Gast ohne Bildschirmrecht wird serverseitig abgelehnt (mit Meldung) | ✅ |
 
-### Hosting-Zentrale (Desktop-App) – `tests/e2e/hosting.mjs`: 18/18 bestanden (0.5.0, inkl. Internet-Link über das Relay; ohne Internet: `E2E_NO_INTERNET=1`)
+### Interaktion – `tests/e2e/interact.mjs`: 17/17 bestanden (0.6.0)
+
+Zwei Browser-Clients (Inhaber + Mitglied) gegen einen frischen Server: Umfrage erstellen/abstimmen/live zählen, Weiterleiten, Als ungelesen markieren, Auszeit über das Personen-Menü (Eingabe gesperrt, Uhr-Symbol, aufheben), Slow-Mode (Hinweis, Countdown), Soundboard, serverseitig stummschalten (Mitglied kann nicht selbst aufheben), Verschieben in anderen Sprachkanal, Kicken (abgemeldet, wartet auf Freischaltung).
+
+### Sprach-Relay über TCP – `tests/e2e/turn.mjs`: 5/5 bestanden (0.6.0)
+
+Zwei Chromium-Verbindungen, die nur TURN über TCP benutzen dürfen: Datenkanal und Audio kommen an, gewählter Pfad ist „relay/tcp“. Dazu Rust: `turn_allocates_over_tcp` (lokal) und das Live-Test `turn_through_relay` (zwei TURN-Clients über bore.pub, Daten über beide Relay-Adressen):
+
+```bash
+cargo test -p nexustalk turn_through_relay -- --ignored --nocapture
+```
+
+Rust-Integrationstests neu in 0.6.0: `timeout_kick_and_voice_moderation`, `polls_forwarding_slowmode_and_mark_unread`.
+
+### Hosting-Zentrale (Desktop-App) – `tests/e2e/hosting.mjs`: 19/19 bestanden (0.6.0, inkl. Internet-Link und eigenem TURN-Tunnel; ohne Internet: `E2E_NO_INTERNET=1`)
 
 Echte Desktop-App (Testbuild mit eigener App-Kennung, Datenordner per `APPDATA` in ein Temp-Verzeichnis umgeleitet – eine installierte NexusTalk bleibt unberührt), gesteuert über WebView2-DevTools: Schaltfläche unten links, Erstformular mit vorausgefülltem Namen, zwei Server nacheinander erstellt (Ports 7878/7879), Inhaber jeweils mit vorausgefülltem Benutzernamen angelegt, dauerhafte Einladungslinks angezeigt und beim erneuten Öffnen unverändert, beide Server gleichzeitig aktiv, Zähler in der Leiste, Registry `hosts.json`, Entfernen inkl. Datenordner und Client-Eintrag.
 
@@ -125,6 +139,7 @@ Release-Build, gesteuert über das DevTools-Protokoll von WebView2:
 
 ## Nicht oder nur teilweise getestet
 
+* **Freigabe-Leiste der WebView2 (0.6.0):** Das Ausblenden wurde einmal manuell-skriptgesteuert in der echten WebView2 geprüft (Quelle per `--auto-select-desktop-capture-source`), ist aber nicht Teil der automatischen Testreihen, weil dafür der echte Bildschirm aufgenommen wird.
 * **Internet-Tunnel mit einem zweiten Gerät (0.5.0):** Der Weg durch das echte Relay ist getestet, der Client lief aber auf demselben PC. Sprache/Video zwischen zwei Geräten in fremden Netzen (WebRTC über öffentliches STUN, ohne TURN) ist **nicht** getestet.
 * **Firewall-Freigabe und Zugriff von einem zweiten PC (0.4.1):** Die Freigabe ist eine Admin-Aktion und wurde nicht automatisiert ausgeführt; ein zweites Gerät stand nicht zur Verfügung. Geprüft sind Status-Abfrage, Skript-Syntax und die Hinweise im Client. **UPnP** konnte mangels UPnP-fähigem Router nicht gegen ein echtes Gerät getestet werden.
 

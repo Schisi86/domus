@@ -88,10 +88,36 @@ struct SendReq {
     nonce: Option<String>,
 }
 
+/// Slow mode: members without MANAGE_MESSAGES wait between messages.
+fn check_slowmode(ctx: &Ctx, channel_id: i64) -> ApiResult<()> {
+    let secs = {
+        let pc = ctx.perms();
+        let s = pc.channels.get(&channel_id).map(|c| c.slowmode).unwrap_or(0);
+        if s <= 0 || pc.has_in(ctx.uid, channel_id, MANAGE_MESSAGES) {
+            return Ok(());
+        }
+        s
+    };
+    let now = crate::util::now_ms();
+    let mut map = ctx.st.last_sent.lock().unwrap_or_else(|p| p.into_inner());
+    if let Some(last) = map.get(&(ctx.uid, channel_id)) {
+        let wait = last + secs * 1000 - now;
+        if wait > 0 {
+            return Err(ApiError::new(Code::RateLimited, format!("Slow-Mode: bitte noch {} s warten", (wait + 999) / 1000)));
+        }
+    }
+    if map.len() > 50_000 {
+        map.clear();
+    }
+    map.insert((ctx.uid, channel_id), now);
+    Ok(())
+}
+
 pub async fn send(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     let r: SendReq = parse(d)?;
     ctx.take_message_token()?;
     ctx.require_in(r.channel_id, SEND_MESSAGES)?;
+    check_slowmode(ctx, r.channel_id)?;
     if !r.attachments.is_empty() {
         ctx.require_in(r.channel_id, ATTACH_FILES)?;
         if r.attachments.len() > MAX_ATTACHMENTS {
@@ -222,13 +248,20 @@ pub async fn search(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
 struct AckReq {
     channel_id: i64,
     message_id: i64,
+    /// Move the marker back ("mark as unread").
+    #[serde(default)]
+    unread: bool,
 }
 
 pub async fn ack(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     let r: AckReq = parse(d)?;
     ctx.require_in(r.channel_id, VIEW_CHANNEL)?;
     let uid = ctx.uid;
-    ctx.st.db.call(move |c| store::set_read(c, uid, r.channel_id, r.message_id)).await?;
+    let (cid, mid, unread) = (r.channel_id, r.message_id, r.unread);
+    ctx.st
+        .db
+        .call(move |c| if unread { store::set_read_exact(c, uid, cid, mid) } else { store::set_read(c, uid, cid, mid) })
+        .await?;
     let ev = hub::event("read_state.update", &json!({ "channel_id": r.channel_id, "message_id": r.message_id }));
     ctx.st.hub.send_user_except(uid, ctx.conn_id, &ev);
     Ok(json!({}))
@@ -333,6 +366,164 @@ pub async fn pins(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     ctx.require_in(r.channel_id, VIEW_CHANNEL)?;
     let msgs = ctx.st.db.call(move |c| store::pinned_messages(c, r.channel_id)).await?;
     Ok(json!({ "messages": msgs }))
+}
+
+#[derive(Deserialize)]
+struct ForwardReq {
+    message_id: i64,
+    channel_id: i64,
+}
+
+/// Forwards a message (text and files) to another channel or DM.
+pub async fn forward(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: ForwardReq = parse(d)?;
+    ctx.take_message_token()?;
+    let id = r.message_id;
+    let src = ctx.st.db.call(move |c| store::get_message(c, id)).await?.ok_or_else(|| ApiError::not_found("Nachricht"))?;
+    ctx.require_in(src.channel_id, VIEW_CHANNEL)?;
+    ctx.require_in(r.channel_id, SEND_MESSAGES)?;
+    if !src.attachments.is_empty() {
+        ctx.require_in(r.channel_id, ATTACH_FILES)?;
+    }
+    if src.poll.is_some() {
+        return Err(ApiError::invalid("Umfragen können nicht weitergeleitet werden"));
+    }
+    check_slowmode(ctx, r.channel_id)?;
+    if let Some(other) = dm_partner(ctx, r.channel_id) {
+        let me = ctx.uid;
+        if ctx.st.db.call(move |c| store::is_blocked_either(c, me, other)).await? {
+            return Err(ApiError::new(Code::Blocked, "Nachricht kann nicht zugestellt werden"));
+        }
+    }
+    // Copy the files first so the new message never points to missing data.
+    let mut planned = Vec::new();
+    for a in &src.attachments {
+        let new_id = crate::util::random_hex(16);
+        let (Some(from), Some(to)) = (files::attachment_path(&ctx.st, &a.id), files::attachment_path(&ctx.st, &new_id)) else {
+            return Err(ApiError::internal());
+        };
+        std::fs::copy(&from, &to).map_err(|_| ApiError::not_found("Anhang"))?;
+        planned.push(new_id);
+    }
+    let (uid, cid, ids) = (ctx.uid, r.channel_id, planned.clone());
+    let msg = match ctx.st.db.call(move |c| store::forward_message(c, &src, cid, uid, &ids)).await {
+        Ok(m) => m,
+        Err(e) => {
+            files::remove_attachments(&ctx.st, &planned);
+            return Err(e);
+        }
+    };
+    ctx.st.broadcast_channel(cid, &hub::event("message.created", &json!({ "message": msg, "nonce": null })));
+    Ok(json!(msg))
+}
+
+#[derive(Deserialize)]
+struct PollCreate {
+    channel_id: i64,
+    question: String,
+    options: Vec<String>,
+    #[serde(default)]
+    multi: bool,
+    /// Runtime in hours; 0 = until ended by hand.
+    #[serde(default)]
+    hours: i64,
+}
+
+pub async fn poll_create(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: PollCreate = parse(d)?;
+    ctx.take_message_token()?;
+    ctx.require_in(r.channel_id, SEND_MESSAGES)?;
+    check_slowmode(ctx, r.channel_id)?;
+    let question = clean_text(&r.question, 300, false, "Frage")?;
+    if question.is_empty() {
+        return Err(ApiError::invalid("Frage darf nicht leer sein"));
+    }
+    let options: Vec<String> = r
+        .options
+        .iter()
+        .map(|o| clean_text(o, 80, false, "Antwort"))
+        .collect::<ApiResult<Vec<_>>>()?
+        .into_iter()
+        .filter(|o| !o.is_empty())
+        .collect();
+    if options.len() < 2 || options.len() > store::MAX_POLL_OPTIONS {
+        return Err(ApiError::invalid(format!("Eine Umfrage braucht 2 bis {} Antworten", store::MAX_POLL_OPTIONS)));
+    }
+    if !(0..=24 * 14).contains(&r.hours) {
+        return Err(ApiError::invalid("Laufzeit: höchstens 14 Tage"));
+    }
+    let ends_at = (r.hours > 0).then(|| crate::util::now_ms() + r.hours * 3_600_000);
+    let (uid, cid, multi) = (ctx.uid, r.channel_id, r.multi);
+    let msg = ctx.st.db.call(move |c| store::insert_poll(c, cid, uid, &question, &options, multi, ends_at)).await?;
+    ctx.st.broadcast_channel(cid, &hub::event("message.created", &json!({ "message": msg, "nonce": null })));
+    Ok(json!(msg))
+}
+
+#[derive(Deserialize)]
+struct PollVote {
+    message_id: i64,
+    /// Chosen answers (empty = withdraw the vote).
+    options: Vec<usize>,
+}
+
+pub async fn poll_vote(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: PollVote = parse(d)?;
+    ctx.take_message_token()?;
+    let id = r.message_id;
+    let msg = ctx.st.db.call(move |c| store::get_message(c, id)).await?.ok_or_else(|| ApiError::not_found("Nachricht"))?;
+    ctx.require_in(msg.channel_id, VIEW_CHANNEL)?;
+    let poll = msg.poll.as_ref().ok_or_else(|| ApiError::not_found("Umfrage"))?;
+    if poll.ends_at.is_some_and(|t| t <= crate::util::now_ms()) {
+        return Err(ApiError::invalid("Die Umfrage ist beendet"));
+    }
+    let mut opts = r.options.clone();
+    opts.sort_unstable();
+    opts.dedup();
+    if opts.iter().any(|o| *o >= poll.options.len()) || (!poll.multi && opts.len() > 1) {
+        return Err(ApiError::invalid("Ungültige Auswahl"));
+    }
+    let uid = ctx.uid;
+    let updated = ctx
+        .st
+        .db
+        .call(move |c| {
+            store::vote_poll(c, id, uid, &opts)?;
+            store::get_message(c, id)
+        })
+        .await?
+        .ok_or_else(ApiError::internal)?;
+    ctx.st.broadcast_channel(updated.channel_id, &hub::event("message.updated", &updated));
+    Ok(json!(updated))
+}
+
+#[derive(Deserialize)]
+struct IdOnly {
+    message_id: i64,
+}
+
+/// Ends a poll early (author or moderator).
+pub async fn poll_end(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: IdOnly = parse(d)?;
+    let id = r.message_id;
+    let msg = ctx.st.db.call(move |c| store::get_message(c, id)).await?.ok_or_else(|| ApiError::not_found("Nachricht"))?;
+    ctx.require_in(msg.channel_id, VIEW_CHANNEL)?;
+    if msg.poll.is_none() {
+        return Err(ApiError::not_found("Umfrage"));
+    }
+    if msg.author_id != ctx.uid {
+        ctx.require_in(msg.channel_id, MANAGE_MESSAGES)?;
+    }
+    let updated = ctx
+        .st
+        .db
+        .call(move |c| {
+            store::end_poll(c, id)?;
+            store::get_message(c, id)
+        })
+        .await?
+        .ok_or_else(ApiError::internal)?;
+    ctx.st.broadcast_channel(updated.channel_id, &hub::event("message.updated", &updated));
+    Ok(json!(updated))
 }
 
 #[cfg(test)]

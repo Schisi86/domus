@@ -30,6 +30,14 @@ pub const BAN_MEMBERS: Perms = 1 << 11;
 pub const MANAGE_ROLES: Perms = 1 << 12;
 pub const MANAGE_SERVER: Perms = 1 << 13;
 pub const VIEW_AUDIT_LOG: Perms = 1 << 14;
+/// Remove a member from the server (they need to be re-admitted).
+pub const KICK_MEMBERS: Perms = 1 << 15;
+/// Time out members: no writing, reacting or speaking for a while.
+pub const MODERATE_MEMBERS: Perms = 1 << 16;
+/// Mute or deafen others in voice channels (server-side).
+pub const MUTE_MEMBERS: Perms = 1 << 17;
+/// Move others between voice channels or disconnect them.
+pub const MOVE_MEMBERS: Perms = 1 << 18;
 pub const ADMINISTRATOR: Perms = 1 << 30;
 
 pub const ALL: Perms = VIEW_CHANNEL
@@ -47,6 +55,10 @@ pub const ALL: Perms = VIEW_CHANNEL
     | MANAGE_ROLES
     | MANAGE_SERVER
     | VIEW_AUDIT_LOG
+    | KICK_MEMBERS
+    | MODERATE_MEMBERS
+    | MUTE_MEMBERS
+    | MOVE_MEMBERS
     | ADMINISTRATOR;
 
 /// Permissions that only make sense per channel; overrides may only touch these.
@@ -59,8 +71,19 @@ pub const DM_PERMS: Perms = VIEW_CHANNEL | SEND_MESSAGES | ATTACH_FILES | CONNEC
 pub const MEMBER_DEFAULT: Perms =
     VIEW_CHANNEL | SEND_MESSAGES | ATTACH_FILES | CONNECT | SPEAK | VIDEO | SCREEN_SHARE;
 pub const GUEST_DEFAULT: Perms = VIEW_CHANNEL | SEND_MESSAGES | CONNECT | SPEAK;
-pub const MODERATOR_DEFAULT: Perms =
-    MEMBER_DEFAULT | MANAGE_MESSAGES | CREATE_INVITES | BAN_MEMBERS | VIEW_AUDIT_LOG | CREATE_CHANNELS;
+pub const MODERATOR_DEFAULT: Perms = MEMBER_DEFAULT
+    | MANAGE_MESSAGES
+    | CREATE_INVITES
+    | BAN_MEMBERS
+    | VIEW_AUDIT_LOG
+    | CREATE_CHANNELS
+    | KICK_MEMBERS
+    | MODERATE_MEMBERS
+    | MUTE_MEMBERS
+    | MOVE_MEMBERS;
+
+/// What a timed-out member loses in server channels (DMs stay usable).
+pub const TIMEOUT_DENY: Perms = SEND_MESSAGES | ATTACH_FILES | SPEAK | VIDEO | SCREEN_SHARE;
 
 /// Default roles created for a fresh server: (name, permissions, position, color, assigned to new users).
 pub const DEFAULT_ROLES: &[(&str, Perms, i64, &str, bool)] = &[
@@ -82,6 +105,10 @@ pub struct ChannelInfo {
     /// Voice channels and DMs can be joined for calls.
     pub voice: bool,
     pub dm_members: Vec<i64>,
+    /// Seconds between two messages of one member (0 = off).
+    pub slowmode: i64,
+    /// Maximum participants of a voice channel (0 = unlimited).
+    pub user_limit: i64,
     /// role id -> (allow, deny)
     pub overrides: HashMap<i64, (Perms, Perms)>,
 }
@@ -95,6 +122,8 @@ pub struct PermCache {
     pub user_roles: HashMap<i64, Vec<i64>>,
     pub owners: HashSet<i64>,
     pub channels: HashMap<i64, ChannelInfo>,
+    /// user id -> timeout end (ms since epoch)
+    pub timeouts: HashMap<i64, i64>,
 }
 
 impl PermCache {
@@ -119,8 +148,19 @@ impl PermCache {
         if p & ADMINISTRATOR != 0 { ALL } else { p }
     }
 
+    /// End of a running timeout, if any.
+    pub fn timeout_until(&self, uid: i64) -> Option<i64> {
+        self.timeouts.get(&uid).copied().filter(|t| *t > crate::util::now_ms())
+    }
+
     /// Effective permissions in a channel. Unknown channels yield 0.
     pub fn channel(&self, uid: i64, cid: i64) -> Perms {
+        let p = self.channel_raw(uid, cid);
+        let dm = self.channels.get(&cid).is_some_and(|c| c.is_dm);
+        if !dm && self.timeout_until(uid).is_some() { p & !TIMEOUT_DENY } else { p }
+    }
+
+    fn channel_raw(&self, uid: i64, cid: i64) -> Perms {
         let Some(ch) = self.channels.get(&cid) else { return 0 };
         if ch.is_dm {
             return if ch.dm_members.contains(&uid) { DM_PERMS } else { 0 };
@@ -250,6 +290,18 @@ mod tests {
         assert_eq!(c.channel(103, 13), DM_PERMS);
         assert_eq!(c.channel(101, 13), 0, "even admins cannot read foreign DMs");
         assert_eq!(c.channel(103, 999), 0);
+    }
+
+    #[test]
+    fn timeout_removes_writing_and_speaking_but_not_dms() {
+        let mut c = cache();
+        c.timeouts.insert(103, crate::util::now_ms() + 60_000);
+        assert!(c.has_in(103, 10, VIEW_CHANNEL));
+        assert!(!c.has_in(103, 10, SEND_MESSAGES));
+        assert!(!c.has_in(103, 10, SPEAK));
+        assert!(c.has_in(103, 13, SEND_MESSAGES), "DMs stay usable");
+        c.timeouts.insert(103, crate::util::now_ms() - 1);
+        assert!(c.has_in(103, 10, SEND_MESSAGES), "expired timeouts do not apply");
     }
 
     #[test]

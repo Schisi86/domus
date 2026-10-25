@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-25T00:09:22.544Z",
+  "results": [
+    {
+      "name": "poll: member sees the new poll",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "poll: member's vote is marked",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "poll: owner sees the vote live",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "forward: copy appears with the original author",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "mark unread: 'new' marker appears",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "timeout: member's composer is blocked",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "timeout: clock mark in the member list",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "timeout: lifted again",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "slow mode: hint shown to members",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "slow mode: countdown after sending",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "soundboard: sound sent (cooldown starts, no error)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "server mute: member is muted and told why",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "server mute: member cannot unmute",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "server mute: lifted by the moderator",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "move: member lands in the other voice channel",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "kick: member is signed out",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "kick: account waits for approval",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

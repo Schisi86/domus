@@ -16,6 +16,10 @@ export const P = {
   MANAGE_ROLES: 1 << 12,
   MANAGE_SERVER: 1 << 13,
   VIEW_AUDIT_LOG: 1 << 14,
+  KICK_MEMBERS: 1 << 15,
+  MODERATE_MEMBERS: 1 << 16,
+  MUTE_MEMBERS: 1 << 17,
+  MOVE_MEMBERS: 1 << 18,
   ADMINISTRATOR: 1 << 30,
 } as const;
 
@@ -45,6 +49,8 @@ export interface Member {
   roles: number[];
   presence: Presence;
   status: string;
+  /** End of a running timeout (ms), if any. */
+  timeout_until?: number | null;
 }
 
 export interface Role {
@@ -71,6 +77,10 @@ export interface Channel {
   position: number;
   last_message_id: number | null;
   perms: number;
+  /** Seconds between two messages (0 = off). */
+  slowmode?: number;
+  /** Voice channels: maximum participants (0 = unlimited). */
+  user_limit?: number;
 }
 
 export interface Attachment {
@@ -93,10 +103,20 @@ export interface Message {
   attachments: Attachment[];
   reactions: { emoji: string; users: number[] }[];
   pinned_at: number | null;
+  /** Original author of a forwarded message. */
+  forwarded_from?: number | null;
+  poll?: Poll;
   // client-side only
   nonce?: string;
   pending?: boolean;
   failed?: boolean;
+}
+
+export interface Poll {
+  question: string;
+  options: { text: string; voters: number[] }[];
+  multi: boolean;
+  ends_at: number | null;
 }
 
 export interface Dm {
@@ -113,6 +133,9 @@ export interface VoiceMember {
   video: boolean;
   screen: boolean;
   suppressed: boolean;
+  /** Muted / deafened by a moderator. */
+  server_muted?: boolean;
+  server_deafened?: boolean;
   joined_at: number;
 }
 
@@ -131,7 +154,8 @@ export interface ServerInfo {
 
 export interface IceConfig {
   stun_port: number | null;
-  turn: { port: number; username: string; credential: string } | null;
+  /** `tcp`: also reachable via TCP on the same port; `public`: TURN-over-TCP address through the internet tunnel. */
+  turn: { port: number; tcp?: boolean; public?: string | null; username: string; credential: string } | null;
   servers: { urls: string[]; username?: string; credential?: string }[];
 }
 

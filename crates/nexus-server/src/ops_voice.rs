@@ -13,7 +13,7 @@ use serde_json::{json, Value};
 
 use crate::error::{ApiError, ApiResult, Code};
 use crate::hub;
-use crate::perms::{PermCache, CONNECT, SCREEN_SHARE, SPEAK, VIDEO, VIEW_CHANNEL};
+use crate::perms::{PermCache, CONNECT, MOVE_MEMBERS, MUTE_MEMBERS, SCREEN_SHARE, SPEAK, VIDEO, VIEW_CHANNEL};
 use crate::util::now_ms;
 use crate::ws::{ice_config, parse, Ctx};
 use crate::AppState;
@@ -33,12 +33,17 @@ pub struct VoiceMember {
     pub screen: bool,
     /// The user lacks the SPEAK permission and is listen-only.
     pub suppressed: bool,
+    /// Muted / deafened by a moderator (only they can lift it).
+    pub server_muted: bool,
+    pub server_deafened: bool,
     pub joined_at: i64,
 }
 
 #[derive(Default)]
 pub struct VoiceRegistry {
     by_user: HashMap<i64, VoiceMember>,
+    /// Soundboard: last sound per user (ms) for rate limiting.
+    last_sound: HashMap<i64, i64>,
 }
 
 impl VoiceRegistry {
@@ -80,10 +85,12 @@ struct JoinReq {
 
 pub async fn join(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     let r: JoinReq = parse(d)?;
-    let (is_voice, can_speak) = {
+    let (is_voice, can_speak, user_limit, can_move) = {
         let pc = ctx.perms();
-        let is_voice = pc.channels.get(&r.channel_id).map(|c| c.voice).unwrap_or(false);
-        (is_voice, pc.has_in(ctx.uid, r.channel_id, SPEAK))
+        let ch = pc.channels.get(&r.channel_id);
+        let is_voice = ch.map(|c| c.voice).unwrap_or(false);
+        let limit = ch.map(|c| c.user_limit).unwrap_or(0);
+        (is_voice, pc.has_in(ctx.uid, r.channel_id, SPEAK), limit, pc.has(ctx.uid, MOVE_MEMBERS))
     };
     ctx.require_in(r.channel_id, CONNECT)?;
     if !is_voice {
@@ -106,6 +113,9 @@ pub async fn join(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
         if reg.channel_members(r.channel_id).len() >= max {
             return Err(ApiError::new(Code::VoiceFull, format!("Sprachkanal ist voll ({max} Teilnehmer)")));
         }
+        if user_limit > 0 && !can_move && reg.channel_members(r.channel_id).len() as i64 >= user_limit {
+            return Err(ApiError::new(Code::VoiceFull, format!("Sprachkanal ist voll (Limit {user_limit})")));
+        }
         let previous = reg.by_user.remove(&ctx.uid);
         let m = VoiceMember {
             user_id: ctx.uid,
@@ -116,6 +126,8 @@ pub async fn join(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
             video: false,
             screen: false,
             suppressed: !can_speak,
+            server_muted: false,
+            server_deafened: false,
             joined_at: now_ms(),
         };
         reg.by_user.insert(ctx.uid, m.clone());
@@ -163,10 +175,10 @@ pub async fn update(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
         let mut reg = registry(&ctx.st);
         let m = reg.by_user.get_mut(&ctx.uid).ok_or_else(|| ApiError::not_found("Sprachverbindung"))?;
         if let Some(v) = r.muted {
-            m.muted = v || !can_speak;
+            m.muted = v || !can_speak || m.server_muted;
         }
         if let Some(v) = r.deafened {
-            m.deafened = v;
+            m.deafened = v || m.server_deafened;
         }
         if let Some(v) = r.video {
             m.video = v;
@@ -179,6 +191,127 @@ pub async fn update(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     };
     broadcast_state(&ctx.st, &m, false);
     Ok(json!(m))
+}
+
+/// Re-evaluates SPEAK for a participant (e.g. after a timeout was set or lifted).
+pub fn refresh_speak(st: &AppState, uid: i64) {
+    let m = {
+        let pc = st.perms();
+        let mut reg = registry(st);
+        let Some(m) = reg.by_user.get_mut(&uid) else { return };
+        let can_speak = pc.has_in(uid, m.channel_id, SPEAK);
+        m.suppressed = !can_speak;
+        if !can_speak {
+            m.muted = true;
+        }
+        m.clone()
+    };
+    broadcast_state(st, &m, false);
+}
+
+#[derive(Deserialize)]
+struct ModerateReq {
+    user_id: i64,
+    mute: Option<bool>,
+    deafen: Option<bool>,
+}
+
+/// Server mute / deafen by a moderator.
+pub async fn moderate(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: ModerateReq = parse(d)?;
+    let channel_id = registry(&ctx.st).get(r.user_id).map(|m| m.channel_id).ok_or_else(|| ApiError::not_found("Teilnehmer"))?;
+    ctx.require_in(channel_id, MUTE_MEMBERS)?;
+    {
+        let pc = ctx.perms();
+        if r.user_id != ctx.uid && (pc.is_owner(r.user_id) || !pc.outranks(ctx.uid, r.user_id)) {
+            return Err(ApiError::new(Code::PermissionDenied, "Du kannst nur Benutzer unterhalb deiner Rolle moderieren"));
+        }
+    }
+    let m = {
+        let mut reg = registry(&ctx.st);
+        let m = reg.by_user.get_mut(&r.user_id).ok_or_else(|| ApiError::not_found("Teilnehmer"))?;
+        if let Some(v) = r.mute {
+            m.server_muted = v;
+            if v {
+                m.muted = true;
+            }
+        }
+        if let Some(v) = r.deafen {
+            m.server_deafened = v;
+            if v {
+                m.deafened = true;
+            }
+        }
+        m.clone()
+    };
+    ctx.audit("voice.moderate", format!("user:{}", r.user_id), format!("mute:{:?} deafen:{:?}", r.mute, r.deafen));
+    broadcast_state(&ctx.st, &m, false);
+    Ok(json!(m))
+}
+
+#[derive(Deserialize)]
+struct MoveReq {
+    user_id: i64,
+    /// Target voice channel; `None` disconnects.
+    channel_id: Option<i64>,
+}
+
+/// Moves a participant to another voice channel or disconnects them.
+pub async fn move_member(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: MoveReq = parse(d)?;
+    ctx.require(MOVE_MEMBERS)?;
+    let current = registry(&ctx.st).get(r.user_id).map(|m| m.channel_id).ok_or_else(|| ApiError::not_found("Teilnehmer"))?;
+    {
+        let pc = ctx.perms();
+        if r.user_id != ctx.uid && (pc.is_owner(r.user_id) || !pc.outranks(ctx.uid, r.user_id)) {
+            return Err(ApiError::new(Code::PermissionDenied, "Du kannst nur Benutzer unterhalb deiner Rolle moderieren"));
+        }
+        if let Some(to) = r.channel_id {
+            let ok = pc.channels.get(&to).is_some_and(|c| c.voice && !c.is_dm) && pc.has_in(r.user_id, to, CONNECT);
+            if !ok || to == current {
+                return Err(ApiError::invalid("Zielkanal ist kein erreichbarer Sprachkanal"));
+            }
+        }
+    }
+    // The client switches channels on this event; the seat is freed right away.
+    ctx.st.hub.send_user(r.user_id, &hub::event("voice.moved", &json!({ "channel_id": r.channel_id, "by": ctx.uid })));
+    force_leave(&ctx.st, r.user_id);
+    ctx.audit("voice.move", format!("user:{}", r.user_id), format!("{current} -> {:?}", r.channel_id));
+    Ok(json!({}))
+}
+
+/// Soundboard: at most one sound every few seconds per member.
+pub const SOUND_INTERVAL_MS: i64 = 3000;
+
+#[derive(Deserialize)]
+struct SoundReq {
+    sound: String,
+}
+
+/// Plays a soundboard sound for everyone in the caller's voice channel.
+pub async fn sound(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: SoundReq = parse(d)?;
+    if r.sound.is_empty() || r.sound.len() > 24 || !r.sound.bytes().all(|b| b.is_ascii_lowercase() || b == b'_') {
+        return Err(ApiError::invalid("Unbekannter Sound"));
+    }
+    let channel_id = {
+        let mut reg = registry(&ctx.st);
+        let m = reg.by_user.get(&ctx.uid).ok_or_else(|| ApiError::not_found("Sprachverbindung"))?;
+        if m.suppressed || m.server_muted {
+            return Err(ApiError::denied());
+        }
+        let cid = m.channel_id;
+        let now = now_ms();
+        if reg.last_sound.get(&ctx.uid).is_some_and(|t| now - t < SOUND_INTERVAL_MS) {
+            return Err(ApiError::rate_limited());
+        }
+        reg.last_sound.insert(ctx.uid, now);
+        cid
+    };
+    ctx.require_in(channel_id, SPEAK)?;
+    let ev = hub::event("voice.sound", &json!({ "channel_id": channel_id, "user_id": ctx.uid, "sound": r.sound }));
+    ctx.st.broadcast_channel(channel_id, &ev);
+    Ok(json!({}))
 }
 
 #[derive(Deserialize)]

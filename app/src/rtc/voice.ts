@@ -8,11 +8,11 @@
 import { signal } from "@preact/signals";
 import { settings, toast, voiceHooks, type ScreenOpts, type ScreenRes } from "../state/app";
 import type { ServerStore } from "../state/server";
-import type { VoiceMember } from "../types";
+import type { IceConfig, VoiceMember } from "../types";
 import { errorText, t } from "../i18n";
-import { isTauri, log } from "../platform";
+import { isTauri, log, tauriInvoke } from "../platform";
 import { normalizeAddress } from "../net/transport";
-import { play } from "../sound";
+import { play, playBoard } from "../sound";
 
 export type StreamKind = "mic" | "screen" | "camera";
 
@@ -86,6 +86,11 @@ class Peer {
   }
 }
 
+/** Hides WebView2's floating "sharing your screen" bar while a share runs (desktop app). */
+function captureBar(active: boolean) {
+  if (isTauri) void tauriInvoke("capture_bar_hide", { active }).catch(() => {});
+}
+
 export class VoiceSession {
   state = signal<"connecting" | "connected" | "reconnecting" | "ended">("connecting");
   muted = signal(false);
@@ -101,6 +106,9 @@ export class VoiceSession {
   screenHasAudio = signal<boolean | null>(null);
   cameraOn = signal(false);
   suppressed = signal(false);
+  /** Muted / deafened by a moderator. */
+  serverMuted = signal(false);
+  serverDeafened = signal(false);
 
   private mic: MediaStream | null = null;
   private screen: MediaStream | null = null;
@@ -184,12 +192,16 @@ export class VoiceSession {
   }
 
   private async joinChannel(rejoin: boolean) {
-    const r = await this.server.rpc<{ participants: VoiceMember[]; self: VoiceMember }>("voice.join", {
+    const r = await this.server.rpc<{ participants: VoiceMember[]; self: VoiceMember; ice?: IceConfig }>("voice.join", {
       channel_id: this.channelId,
       muted: this.muted.value || !this.hasMic.value,
       deafened: this.deafened.value,
     });
     this.suppressed.value = r.self.suppressed;
+    this.serverMuted.value = !!r.self.server_muted;
+    this.serverDeafened.value = !!r.self.server_deafened;
+    // Fresh relay data (e.g. the TURN tunnel address may have changed since login).
+    if (r.ice) this.server.ice = r.ice;
     const ids = new Set(r.participants.map((p) => p.user_id));
     for (const uid of ids) if (uid !== this.selfId) this.present.add(uid);
     // Drop peers that are gone; connect to everyone we do not know yet. After a
@@ -223,6 +235,7 @@ export class VoiceSession {
     this.loops.forEach(clearInterval);
     for (const p of this.peers.values()) p.close();
     this.peers.clear();
+    if (this.screen) captureBar(false);
     for (const s of [this.mic, this.screen, this.camera]) s?.getTracks().forEach((t) => t.stop());
     this.mic = this.screen = this.camera = null;
     void this.audioCtx?.close();
@@ -239,7 +252,14 @@ export class VoiceSession {
     const h = host.includes(":") ? `[${host}]` : host;
     const list: RTCIceServer[] = [];
     if (ice?.stun_port) list.push({ urls: `stun:${h}:${ice.stun_port}` });
-    if (ice?.turn) list.push({ urls: `turn:${h}:${ice.turn.port}?transport=udp`, username: ice.turn.username, credential: ice.turn.credential });
+    if (ice?.turn) {
+      const { username, credential } = ice.turn;
+      const urls = [`turn:${h}:${ice.turn.port}?transport=udp`];
+      if (ice.turn.tcp) urls.push(`turn:${h}:${ice.turn.port}?transport=tcp`);
+      list.push({ urls, username, credential });
+      // Reachable from anywhere: TURN over TCP through the host's internet tunnel.
+      if (ice.turn.public) list.push({ urls: `turn:${ice.turn.public}?transport=tcp`, username, credential });
+    }
     for (const s of ice?.servers ?? []) list.push({ urls: s.urls, username: s.username, credential: s.credential });
     // Public STUN as fallback: needed when the server is only reachable through
     // the internet relay or sits behind CGNAT (its own STUN port is unreachable).
@@ -398,7 +418,7 @@ export class VoiceSession {
         if (d.left) {
           toast(t("voice.endedByServer"), t("voice.endedByServerBody"), "warn");
           void endVoice();
-        }
+        } else this.applyModeration(d);
         return;
       }
       if (d.left) {
@@ -416,6 +436,19 @@ export class VoiceSession {
     } else if (ev === "voice.state" && d.user_id === this.selfId && !d.left && d.channel_id !== this.channelId) {
       // Joined elsewhere from another device.
       void endVoice();
+    } else if (ev === "voice.moved") {
+      // A moderator moved us (or disconnected us when channel_id is null).
+      const to: number | null = d.channel_id ?? null;
+      const by = this.server.memberName(d.by);
+      void endVoice().then(() => {
+        if (to !== null) {
+          toast(t("voice.movedTitle"), t("voice.movedBody", { name: by, channel: this.server.channel(to)?.name ?? "" }), "info");
+          void joinVoice(this.server, to);
+        } else toast(t("voice.kickedTitle"), t("voice.kickedBody", { name: by }), "warn");
+      });
+    } else if (ev === "voice.sound" && d.channel_id === this.channelId) {
+      const st = settings.value;
+      if (st.soundboard && !this.deafened.value && !st.localMute[`${this.server.id}:${d.user_id}`]) playBoard(d.sound);
     } else if (ev === "ready" && d.reconnect) {
       this.state.value = "reconnecting";
       this.joinChannel(true).catch((e) => {
@@ -470,7 +503,29 @@ export class VoiceSession {
   /** The microphone track only carries audio while the user transmits. */
   transmitting() {
     const st = settings.value;
-    return this.hasMic.value && !this.muted.value && !this.deafened.value && !this.suppressed.value && (!st.pushToTalk || this.pttDown.value);
+    return this.hasMic.value && !this.muted.value && !this.deafened.value && !this.suppressed.value && !this.serverMuted.value && (!st.pushToTalk || this.pttDown.value);
+  }
+
+  /** Server mute / deafen and lost speaking rights apply immediately. */
+  private applyModeration(d: VoiceMember) {
+    const wasDeaf = this.serverDeafened.value;
+    if (d.server_muted && !this.serverMuted.value) toast(t("voice.serverMutedTitle"), t("voice.serverMutedBody"), "warn");
+    this.serverMuted.value = !!d.server_muted;
+    this.serverDeafened.value = !!d.server_deafened;
+    this.suppressed.value = d.suppressed;
+    if (d.server_deafened && !this.deafened.value) {
+      this.deafened.value = true;
+      for (const p of this.peers.values()) this.applyOutput(p);
+    } else if (!d.server_deafened && wasDeaf && this.deafened.value && !d.deafened) {
+      this.deafened.value = false;
+      for (const p of this.peers.values()) this.applyOutput(p);
+    }
+    this.applyMicEnabled();
+  }
+
+  /** Plays a soundboard sound for everyone in the channel. */
+  async playSound(id: string) {
+    await this.server.rpc("voice.sound", { sound: id });
   }
 
   applyMicEnabled() {
@@ -479,6 +534,7 @@ export class VoiceSession {
   }
 
   async setMuted(m: boolean) {
+    if (!m && this.serverMuted.value) return toast(t("voice.serverMutedTitle"), t("voice.serverMutedBody"), "warn");
     if (m !== this.muted.value) play(m ? "mute" : "unmute");
     this.muted.value = m;
     this.applyMicEnabled();
@@ -486,6 +542,7 @@ export class VoiceSession {
   }
 
   async setDeafened(d: boolean) {
+    if (!d && this.serverDeafened.value) return toast(t("voice.serverDeafenedTitle"), t("voice.serverDeafenedBody"), "warn");
     if (d !== this.deafened.value) play(d ? "deafen" : "undeafen");
     this.deafened.value = d;
     for (const p of this.peers.values()) this.applyOutput(p);
@@ -496,9 +553,10 @@ export class VoiceSession {
   /** Applies output device, deafen and per-user volume to a peer's audio. */
   applyOutput(peer: Peer) {
     const st = settings.value;
-    const vol = st.userVolume[`${this.server.id}:${peer.uid}`] ?? 1;
+    const key = `${this.server.id}:${peer.uid}`;
+    const vol = st.userVolume[key] ?? 1;
     for (const el of [peer.micEl, peer.screenAudioEl]) {
-      el.muted = this.deafened.value;
+      el.muted = this.deafened.value || !!st.localMute[key];
       el.volume = Math.max(0, Math.min(1, vol));
       const sink = (el as HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> }).setSinkId;
       if (sink && st.outputDevice) sink.call(el, st.outputDevice).catch(() => {});
@@ -529,16 +587,20 @@ export class VoiceSession {
     const prof = screenProfile();
     const st = settings.value;
     let stream: MediaStream;
+    captureBar(true);
     try {
       stream = await navigator.mediaDevices.getDisplayMedia({
         video: { frameRate: { ideal: prof.fps, max: prof.fps }, width: { max: prof.width }, height: { max: prof.height } },
-        audio: st.screenAudio ? { echoCancellation: false, noiseSuppression: false, autoGainControl: false } : false,
+        // restrictOwnAudio: keep NexusTalk's own output (the others' voices) out of
+        // the shared system audio, so nobody hears themselves echoed back.
+        audio: st.screenAudio ? { echoCancellation: false, noiseSuppression: false, autoGainControl: false, restrictOwnAudio: true } : false,
         systemAudio: st.screenAudio ? "include" : "exclude",
         selfBrowserSurface: "exclude",
         surfaceSwitching: "include",
         monitorTypeSurfaces: "include",
       } as DisplayMediaStreamOptions);
     } catch (e) {
+      captureBar(false);
       const name = (e as DOMException)?.name;
       if (name !== "NotAllowedError" && name !== "AbortError") toast(t("voice.screenFailed"), String(e), "error");
       return;
@@ -547,6 +609,7 @@ export class VoiceSession {
       await this.server.rpc("voice.update", { screen: true });
     } catch (e) {
       stream.getTracks().forEach((t) => t.stop());
+      captureBar(false);
       toast(t("voice.screenDenied"), errorText(e), "error");
       return;
     }
@@ -578,6 +641,7 @@ export class VoiceSession {
     const s = this.screen;
     this.screen = null;
     this.sharingScreen.value = false;
+    captureBar(false);
     play("streamStop");
     this.screenHasAudio.value = null;
     for (const p of this.peers.values()) {

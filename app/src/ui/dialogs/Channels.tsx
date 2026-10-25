@@ -37,7 +37,7 @@ function OverrideEditor({ server, channel }: { server: ServerStore; channel: Cha
     }
   };
   const textOnly = [P.SEND_MESSAGES, P.ATTACH_FILES, P.MANAGE_MESSAGES] as number[];
-  const voiceOnly = [P.CONNECT, P.SPEAK, P.VIDEO, P.SCREEN_SHARE] as number[];
+  const voiceOnly = [P.CONNECT, P.SPEAK, P.VIDEO, P.SCREEN_SHARE, P.MUTE_MEMBERS] as number[];
   const perms = PERMISSIONS.filter((p) => p.channel && (channel.kind === "voice" ? !textOnly.includes(p.bit) : !voiceOnly.includes(p.bit)));
   return (
     <div class="col">
@@ -71,11 +71,16 @@ function OverrideEditor({ server, channel }: { server: ServerStore; channel: Cha
   );
 }
 
+/** Slow-mode steps in seconds, like Discord. */
+const SLOWMODES = [0, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 21600];
+
 export function ChannelDialog({ server, channel, categoryId }: { server: ServerStore; channel?: Channel; categoryId?: number }) {
   const [kind, setKind] = useState<"text" | "voice">(channel?.kind ?? "text");
   const [name, setName] = useState(channel?.name ?? "");
   const [topic, setTopic] = useState(channel?.topic ?? "");
   const [cat, setCat] = useState<number | null>(channel ? channel.category_id : (categoryId ?? null));
+  const [slowmode, setSlowmode] = useState(channel?.slowmode ?? 0);
+  const [limit, setLimit] = useState(channel?.user_limit ?? 0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canOverrides = !!channel && server.can(P.MANAGE_ROLES);
@@ -84,8 +89,12 @@ export function ChannelDialog({ server, channel, categoryId }: { server: ServerS
     setBusy(true);
     setError(null);
     try {
-      if (channel) await server.rpc("channel.update", { channel_id: channel.id, name, topic, category_id: cat });
-      else await server.rpc("channel.create", { kind, name, topic, category_id: cat });
+      const extra = kind === "voice" ? { user_limit: limit } : { slowmode };
+      if (channel) await server.rpc("channel.update", { channel_id: channel.id, name, topic, category_id: cat, ...extra });
+      else {
+        const c = await server.rpc<{ id: number }>("channel.create", { kind, name, topic, category_id: cat });
+        if (slowmode || limit) await server.rpc("channel.update", { channel_id: c.id, ...extra });
+      }
       closeModal();
     } catch (e) {
       setError(errorText(e));
@@ -123,6 +132,20 @@ export function ChannelDialog({ server, channel, categoryId }: { server: ServerS
       {kind === "text" && (
         <Field label={t("chanDlg.topic")}>
           <input class="input" value={topic} maxLength={256} onInput={(e) => setTopic((e.target as HTMLInputElement).value)} />
+        </Field>
+      )}
+      {kind === "text" ? (
+        <Field label={t("chanDlg.slowmode")} hint={t("chanDlg.slowmodeHint")}>
+          <select class="select" value={slowmode} onChange={(e) => setSlowmode(Number((e.target as HTMLSelectElement).value))}>
+            {SLOWMODES.map((s) => <option key={s} value={s}>{s === 0 ? t("chanDlg.off") : s < 60 ? `${s} s` : s < 3600 ? `${s / 60} min` : `${s / 3600} h`}</option>)}
+          </select>
+        </Field>
+      ) : (
+        <Field label={t("chanDlg.userLimit")} hint={t("chanDlg.userLimitHint")}>
+          <div class="row">
+            <input class="grow" type="range" min={0} max={99} value={limit} onInput={(e) => setLimit(Number((e.target as HTMLInputElement).value))} aria-label={t("chanDlg.userLimit")} />
+            <span class="badge" style={{ minWidth: "64px", textAlign: "center" }}>{limit ? limit : t("chanDlg.unlimited")}</span>
+          </div>
         </Field>
       )}
       <Field label={t("chanDlg.category")}>

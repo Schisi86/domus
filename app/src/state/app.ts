@@ -46,6 +46,13 @@ export interface Settings {
   muted: Record<string, boolean>;
   /** `${serverId}:${userId}` → 0..1 */
   userVolume: Record<string, number>;
+  /** `${serverId}:${userId}` → muted for me only (voice and soundboard). */
+  localMute: Record<string, boolean>;
+  /** `${serverId}:${userId}` → private note, only stored on this device. */
+  notes: Record<string, string>;
+  /** Play soundboard sounds from others. */
+  soundboard: boolean;
+  soundboardVolume: number;
   /** Screen share: chosen in the menu before (or while) sharing. */
   screen: ScreenOpts;
   screenAudio: boolean;
@@ -104,6 +111,10 @@ export const defaultSettings: Settings = {
   notifyVoiceJoin: true,
   muted: {},
   userVolume: {},
+  localMute: {},
+  notes: {},
+  soundboard: true,
+  soundboardVolume: 0.6,
   screen: { res: "1080", fps: 30, content: "auto", kbps: 0 },
   screenAudio: true,
   showMembers: true,
@@ -304,6 +315,12 @@ export interface MenuItem {
   onClick?: () => void;
   danger?: boolean;
   separator?: boolean;
+  /** Shows a check mark (toggle entries). */
+  checked?: boolean;
+  /** Opens a submenu on hover/click instead of running an action. */
+  sub?: MenuItem[];
+  /** Small section caption (not clickable). */
+  heading?: boolean;
 }
 export const contextMenu = signal<{ x: number; y: number; items: MenuItem[] } | null>(null);
 export function showMenu(e: MouseEvent, items: MenuItem[]) {

@@ -86,7 +86,12 @@ struct ChannelUpdate {
     #[serde(default, deserialize_with = "double_option")]
     category_id: Option<Option<i64>>,
     position: Option<i64>,
+    slowmode: Option<i64>,
+    user_limit: Option<i64>,
 }
+
+/// Allowed slow-mode steps in seconds (like Discord).
+pub const SLOWMODE_MAX: i64 = 6 * 3600;
 
 pub async fn channel_update(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     let r: ChannelUpdate = parse(d)?;
@@ -107,6 +112,18 @@ pub async fn channel_update(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     }
     if let Some(p) = r.position {
         ch.position = p.clamp(0, 10_000);
+    }
+    if let Some(s) = r.slowmode {
+        if !(0..=SLOWMODE_MAX).contains(&s) {
+            return Err(ApiError::invalid("Slow-Mode: 0 bis 6 Stunden"));
+        }
+        ch.slowmode = s;
+    }
+    if let Some(l) = r.user_limit {
+        if !(0..=99).contains(&l) {
+            return Err(ApiError::invalid("Personenlimit: 0 bis 99"));
+        }
+        ch.user_limit = l;
     }
     let ch2 = ch.clone();
     ctx.st
@@ -475,6 +492,90 @@ pub async fn member_ban(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     ctx.st.hub.disconnect_user(uid, 4003, "banned");
     ctx.st.hub.broadcast(&hub::event("member.removed", &json!({ "user_id": uid })), |_| true);
     Ok(json!({}))
+}
+
+/// Checks that the actor may moderate `target` (ranked higher, target is no owner).
+fn check_target(ctx: &Ctx, target: i64, perm: Perms) -> ApiResult<()> {
+    ctx.require(perm)?;
+    let pc = ctx.perms();
+    if pc.is_owner(target) || !pc.outranks(ctx.uid, target) {
+        return Err(ApiError::new(Code::PermissionDenied, "Du kannst nur Benutzer unterhalb deiner Rolle moderieren"));
+    }
+    Ok(())
+}
+
+/// Removes a member from the server: signed out everywhere, out of voice, and
+/// the account waits for approval again (Mitglieder → Ausstehend).
+pub async fn member_kick(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: UserReq = parse(d)?;
+    check_target(ctx, r.user_id, perms::KICK_MEMBERS)?;
+    let u = load_user_with_status(ctx, r.user_id, "active").await?;
+    let uid = r.user_id;
+    ctx.st
+        .db
+        .call(move |c| {
+            store::set_user_status(c, uid, "pending")?;
+            store::delete_user_sessions(c, uid)
+        })
+        .await?;
+    let reason = clean_text(&r.reason, 256, false, "Grund").unwrap_or_default();
+    ctx.audit("member.kick", format!("user:{uid}"), format!("{} {}", u.username, reason));
+    ctx.st.reload_perms().await?;
+    ops_voice::force_leave(&ctx.st, uid);
+    ctx.st.hub.disconnect_user(uid, 4003, "kicked");
+    ctx.st.hub.broadcast(&hub::event("member.removed", &json!({ "user_id": uid })), |_| true);
+    Ok(json!({}))
+}
+
+#[derive(Deserialize)]
+struct TimeoutReq {
+    user_id: i64,
+    /// Duration in minutes; 0 lifts the timeout.
+    minutes: i64,
+    #[serde(default)]
+    reason: String,
+}
+
+/// Longest timeout (28 days, like Discord).
+pub const TIMEOUT_MAX_MINUTES: i64 = 28 * 24 * 60;
+
+pub async fn member_timeout(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: TimeoutReq = parse(d)?;
+    check_target(ctx, r.user_id, perms::MODERATE_MEMBERS)?;
+    if !(0..=TIMEOUT_MAX_MINUTES).contains(&r.minutes) {
+        return Err(ApiError::invalid("Auszeit: höchstens 28 Tage"));
+    }
+    load_user_with_status(ctx, r.user_id, "active").await?;
+    let uid = r.user_id;
+    let until = (r.minutes > 0).then(|| now_ms() + r.minutes * 60_000);
+    let user = ctx
+        .st
+        .db
+        .call(move |c| {
+            store::set_timeout(c, uid, until)?;
+            store::user_by_id(c, uid)
+        })
+        .await?
+        .ok_or_else(ApiError::internal)?;
+    let reason = clean_text(&r.reason, 256, false, "Grund").unwrap_or_default();
+    ctx.audit("member.timeout", format!("user:{uid}"), format!("{} min {}", r.minutes, reason));
+    after_structure_change(ctx).await?;
+    ops_voice::refresh_speak(&ctx.st, uid);
+    crate::ops_social::broadcast_member(&ctx.st, &user);
+    if let Some(until) = until {
+        // Give the rights back to everyone's view when the timeout ends.
+        let st = ctx.st.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis((until - now_ms()).max(0) as u64 + 500)).await;
+            if st.reload_perms().await.is_ok() && st.perms().timeout_until(uid).is_none() {
+                let _ = st.sync_guild().await;
+                if let Ok(Some(u)) = st.db.call(move |c| store::user_by_id(c, uid)).await {
+                    crate::ops_social::broadcast_member(&st, &u);
+                }
+            }
+        });
+    }
+    Ok(json!({ "timeout_until": until }))
 }
 
 pub async fn member_unban(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {

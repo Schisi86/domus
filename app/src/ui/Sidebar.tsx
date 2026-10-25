@@ -5,7 +5,7 @@ import { activeChannelId, activeServer, activeServerId, homeDm, isMuted, openDm,
 import type { ServerStore } from "../state/server";
 import type { Channel } from "../types";
 import { has, P } from "../types";
-import { Avatar, IconButton, Icon, confirmDialog, copyText } from "./components";
+import { Avatar, IconButton, Icon, Popover, confirmDialog, copyText } from "./components";
 import { joinVoice, endVoice, voice, voiceBusy } from "../rtc/voice";
 import { ChannelDialog, CategoryDialog } from "./dialogs/Channels";
 import { ServerSettingsDialog } from "./dialogs/ServerSettings";
@@ -14,6 +14,9 @@ import { AddServerDialog } from "./dialogs/AddServer";
 import { UserSettingsDialog } from "./dialogs/UserSettings";
 import { errorText, presenceText, t } from "../i18n";
 import { ScreenShareControl } from "./ScreenShare";
+import { memberMenu } from "./Members";
+import { SOUNDBOARD } from "../sound";
+import { useState } from "preact/hooks";
 
 function ConnBanner({ server }: { server: ServerStore }) {
   const st = server.conn.state.value;
@@ -47,14 +50,21 @@ function VoiceUsers({ server, channel }: { server: ServerStore; channel: Channel
   return (
     <div class="voice-users">
       {members.map((m) => (
-        <div class="voice-user" key={m.user_id}>
+        <div
+          class="voice-user"
+          key={m.user_id}
+          onContextMenu={(e) => {
+            const mem = server.member(m.user_id);
+            if (mem) memberMenu(e, server, mem);
+          }}
+        >
           <Avatar server={server} userId={m.user_id} name={server.memberName(m.user_id)} size={20} speaking={speaking.has(m.user_id)} />
           <span class="ellipsis">{server.memberName(m.user_id)}</span>
           <span class="flags">
             {m.screen && <span class="live-badge" title={t("voice.sharingScreen")}>LIVE</span>}
             {m.video && <Icon.Camera title={t("voice.cameraOn")} />}
-            {(m.muted || m.suppressed) && <Icon.MicOff title={t("voice.muted")} />}
-            {m.deafened && <Icon.HeadphonesOff title={t("voice.deafened")} />}
+            {m.server_muted ? <span class="mod-flag"><Icon.MicOff title={t("mod.serverMuted")} /></span> : (m.muted || m.suppressed) && <Icon.MicOff title={t("voice.muted")} />}
+            {m.server_deafened ? <span class="mod-flag"><Icon.HeadphonesOff title={t("mod.serverDeafened")} /></span> : m.deafened && <Icon.HeadphonesOff title={t("voice.deafened")} />}
           </span>
         </div>
       ))}
@@ -104,6 +114,10 @@ function ChannelRow({ server, channel }: { server: ServerStore; channel: Channel
       <button class={`chan${active ? " active" : ""}${unread ? " unread" : ""}`} onClick={click} onContextMenu={menu} title={channel.topic || channel.name}>
         {channel.kind === "voice" ? <Icon.Speaker /> : <Icon.Hash />}
         <span class="name">{channel.name}</span>
+        {channel.kind === "voice" && (channel.user_limit ?? 0) > 0 && (
+          <span class="limit-badge" title={t("chanDlg.userLimit")}>{server.voiceMembers(channel.id).length}/{channel.user_limit}</span>
+        )}
+        {channel.kind === "text" && (channel.slowmode ?? 0) > 0 && <Icon.Clock size={13} title={t("chanDlg.slowmode")} />}
         {muted && <Icon.BellOff size={14} />}
         {mentions > 0 && <span class="mention-count">{mentions}</span>}
         {canManage && (
@@ -232,6 +246,47 @@ function HomeSidebar() {
   );
 }
 
+/** Soundboard: short sounds everyone in the channel hears. */
+function SoundboardButton({ v }: { v: NonNullable<typeof voice.value> }) {
+  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const [cooling, setCooling] = useState(false);
+  const blocked = v.suppressed.value || v.serverMuted.value;
+  const fire = async (id: string) => {
+    try {
+      await v.playSound(id);
+      setCooling(true);
+      setTimeout(() => setCooling(false), 3000);
+    } catch (e) {
+      toast(t("board.failed"), errorText(e), "warn", 3000);
+    }
+  };
+  return (
+    <>
+      <button class={`btn${anchor ? " on" : ""}`} title={blocked ? t("board.blocked") : t("board.title")} disabled={blocked} onClick={(e) => setAnchor(anchor ? null : (e.currentTarget as HTMLElement).getBoundingClientRect())}>
+        <Icon.Music />
+      </button>
+      {anchor && (
+        <Popover anchor={anchor} onClose={() => setAnchor(null)}>
+          <div class="soundboard">
+            <div class="row" style={{ marginBottom: "6px" }}>
+              <b class="grow small">{t("board.title")}</b>
+              <span class="faint xs">{t("board.hint")}</span>
+            </div>
+            <div class="sb-grid">
+              {SOUNDBOARD.map((s) => (
+                <button key={s.id} class="sb-btn" disabled={cooling} onClick={() => void fire(s.id)} title={t(`board.${s.id}` as "board.airhorn")}>
+                  <span class="e">{s.emoji}</span>
+                  <span class="xs ellipsis">{t(`board.${s.id}` as "board.airhorn")}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </Popover>
+      )}
+    </>
+  );
+}
+
 function VoicePanel() {
   const v = voice.value;
   if (!v) return null;
@@ -264,7 +319,11 @@ function VoicePanel() {
         <button class={`btn${v.cameraOn.value ? " on" : ""}`} title={v.cameraOn.value ? t("voice.cameraOff") : t("voice.cameraOnAction")} onClick={() => (v.cameraOn.value ? v.stopCamera() : v.startCamera())}>
           {v.cameraOn.value ? <Icon.Camera /> : <Icon.CameraOff />}
         </button>
+        <SoundboardButton v={v} />
       </div>
+      {(v.serverMuted.value || v.serverDeafened.value) && (
+        <div class="notice warn xs" style={{ marginTop: "6px" }}>{v.serverDeafened.value ? t("voice.serverDeafenedBody") : t("voice.serverMutedBody")}</div>
+      )}
       {v.sharingScreen.value && <div class="faint xs" style={{ marginTop: "6px" }}>🔴 {v.screenHasAudio.value ? t("voice.sharingWithAudio") : t("voice.sharingNow")}</div>}
     </div>
   );
@@ -274,7 +333,7 @@ function UserPanel() {
   const server = activeServer.value ?? servers.value.find((s) => s.me.value) ?? null;
   const me = server?.me.value;
   const v = voice.value;
-  const muted = v ? v.muted.value || !v.hasMic.value : false;
+  const muted = v ? v.muted.value || !v.hasMic.value || v.serverMuted.value : false;
   const deaf = v ? v.deafened.value : false;
   const presence = me?.presence ?? "online";
   return (

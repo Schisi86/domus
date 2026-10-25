@@ -39,7 +39,7 @@ New-NetFirewallRule -DisplayName "NexusTalk STUN/TURN" -Direction Inbound -Proto
 Im Modus „Freunde einladen“ baut die App automatisch einen **Internet-Tunnel** auf: eine ausgehende Verbindung zum öffentlichen Relay `bore.pub`, das den Server unter `bore.pub:PORT` erreichbar macht. Die Einladungskarte zeigt diesen Link als „Über das Internet“. Das funktioniert auch bei Anschlüssen ohne eigene öffentliche IPv4 (Starlink, DS-Lite/CGNAT) und ohne Portweiterleitung, weil nur ausgehende Verbindungen nötig sind.
 
 * TLS bleibt Ende-zu-Ende zwischen App und Server; das Relay leitet nur verschlüsselte Bytes weiter. Clients prüfen den Fingerabdruck aus dem Link.
-* Sprache und Video laufen nicht durch den Tunnel, sondern per WebRTC direkt (STUN des Servers plus öffentliche STUN-Server von Cloudflare und Google als Rückfallebene). Hinter CGNAT ist der eingebaute TURN-Server nicht erreichbar; in sehr restriktiven Netzen kann Sprache scheitern, obwohl Chat funktioniert. Dann hilft ein externer TURN-Server (siehe unten).
+* Sprache und Video laufen möglichst direkt per WebRTC (STUN des Servers plus öffentliche STUN-Server von Cloudflare und Google). Klappt das nicht, springt ab 0.6.0 der eingebaute TURN-Relay ein: Er läuft automatisch, sobald der Tunnel an ist, und ist über einen zweiten Tunnel (TURN über TCP) aus dem Internet erreichbar. Die Medien bleiben dabei DTLS-SRTP-verschlüsselt.
 * Abschaltbar im Verbindungs-Check („Tunnel ausschalten“). Der Port wird in `relay.json` im Serverordner gemerkt.
 * `bore.pub` ist ein kostenloser Dienst eines Dritten ohne Verfügbarkeitsgarantie.
 

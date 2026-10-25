@@ -19,6 +19,9 @@ pub struct RelaySettings {
     /// Public port from the last session – requested again so invite links stay valid.
     #[serde(default)]
     pub port: Option<u16>,
+    /// Same for the TURN-over-TCP tunnel (voice/video relay).
+    #[serde(default)]
+    pub turn_port: Option<u16>,
 }
 
 fn yes() -> bool {
@@ -27,7 +30,7 @@ fn yes() -> bool {
 
 impl Default for RelaySettings {
     fn default() -> Self {
-        Self { enabled: true, port: None }
+        Self { enabled: true, port: None, turn_port: None }
     }
 }
 
@@ -51,13 +54,52 @@ pub struct RelayStatus {
     pub address: Option<String>,
     pub connecting: bool,
     pub error: Option<String>,
+    /// Public TURN address for voice/video, e.g. "bore.pub:41235".
+    pub turn_address: Option<String>,
+}
+
+/// What a tunnel carries: the server itself or the TURN relay (TCP).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Slot {
+    Server,
+    Turn,
+}
+
+impl Slot {
+    fn port(self, s: &RelaySettings) -> Option<u16> {
+        match self {
+            Slot::Server => s.port,
+            Slot::Turn => s.turn_port,
+        }
+    }
+    fn set_port(self, s: &mut RelaySettings, p: Option<u16>) {
+        match self {
+            Slot::Server => s.port = p,
+            Slot::Turn => s.turn_port = p,
+        }
+    }
 }
 
 /// Keeps the tunnel to the relay open (reconnecting with backoff) until aborted.
-pub fn spawn(status: Arc<Mutex<Option<RelayStatus>>>, dir: PathBuf, local_port: u16) -> tauri::async_runtime::JoinHandle<()> {
+/// `notify` receives the public address when it comes up and `None` when it drops.
+pub fn spawn(
+    status: Arc<Mutex<Option<RelayStatus>>>,
+    dir: PathBuf,
+    local_port: u16,
+    slot: Slot,
+    notify: impl Fn(Option<String>) + Send + Sync + 'static,
+) -> tauri::async_runtime::JoinHandle<()> {
     let set = move |f: &dyn Fn(&mut RelayStatus)| {
         let mut g = status.lock().unwrap_or_else(|p| p.into_inner());
-        f(g.get_or_insert_with(RelayStatus::default));
+        let st = g.get_or_insert_with(RelayStatus::default);
+        if slot == Slot::Server {
+            f(st);
+        } else {
+            // The TURN tunnel only reports its address; errors go to the log.
+            let mut tmp = st.clone();
+            f(&mut tmp);
+            st.turn_address = tmp.address.filter(|_| !tmp.connecting);
+        }
     };
     tauri::async_runtime::spawn(async move {
         let mut backoff = 2u64;
@@ -67,16 +109,19 @@ pub fn spawn(status: Arc<Mutex<Option<RelayStatus>>>, dir: PathBuf, local_port: 
                 s.connecting = true;
                 s.error = None;
             });
-            let wanted = settings.port.unwrap_or(0);
+            let wanted = slot.port(&settings).unwrap_or(0);
             match bore_cli::client::Client::new("127.0.0.1", local_port, RELAY_HOST, wanted, None).await {
                 Ok(client) => {
                     let port = client.remote_port();
-                    if settings.port != Some(port) {
-                        settings.port = Some(port);
+                    if slot.port(&settings) != Some(port) {
+                        // Re-read: the other tunnel may have saved its port meanwhile.
+                        settings = load(&dir);
+                        slot.set_port(&mut settings, Some(port));
                         save(&dir, &settings);
                     }
                     let address = format!("{RELAY_HOST}:{port}");
-                    tracing::info!(%address, "Internet-Relay verbunden");
+                    tracing::info!(%address, ?slot, "Internet-Relay verbunden");
+                    notify(Some(address.clone()));
                     set(&|s| {
                         s.address = Some(address.clone());
                         s.connecting = false;
@@ -85,7 +130,8 @@ pub fn spawn(status: Arc<Mutex<Option<RelayStatus>>>, dir: PathBuf, local_port: 
                     backoff = 2;
                     let res = client.listen().await;
                     let msg = res.err().map(|e| e.to_string()).unwrap_or_else(|| "Verbindung zum Relay beendet".into());
-                    tracing::warn!(error = %msg, "Internet-Relay getrennt – neuer Versuch");
+                    tracing::warn!(error = %msg, ?slot, "Internet-Relay getrennt – neuer Versuch");
+                    notify(None);
                     set(&|s| {
                         s.connecting = true;
                         s.error = Some(msg.clone());
@@ -95,11 +141,12 @@ pub fn spawn(status: Arc<Mutex<Option<RelayStatus>>>, dir: PathBuf, local_port: 
                     let msg = e.to_string();
                     if wanted != 0 && msg.contains("already in use") {
                         // Our old port is taken: take a new one right away.
-                        settings.port = None;
+                        settings = load(&dir);
+                        slot.set_port(&mut settings, None);
                         save(&dir, &settings);
                         continue;
                     }
-                    tracing::warn!(error = %msg, "Internet-Relay nicht erreichbar");
+                    tracing::warn!(error = %msg, ?slot, "Internet-Relay nicht erreichbar");
                     set(&|s| {
                         s.connecting = false;
                         s.error = Some(msg.clone());
@@ -122,10 +169,11 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("nx-relay-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         assert!(load(&dir).enabled);
-        save(&dir, &RelaySettings { enabled: false, port: Some(4242) });
+        save(&dir, &RelaySettings { enabled: false, port: Some(4242), turn_port: Some(4243) });
         let s = load(&dir);
         assert!(!s.enabled);
         assert_eq!(s.port, Some(4242));
+        assert_eq!(s.turn_port, Some(4243));
         let _ = std::fs::remove_dir_all(&dir);
     }
 

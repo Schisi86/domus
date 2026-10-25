@@ -169,6 +169,30 @@ const MIGRATIONS: &[&str] = &[
     ALTER TABLE messages ADD COLUMN pinned_at INTEGER;
     CREATE INDEX messages_pinned ON messages(channel_id, pinned_at) WHERE pinned_at IS NOT NULL;
     "#,
+    // v3: moderation (timeouts, new permissions), slow mode, voice user limit,
+    // polls and forwarded messages
+    r#"
+    ALTER TABLE users ADD COLUMN timeout_until INTEGER;
+    ALTER TABLE channels ADD COLUMN slowmode INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE channels ADD COLUMN user_limit INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE messages ADD COLUMN forwarded_from INTEGER;
+    CREATE TABLE polls (
+        message_id INTEGER PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE,
+        question TEXT NOT NULL,
+        options TEXT NOT NULL,
+        multi INTEGER NOT NULL DEFAULT 0,
+        ends_at INTEGER
+    );
+    CREATE TABLE poll_votes (
+        message_id INTEGER NOT NULL REFERENCES polls(message_id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        option INTEGER NOT NULL,
+        PRIMARY KEY (message_id, user_id, option)
+    );
+    -- Roles that could ban may now also kick, time out, mute and move members.
+    UPDATE roles SET permissions = permissions | 491520
+        WHERE (permissions & 2048) != 0 AND (permissions & 1073741824) = 0;
+    "#,
 ];
 
 pub const SCHEMA_VERSION: i64 = MIGRATIONS.len() as i64;
