@@ -1022,6 +1022,7 @@ const dict: Partial = {
   "rc2.allow": "Uzaktan kumandaya izin ver",
   "rc2.allowed": "Uzaktan kumanda açık",
   "rc2.needShare": "Önce ekranını paylaş",
+  "rc2.needFullScreen": "Yalnızca tüm ekran paylaşılırken.",
   "rc2.controlledBy": "{name} bilgisayarını kumanda ediyor",
   "rc2.revoke": "Durdur",
   "rc2.nowControlling": "{name} artık bilgisayarını kumanda ediyor",

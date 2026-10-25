@@ -117,6 +117,8 @@ export class VoiceSession {
   cameras = signal<Map<number, MediaStream>>(new Map());
   sharingScreen = signal(false);
   screenHasAudio = signal<boolean | null>(null);
+  /** Whether the current share is the whole screen (remote control needs this). */
+  screenIsMonitor = signal(false);
   cameraOn = signal(false);
   /** Remote control: whether others may control me, and the password I set. */
   remoteAllowed = signal(false);
@@ -810,6 +812,11 @@ export class VoiceSession {
       video.contentHint = prof.motion ? "motion" : "detail";
       video.onended = () => void this.stopScreen();
     }
+    // Remote control is only offered for a whole-screen share, so the controller
+    // can see the entire desktop they are driving (not just one window).
+    const surf = (video?.getSettings() as MediaTrackSettings & { displaySurface?: string })?.displaySurface;
+    this.screenIsMonitor.value = surf ? surf === "monitor" : surface === "monitor";
+    if (!this.screenIsMonitor.value && this.remoteAllowed.value) this.setRemote(false);
     this.screen = stream;
     this.sharingScreen.value = true;
     play("streamStart");
@@ -834,6 +841,7 @@ export class VoiceSession {
     const s = this.screen;
     this.screen = null;
     this.sharingScreen.value = false;
+    this.screenIsMonitor.value = false;
     captureBar(false);
     play("streamStop");
     this.screenHasAudio.value = null;

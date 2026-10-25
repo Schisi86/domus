@@ -1022,6 +1022,7 @@ const dict: Partial = {
   "rc2.allow": "원격 제어 허용",
   "rc2.allowed": "원격 제어 켜짐",
   "rc2.needShare": "먼저 화면을 공유하세요",
+  "rc2.needFullScreen": "전체 화면을 공유할 때만 가능합니다.",
   "rc2.controlledBy": "{name} 님이 당신의 컴퓨터를 제어 중",
   "rc2.revoke": "중지",
   "rc2.nowControlling": "{name} 님이 이제 당신의 컴퓨터를 제어합니다",

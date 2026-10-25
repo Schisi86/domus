@@ -1062,6 +1062,7 @@ const de = {
   "rc2.allow": "Fernsteuerung erlauben",
   "rc2.allowed": "Fernsteuerung aktiv",
   "rc2.needShare": "Teile zuerst deinen Bildschirm",
+  "rc2.needFullScreen": "Nur bei Übertragung des gesamten Bildschirms möglich.",
   "rc2.controlledBy": "{name} steuert deinen Computer",
   "rc2.revoke": "Beenden",
   "rc2.nowControlling": "{name} steuert jetzt deinen Computer",

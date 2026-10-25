@@ -31,12 +31,15 @@ export function ControlHostButton({ v }: { v: VoiceSession }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const on = v.remoteAllowed.value;
   const sharing = v.sharingScreen.value;
+  const monitor = v.screenIsMonitor.value;
+  const ready = sharing && monitor;
+  const title = !sharing ? t("rc2.needShare") : !monitor ? t("rc2.needFullScreen") : on ? t("rc2.allowed") : t("rc2.allow");
   return (
     <>
       <button
         class={`round-btn${on ? " on" : ""}`}
-        title={!sharing ? t("rc2.needShare") : on ? t("rc2.allowed") : t("rc2.allow")}
-        disabled={!sharing}
+        title={title}
+        disabled={!ready}
         onClick={(e) => setAnchor(anchor ? null : (e.currentTarget as HTMLElement).getBoundingClientRect())}
       >
         <Icon.Remote />
@@ -47,6 +50,7 @@ export function ControlHostButton({ v }: { v: VoiceSession }) {
             <div class="row"><b class="grow small">{t("rc2.title")}</b></div>
             <div class="faint xs">{t("rc2.menuHint")}</div>
             {!isTauri && <div class="notice warn xs">{t("rc2.desktopOnly")}</div>}
+            {!monitor && <div class="notice warn xs">{t("rc2.needFullScreen")}</div>}
             <label class="rc-field">
               <span class="label" style={{ margin: "0px" }}>{t("rc2.password")}</span>
               <input

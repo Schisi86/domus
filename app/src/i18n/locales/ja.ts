@@ -1022,6 +1022,7 @@ const dict: Partial = {
   "rc2.allow": "リモート操作を許可",
   "rc2.allowed": "リモート操作オン",
   "rc2.needShare": "先に画面を共有してください",
+  "rc2.needFullScreen": "画面全体を共有しているときのみ。",
   "rc2.controlledBy": "{name} があなたのPCを操作しています",
   "rc2.revoke": "停止",
   "rc2.nowControlling": "{name} が今あなたのPCを操作しています",

@@ -1202,7 +1202,7 @@ details.advanced[open] > summary::after { transform: rotate(90deg); }
 /* ---------- soundboard ---------- */
 .soundboard { width: 296px; padding: 10px; }
 /* Minimalist grid of emoji-only tiles, scrolls when there are many sounds. */
-.sb-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; max-height: 232px; overflow-y: auto; padding: 2px; margin: -2px; }
+.sb-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 2px; margin: -2px; }
 .sb-btn { aspect-ratio: 1; display: grid; place-items: center; border-radius: var(--r-sm); border: 1px solid transparent; background: var(--bg-2); cursor: pointer; transition: transform 90ms var(--ease), background var(--dur); }
 .sb-btn .e { font-size: 21px; line-height: 1; }
 .sb-btn:hover { background: var(--accent-soft); }

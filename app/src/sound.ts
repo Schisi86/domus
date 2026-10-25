@@ -146,15 +146,15 @@ export function playDemo() {
 // ------------------------------------------------------------- soundboard
 // Short sounds everyone in a voice channel hears (like Discord's soundboard).
 // Recordings from Pixabay (Pixabay Content License, see public/sounds/CREDITS.md),
-// levelled per sound; long ones fade out so the board stays snappy.
+// levelled per sound and kept short so the board stays snappy.
 
 export const SOUNDBOARD = [
   { id: "airhorn", emoji: "📯", gain: 1.57 },
   { id: "tada", emoji: "🎉", gain: 1.23 },
   { id: "rimshot", emoji: "🥁", gain: 1.47 },
-  { id: "applause", emoji: "👏", gain: 0.84, max: 4.5 },
+  { id: "applause", emoji: "👏", gain: 0.84 },
   { id: "sad", emoji: "🎺", gain: 1.35 },
-  { id: "crickets", emoji: "🦗", gain: 2.2, max: 3.5 },
+  { id: "crickets", emoji: "🦗", gain: 2.2 },
   { id: "bell", emoji: "🔔", gain: 0.97 },
   { id: "boing", emoji: "🌀", gain: 0.87 },
   { id: "laugh", emoji: "😂", gain: 0.91 },
@@ -163,7 +163,7 @@ export const SOUNDBOARD = [
   { id: "levelup", emoji: "⭐", gain: 1.16 },
   { id: "wrong", emoji: "❌", gain: 0.9 },
   { id: "kaching", emoji: "💰", gain: 0.9 },
-  { id: "gong", emoji: "🔊", gain: 1.13, max: 4.5 },
+  { id: "gong", emoji: "🔊", gain: 1.13 },
   { id: "dramatic", emoji: "😱", gain: 2.07 },
   { id: "vineboom", emoji: "📢", gain: 0.89 },
   { id: "bruh", emoji: "🗿", gain: 0.96 },
@@ -223,16 +223,9 @@ export async function playBoard(id: string, volume = settings.value.soundboardVo
     src.buffer = buf;
     const g = ctx.createGain();
     const level = Math.max(0, Math.min(1, volume)) * meta.gain;
-    const t0 = ctx.currentTime;
-    g.gain.setValueAtTime(level, t0);
-    const max = "max" in meta ? meta.max : 0;
-    if (max && buf.duration > max) {
-      g.gain.setValueAtTime(level, t0 + max - 0.6);
-      g.gain.linearRampToValueAtTime(0.0001, t0 + max);
-      src.stop(t0 + max + 0.05);
-    }
+    g.gain.setValueAtTime(level, ctx.currentTime);
     src.connect(g).connect(ctx.destination);
-    src.start(t0);
+    src.start();
   } catch {
     /* audio unavailable */
   }

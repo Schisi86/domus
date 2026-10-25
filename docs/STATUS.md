@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.9.0)
+# Funktionsstand (Version 0.9.1)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -78,6 +78,15 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Fehlerprotokolle (Client + Server, rotierend) | ✅ |
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
+
+### Korrekturen (0.9.1)
+| Funktion | Stand |
+|---|---|
+| **Soundboard-Sounds repariert:** Applaus, Grillen und Gong (die drei längsten) wurden sauber neu kodiert (44,1 kHz, einheitlich) und kurz getrimmt, damit sie in der WebView2-Engine zuverlässig dekodieren und abspielen | ✅ in der echten Browser-Engine geprüft (alle dekodieren) |
+| **Soundboard ohne Scrollbalken:** das Raster passt jetzt vollständig in den Rahmen (kein seitliches Scrollen) | ✅ Browser-E2E |
+| **Fernsteuerung nur bei Vollbild:** die Freigabe lässt sich nur einschalten, wenn der gesamte Bildschirm geteilt wird (nicht ein einzelnes Fenster), damit der Steuernde den ganzen Desktop sieht | ✅ per displaySurface erkannt, Knopf andernfalls gesperrt |
+| **Bildschirm teilen:** Vollbild ist vorausgewählt (displaySurface „monitor"), Systemton standardmäßig an; „Gesamter Bildschirm" steht im App-Menü links, „Anderer Inhalt" rechts | ✅ App-Menü per E2E; die native Auswahl von Windows/WebView2 selbst ist nicht gestaltbar |
+| **Soundboard-Lautstärke** weiterhin standardmäßig 50 % | ✅ |
 
 ### Soundboard, gleichzeitiges Teilen, Fernsteuerung, neue Designs (neu in 0.9.0)
 | Funktion | Stand |

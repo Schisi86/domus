@@ -1022,6 +1022,7 @@ const dict: Partial = {
   "rc2.allow": "Bediening op afstand toestaan",
   "rc2.allowed": "Bediening op afstand actief",
   "rc2.needShare": "Deel eerst je scherm",
+  "rc2.needFullScreen": "Alleen bij het delen van het hele scherm.",
   "rc2.controlledBy": "{name} bedient je computer",
   "rc2.revoke": "Stoppen",
   "rc2.nowControlling": "{name} bedient nu je computer",
