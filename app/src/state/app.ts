@@ -58,8 +58,6 @@ export interface Settings {
   localMute: Record<string, boolean>;
   /** `${serverId}:${userId}` → private note, only stored on this device. */
   notes: Record<string, string>;
-  /** "Für später": saved messages with optional reminder (this device only). */
-  saved: SavedItem[];
   /** Play soundboard sounds from others. */
   soundboard: boolean;
   soundboardVolume: number;
@@ -68,6 +66,8 @@ export interface Settings {
   screenAudio: boolean;
   /** Webcam also sends the PC's system audio (like screen sharing). */
   cameraAudio: boolean;
+  /** Show the webcam as a small overlay on the screen share (off = separate tile). */
+  cameraOverlay: boolean;
   showMembers: boolean;
   /** Pane widths in px (drag the dividers). */
   sidebarWidth: number;
@@ -79,42 +79,6 @@ export interface Settings {
   lastChannel: Record<string, number>;
 }
 
-export interface SavedItem {
-  serverId: string;
-  channelId: number;
-  messageId: number;
-  author: number;
-  authorName: string;
-  preview: string;
-  savedAt: number;
-  /** Reminder time (ms); cleared once it fired. */
-  remindAt?: number | null;
-}
-
-/** Saves a message for later, optionally with a reminder. */
-export function saveForLater(item: Omit<SavedItem, "savedAt">) {
-  const rest = settings.value.saved.filter((x) => !(x.serverId === item.serverId && x.messageId === item.messageId));
-  updateSettings({ saved: [{ ...item, savedAt: Date.now() }, ...rest].slice(0, 200) });
-}
-
-export function removeSaved(serverId: string, messageId: number) {
-  updateSettings({ saved: settings.value.saved.filter((x) => !(x.serverId === serverId && x.messageId === messageId)) });
-}
-
-/** Fires due reminders: system notification, toast and chime. */
-function checkReminders() {
-  const now = Date.now();
-  const due = settings.value.saved.filter((x) => x.remindAt && x.remindAt <= now);
-  if (!due.length) return;
-  for (const d of due) {
-    const text = `${d.authorName}: ${d.preview}`.slice(0, 180);
-    toast(t("later.reminder"), text, "info", 12000);
-    void notify(t("later.reminder"), text);
-    playChime();
-  }
-  updateSettings({ saved: settings.value.saved.map((x) => (x.remindAt && x.remindAt <= now ? { ...x, remindAt: null } : x)) });
-}
-setInterval(checkReminders, 15000);
 
 export type ScreenRes = "720" | "1080" | "1440" | "2160" | "source";
 export interface ScreenOpts {
@@ -167,7 +131,6 @@ export const defaultSettings: Settings = {
   notifyVoiceJoin: true,
   muted: {},
   userVolume: {},
-  saved: [],
   inputGate: "auto",
   gateThreshold: -50,
   accent: "",
@@ -175,10 +138,11 @@ export const defaultSettings: Settings = {
   localMute: {},
   notes: {},
   soundboard: true,
-  soundboardVolume: 0.6,
+  soundboardVolume: 0.5,
   screen: { res: "1080", fps: 30, content: "auto", kbps: 0 },
   screenAudio: true,
   cameraAudio: true,
+  cameraOverlay: true,
   showMembers: true,
   sidebarWidth: 246,
   membersWidth: 236,

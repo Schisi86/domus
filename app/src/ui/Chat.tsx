@@ -3,7 +3,7 @@
 import { signal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
-import { closeModal, lightbox, openDm, openModal, removeSaved, saveForLater, selectChannel, selectServer, settings, showMenu, startDm, toast, updateSettings, windowFocused } from "../state/app";
+import { closeModal, lightbox, openDm, openModal, selectChannel, selectServer, settings, showMenu, startDm, toast, updateSettings, windowFocused } from "../state/app";
 import type { ServerStore } from "../state/server";
 import type { Attachment, Member, Message, Poll } from "../types";
 import { has, P } from "../types";
@@ -398,7 +398,7 @@ function ForwardDialog({ server, msg }: { server: ServerStore; msg: Message }) {
   const q = filter.trim().toLowerCase();
   const targets = [
     ...server.channels.value.filter((c) => c.kind === "text" && has(c.perms, P.SEND_MESSAGES)).map((c) => ({ id: c.id, label: `# ${c.name}`, dm: false, uid: 0 })),
-    ...server.dms.value.map((d) => ({ id: d.channel_id, label: server.memberName(d.user_id), dm: true, uid: d.user_id })),
+    ...server.dms.value.map((d) => ({ id: d.channel_id, label: server.dmName(d.user_id), dm: true, uid: d.user_id })),
   ].filter((x) => x.id !== msg.channel_id && (!q || x.label.toLowerCase().includes(q)));
   const send = async (cid: number) => {
     setBusy(cid);
@@ -494,19 +494,7 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
       ...(own && !msg.poll ? [{ label: t("common.edit"), onClick: () => { setDraft(msg.content); setEditing(msg.id); } }] : []),
       ...(canPin ? [{ label: msg.pinned_at ? t("chat.unpin") : t("chat.pin"), onClick: pin }] : []),
       ...(msg.poll && (own || canManage) && !(msg.poll.ends_at && msg.poll.ends_at <= Date.now()) ? [{ label: t("poll.end"), onClick: endPoll }] : []),
-      isSaved
-        ? { label: t("later.remove"), onClick: () => removeSaved(server.id, msg.id) }
-        : {
-            label: t("later.save"),
-            sub: [
-              { label: t("later.noReminder"), onClick: () => later(null) },
-              { separator: true, label: "" },
-              { label: t("later.in20"), onClick: () => later(20) },
-              { label: t("later.in60"), onClick: () => later(60) },
-              { label: t("later.in180"), onClick: () => later(180) },
-              { label: t("later.tomorrow"), onClick: () => later("tomorrow") },
-            ],
-          },
+      ...(!msg.poll ? [{ label: t("later.save"), onClick: () => void saveToSelf() }] : []),
       { label: t("chat.markUnread"), onClick: markUnread },
       { separator: true, label: "" },
       { label: t("chat.copyText"), onClick: () => copyText(msg.content) },
@@ -515,18 +503,18 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
       ...(own || canManage ? [{ separator: true, label: "" }, { label: t("common.delete"), danger: true, onClick: remove }] : []),
     ]);
   const authorMenu = (e: MouseEvent) => author && memberMenu(e, server, author);
-  const later = (minutes: number | "tomorrow" | null) => {
-    let remindAt: number | null = null;
-    if (minutes === "tomorrow") {
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      d.setHours(9, 0, 0, 0);
-      remindAt = d.getTime();
-    } else if (minutes) remindAt = Date.now() + minutes * 60_000;
-    saveForLater({ serverId: server.id, channelId: msg.channel_id, messageId: msg.id, author: msg.author_id, authorName: name, preview: (msg.poll?.question ?? msg.content) || msg.attachments.map((a) => a.filename).join(", "), remindAt });
-    toast(remindAt ? t("later.savedRemind", { time: fmtFull(remindAt) }) : t("later.saved"), undefined, "ok", 2500);
+  // "Save for later" forwards the message into the private notes-to-self DM.
+  const saveToSelf = async () => {
+    const me = server.me.value?.id;
+    if (me === undefined) return;
+    try {
+      const dm = await server.rpc<{ channel_id: number }>("dm.open", { user_id: me });
+      await server.rpc("message.forward", { message_id: msg.id, channel_id: dm.channel_id });
+      toast(t("later.saved"), t("later.savedHint"), "ok", 2500);
+    } catch (e) {
+      toast(t("common.error"), errorText(e), "error");
+    }
   };
-  const isSaved = settings.value.saved.some((x) => x.serverId === server.id && x.messageId === msg.id);
 
   return (
     <div
@@ -697,7 +685,7 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
         : ch
           ? t("chat.placeholderChannel", { name: ch.name })
           : dm
-            ? t("chat.placeholderDm", { name: server.memberName(dm.user_id) })
+            ? t("chat.placeholderDm", { name: server.dmName(dm.user_id) })
             : t("chat.placeholder");
 
   useEffect(() => {
@@ -1062,86 +1050,6 @@ function ResultList({ server, title, load, onClose, empty }: { server: ServerSto
   );
 }
 
-/** Inbox: mentions on this server and messages saved for later (with reminders). */
-export function InboxPanel({ server, onClose }: { server: ServerStore; onClose: () => void }) {
-  const [tab, setTab] = useState<"mentions" | "later">("mentions");
-  const [mentions, setMentions] = useState<Message[] | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  useEffect(() => {
-    if (tab !== "mentions") return;
-    setMentions(null);
-    server.rpc<{ messages: Message[] }>("mention.list", {}).then((r) => setMentions(r.messages), (e) => setErr(errorText(e)));
-  }, [tab]);
-  const saved = settings.value.saved;
-  const jumpSaved = (x: (typeof saved)[number]) => {
-    const s = server.id === x.serverId ? server : null;
-    if (!s) return;
-    if (s.dm(x.channelId)) openDm(s, x.channelId);
-    else {
-      selectServer(s.id);
-      selectChannel(x.channelId);
-    }
-    jumpTarget.value = { serverId: x.serverId, channelId: x.channelId, messageId: x.messageId };
-    onClose();
-  };
-  return (
-    <div class="inbox" aria-label={t("inbox.title")}>
-      <div class="tabs" style={{ marginBottom: "8px" }}>
-        <button class={tab === "mentions" ? "active" : ""} onClick={() => setTab("mentions")}>{t("inbox.mentions")}</button>
-        <button class={tab === "later" ? "active" : ""} onClick={() => setTab("later")}>{t("inbox.later")} {saved.length > 0 && <span class="badge">{saved.length}</span>}</button>
-      </div>
-      {tab === "mentions" && (
-        <>
-          {err && <div class="error-text" style={{ padding: "8px" }}>{err}</div>}
-          {!mentions && !err && <div style={{ padding: "12px" }}><Spinner /></div>}
-          {mentions && !mentions.length && <div class="empty-hint">{t("inbox.noMentions")}</div>}
-          {mentions?.map((m) => (
-            <div
-              key={m.id}
-              class="list-item"
-              style={{ alignItems: "flex-start" }}
-              onClick={() => {
-                jumpTo(server, m);
-                onClose();
-              }}
-            >
-              <Avatar server={server} userId={m.author_id} name={server.memberName(m.author_id)} size={28} />
-              <div class="grow" style={{ minWidth: "0px" }}>
-                <div class="row small">
-                  <b class="ellipsis">{server.memberName(m.author_id)}</b>
-                  <span class="faint xs">{server.channel(m.channel_id) ? `#${server.channel(m.channel_id)!.name}` : "DM"} · {fmtStamp(m.created_at)}</span>
-                </div>
-                <div class="small muted inbox-text">{m.content}</div>
-              </div>
-            </div>
-          ))}
-        </>
-      )}
-      {tab === "later" && (
-        <>
-          {!saved.length && <div class="empty-hint">{t("inbox.noLater")}</div>}
-          {saved.map((x) => {
-            const here = x.serverId === server.id;
-            return (
-              <div key={`${x.serverId}:${x.messageId}`} class={`list-item${here ? "" : " dim"}`} style={{ alignItems: "flex-start" }} onClick={() => here && jumpSaved(x)}>
-                <div class="grow" style={{ minWidth: "0px" }}>
-                  <div class="row small">
-                    <b class="ellipsis">{x.authorName}</b>
-                    <span class="faint xs">{here ? (server.channel(x.channelId) ? `#${server.channel(x.channelId)!.name}` : "DM") : t("inbox.otherServer")}</span>
-                  </div>
-                  <div class="small muted inbox-text">{x.preview}</div>
-                  {x.remindAt && <div class="xs reminder-chip"><Icon.Clock size={11} /> {fmtFull(x.remindAt)}</div>}
-                </div>
-                <IconButton title={t("later.remove")} class="sm" onClick={(e) => { e.stopPropagation(); removeSaved(x.serverId, x.messageId); }}><Icon.Check /></IconButton>
-              </div>
-            );
-          })}
-        </>
-      )}
-    </div>
-  );
-}
-
 // ------------------------------------------------------------- chat view
 
 export function ChatView({ server, channelId }: { server: ServerStore; channelId: number }) {
@@ -1225,7 +1133,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
     if (last) setEditing(last.id);
   };
 
-  const title = ch ? ch.name : dm ? server.memberName(dm.user_id) : "";
+  const title = ch ? ch.name : dm ? server.dmName(dm.user_id) : "";
   const inDmCall = dm && server.voiceMembers(channelId).length > 0;
   const v = voice.value;
   const inThisCall = v && v.server === server && v.channelId === channelId;

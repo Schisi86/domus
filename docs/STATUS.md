@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.8.0)
+# Funktionsstand (Version 0.9.0)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -78,6 +78,16 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Fehlerprotokolle (Client + Server, rotierend) | ✅ |
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
+
+### Soundboard, gleichzeitiges Teilen, Fernsteuerung, neue Designs (neu in 0.9.0)
+| Funktion | Stand |
+|---|---|
+| **Soundboard:** 20 neue Meme-/Gaming-Sounds (jetzt 36), alle von Pixabay geprüft und im Pegel angeglichen; feineres, minimalistisches Emoji-Raster; Sounds überlappen beim Klicken ohne Verzögerung und ohne Abbruch; Stummschalt-Knopf und Lautstärke (Standard 50 %) im Menü | ✅ Browser-E2E (schnelle Klicks ohne Sperre, Mute, 50 %); alle 36 Dateien dekodieren (Prüfskript) |
+| **Bildschirm + Kamera gleichzeitig:** beide als getrennte Kacheln oder – Standard – die Kamera als kleines Overlay über der Bildschirmübertragung; umschaltbar in den Einstellungen | ✅ Browser-E2E (Overlay-Kachel); Logik für zwei Streams vorhanden |
+| **Fernsteuerung (Desktop):** Wer den Bildschirm teilt, erlaubt die Steuerung mit einem selbst gesetzten Passwort; ein Betrachter übernimmt Maus, Tastatur oder Controller über den verschlüsselten Datenkanal. Injektion nur bei aktiver, freigegebener Sitzung; Host sieht ein Banner und kann jederzeit beenden | 🟡 Rust-Unit-Tests (Freigabe-Gate, Parsen) + kompiliert; **echte Übertragung zwischen zwei Rechnern nicht getestet** (Eingabe wird per Windows SendInput injiziert); Controller wird auf Maus/Tasten abgebildet (kein virtueller Controller-Treiber nötig) |
+| **Posteingang-Knopf entfernt:** „Für später speichern“ leitet die Nachricht jetzt in eine private Direktnachricht an dich selbst („Notizen“) weiter | ✅ Rust-Integrationstest (Selbst-DM) + Browser-E2E |
+| **Brief-Symbol** schon in 0.8 für DMs/Freunde; Hover-Fehler am „+“ der Textkanäle behoben | ✅ visuell geprüft |
+| **5 neue Designs mit Effekten/Animationen:** Matrix (Grün, Scanlines, Code-Regen), Synthwave (Neon-Gitter + Sonne), Lava (warme, langsam wandernde Blobs), Hologramm (schimmernder Farbverlauf, animierte Namen), Prisma (treibende Aurora) – jetzt 19 Designs; pausieren bei verborgenem Fenster und respektieren „Bewegung reduzieren“ | ✅ Screenshots aller fünf |
 
 ### NexUs (neu in 0.8.0)
 | Funktion | Stand |

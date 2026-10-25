@@ -10,6 +10,7 @@ mod capture_bar;
 mod host;
 mod net;
 mod reach;
+mod remotectl;
 mod store;
 mod tunnel;
 
@@ -184,6 +185,8 @@ pub fn run() {
             host::host_set_autostart,
             host::host_set_relay,
             capture_bar::capture_bar_hide,
+            remotectl::remote_set_allowed,
+            remotectl::remote_inject,
             host::host_config,
             host::host_config_save,
             host::host_config_reset,

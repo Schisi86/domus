@@ -38,6 +38,7 @@ import { endVoice, joinVoice, voice, voiceBusy } from "../rtc/voice";
 import { ScreenQualityChip, ScreenShareControl } from "./ScreenShare";
 import { UserSettingsDialog } from "./dialogs/UserSettings";
 import { memberMenu } from "./Members";
+import { ControlBanner, ControlHostButton, ControlSurface, takeControl } from "./remotecontrol";
 
 export function VoiceView({ server, channel }: { server: ServerStore; channel: Channel }) {
   const v = voice.value;
@@ -62,6 +63,10 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
   const stats = v.stats.value;
   const screens = [...v.screens.value.entries()];
   const cams = v.cameras.value;
+  // Default: a person sharing screen + camera shows the camera as a small overlay
+  // on their screen tile instead of a second tile. Toggle in voice settings.
+  const overlay = settings.value.cameraOverlay;
+  const overlaidCams = new Set(overlay ? screens.map(([uid]) => uid).filter((uid) => cams.has(uid)) : []);
   const focused = focus ? screens.find(([uid]) => `s${uid}` === focus) : undefined;
   const canShare = has(channel.perms, P.SCREEN_SHARE);
   const canVideo = has(channel.perms, P.VIDEO);
@@ -70,7 +75,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
 
   const participantTile = (uid: number) => {
     const m = members.find((x) => x.user_id === uid);
-    const cam = cams.get(uid);
+    const cam = overlaidCams.has(uid) ? undefined : cams.get(uid);
     const st = stats.get(uid);
     const name = server.memberName(uid);
     const menu = (e: MouseEvent) => {
@@ -122,7 +127,24 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
       muted
       onClick={() => setFocus(focus === `s${uid}` ? null : `s${uid}`)}
     >
+      {overlaidCams.has(uid) && (
+        <div class="cam-overlay" title={server.memberName(uid)}>
+          <VideoTile stream={cams.get(uid)!} label="" muted />
+        </div>
+      )}
+      {uid !== v.selfId && v.controlling.value === uid && <ControlSurface v={v} uid={uid} />}
       <div class="tile-tools">
+        {uid !== v.selfId && v.controlling.value !== uid && (
+          <IconButton
+            title={t("rc2.take")}
+            onClick={(e) => {
+              e.stopPropagation();
+              void takeControl(v, uid);
+            }}
+          >
+            <Icon.Remote />
+          </IconButton>
+        )}
         {"pictureInPictureEnabled" in document && (
           <IconButton
             title={t("call.pip")}
@@ -179,6 +201,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
           {ids.map(participantTile)}
         </div>
       )}
+      <ControlBanner v={v} />
       {v.sharingScreen.value && <div class="notice warn" style={{ margin: "0 14px 6px" }}>🔴 {v.screenHasAudio.value ? t("voice.sharingNoticeAudio") : t("voice.sharingNotice")}</div>}
       {!v.hasMic.value && <div class="notice warn" style={{ margin: "0 14px 6px" }}>{t("voice.noMicNotice")}</div>}
       {v.suppressed.value && <div class="notice" style={{ margin: "0 14px 6px" }}>{t("voice.suppressed")}</div>}
@@ -200,6 +223,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
           {v.cameraOn.value ? <Icon.Webcam /> : <Icon.WebcamOff />}
         </button>
         <ScreenShareControl v={v} variant="round" disabled={!canShare} />
+        <ControlHostButton v={v} />
         <ReactionButton v={v} />
         <button class={`round-btn${myHand ? " on" : ""}`} title={myHand ? t("call.lowerHand") : t("call.raiseHand")} onClick={() => void v.setHand(!myHand).catch(() => {})}>
           <span style={{ fontSize: "18px", lineHeight: "1" }}>✋</span>

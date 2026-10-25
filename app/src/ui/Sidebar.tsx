@@ -232,9 +232,9 @@ function HomeSidebar() {
           const inCall = s.voiceMembers(d.channel_id).length > 0;
           return (
             <button key={`${s.id}:${d.channel_id}`} class={`chan${active ? " active" : ""}${unread ? " unread" : ""}`} style={{ height: "44px" }} onClick={() => openDm(s, d.channel_id)}>
-              <Avatar server={s} userId={d.user_id} name={s.memberName(d.user_id)} size={30} presence={m?.presence ?? "offline"} />
+              <Avatar server={s} userId={d.user_id} name={s.dmName(d.user_id)} size={30} presence={m?.presence ?? "offline"} />
               <span class="name">
-                <div class="ellipsis">{s.memberName(d.user_id)}</div>
+                <div class="ellipsis">{s.dmName(d.user_id)}</div>
                 <div class="faint xs ellipsis">{servers.value.length > 1 ? s.displayName() : (m?.status_text ?? "")}</div>
               </span>
               {inCall && <Icon.Speaker size={16} title={t("home.callActive")} />}
@@ -247,19 +247,16 @@ function HomeSidebar() {
   );
 }
 
-/** Soundboard: short sounds everyone in the channel hears. */
+/** Soundboard: short sounds everyone in the channel hears. Clicks play
+ *  instantly and overlap; the mute and volume controls are in the menu. */
 function SoundboardButton({ v }: { v: NonNullable<typeof voice.value> }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
-  const [cooling, setCooling] = useState(false);
+  const s = settings.value;
   const blocked = v.suppressed.value || v.serverMuted.value;
-  const fire = async (id: string) => {
-    try {
-      await v.playSound(id);
-      setCooling(true);
-      setTimeout(() => setCooling(false), 3000);
-    } catch (e) {
-      toast(t("board.failed"), errorText(e), "warn", 3000);
-    }
+  const fire = (id: string) => {
+    // Heard locally at once (overlapping, no cooldown); also sent to the channel.
+    void playBoard(id, s.soundboardVolume, true);
+    v.playSound(id).catch(() => {});
   };
   return (
     <>
@@ -269,27 +266,35 @@ function SoundboardButton({ v }: { v: NonNullable<typeof voice.value> }) {
       {anchor && (
         <Popover anchor={anchor} onClose={() => setAnchor(null)}>
           <div class="soundboard">
-            <div class="row" style={{ marginBottom: "6px" }}>
-              <b class="grow small">{t("board.title")}</b>
-              <span class="faint xs">{t("board.hint")}</span>
-            </div>
             <div class="sb-grid">
-              {SOUNDBOARD.map((s) => (
-                <button
-                  key={s.id}
-                  class="sb-btn"
-                  disabled={cooling}
-                  onClick={() => void fire(s.id)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    void playBoard(s.id);
-                  }}
-                  title={`${t(`board.${s.id}` as "board.airhorn")} – ${t("board.previewHint")}`}
-                >
-                  <span class="e">{s.emoji}</span>
-                  <span class="xs ellipsis">{t(`board.${s.id}` as "board.airhorn")}</span>
+              {SOUNDBOARD.map((snd) => (
+                <button key={snd.id} class="sb-btn" onClick={() => fire(snd.id)} title={t(`board.${snd.id}` as "board.airhorn")} aria-label={t(`board.${snd.id}` as "board.airhorn")}>
+                  <span class="e">{snd.emoji}</span>
                 </button>
               ))}
+            </div>
+            <div class="sb-bar">
+              <button
+                class={`sb-mute${s.soundboard ? "" : " off"}`}
+                title={s.soundboard ? t("board.mute") : t("board.unmute")}
+                aria-label={s.soundboard ? t("board.mute") : t("board.unmute")}
+                onClick={() => updateSettings({ soundboard: !s.soundboard })}
+              >
+                {s.soundboard ? <Icon.Volume size={16} /> : <Icon.VolumeOff size={16} />}
+              </button>
+              <input
+                class="range grow"
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={s.soundboardVolume}
+                disabled={!s.soundboard}
+                aria-label={t("snd.volume")}
+                onInput={(e) => updateSettings({ soundboardVolume: Number((e.target as HTMLInputElement).value) })}
+                onChange={() => s.soundboard && void playBoard("bell", s.soundboardVolume, true)}
+              />
+              <span class="faint xs sb-pct">{Math.round(s.soundboardVolume * 100)}%</span>
             </div>
           </div>
         </Popover>

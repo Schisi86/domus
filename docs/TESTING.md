@@ -80,7 +80,7 @@ Echte Weboberfläche, echter Server, 3–4 Clients in Chromium mit virtuellem Mi
 | Verlassen/erneuter Beitritt baut Medien neu auf | ✅ |
 | Gast ohne Bildschirmrecht wird serverseitig abgelehnt (mit Meldung) | ✅ |
 
-### Interaktion – `tests/e2e/interact.mjs`: 33/33 bestanden (0.8.0, zweimal hintereinander)
+### Interaktion – `tests/e2e/interact.mjs`: 34/34 bestanden (0.9.0)
 
 Zwei Browser-Clients (Inhaber + Mitglied) gegen einen frischen Server: Breiten per Ziehen und Zurücksetzen, kompakter Chat, Emoji-Vorschläge, Bildschirm-Startknöpfe, Posteingang in der linken Leiste, Sprachnachricht aufnehmen/senden/abspielbar mit Wellenform, Profil-Banner und „Über mich“, Posteingang (Erwähnung, „Für später“ mit Erinnerung), Anruf-Reaktion und Hand heben, Noise-Gate im Mikrofonweg, Umfrage erstellen/abstimmen/live zählen, Weiterleiten, Als ungelesen markieren, Auszeit über das Personen-Menü (Eingabe gesperrt, Uhr-Symbol, aufheben), Slow-Mode (Hinweis, Countdown), Soundboard, serverseitig stummschalten (Mitglied kann nicht selbst aufheben), Verschieben in anderen Sprachkanal, Kicken (abgemeldet, wartet auf Freischaltung).
 
@@ -92,7 +92,7 @@ Zwei Chromium-Verbindungen, die nur TURN über TCP benutzen dürfen: Datenkanal 
 cargo test -p nexustalk turn_through_relay -- --ignored --nocapture
 ```
 
-Rust-Integrationstests neu in 0.6.0: `timeout_kick_and_voice_moderation`, `polls_forwarding_slowmode_and_mark_unread`; neu in 0.7.0: `profiles_call_reactions_inbox_and_voice_messages`.
+Rust-Integrationstests neu in 0.6.0: `timeout_kick_and_voice_moderation`, `polls_forwarding_slowmode_and_mark_unread`; 0.7.0: `profiles_call_reactions_inbox_and_voice_messages`; 0.9.0: `self_dm_notes_to_self`, Unit-Tests `remotectl` (Freigabe-Gate, Eingabe-Parsen). Soundboard-Dateien per Skript geprüft (36/36 dekodieren).
 
 ### Hosting-Zentrale (Desktop-App) – `tests/e2e/hosting.mjs`: 19/19 bestanden (0.6.0, inkl. Internet-Link und eigenem TURN-Tunnel; ohne Internet: `E2E_NO_INTERNET=1`)
 

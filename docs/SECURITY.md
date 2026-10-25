@@ -33,6 +33,8 @@
 * **Profile (ab 0.7.0):** Banner-Farben werden serverseitig streng geprüft (nur `#rrggbb`, höchstens zwei), „Über mich“ ist auf 190 Zeichen begrenzt und wird als Text, nicht als HTML angezeigt.
 * **Sprachnachrichten (ab 0.7.0):** werden wie andere Dateien gespeichert (Größenlimit, Leserecht nötig). Als Audio gilt eine Datei nur bei passender Signatur; WebM nur mit Endung `.weba`/`.opus`.
 * **„Für später“ und Notizen** liegen nur lokal auf dem Gerät, nicht auf dem Server.
+* **Fernsteuerung (ab 0.9.0):** Nur in der Desktop-App. Eingaben werden lokal per Windows `SendInput` eingespielt und nur, solange eine ausdrücklich freigegebene Sitzung läuft (Host hat die Funktion eingeschaltet, ein Passwort gesetzt, und das Passwort des Betrachters stimmte). Der Host sieht ein deutliches Banner und kann sofort widerrufen; das Beenden der Bildschirmübertragung schaltet die Steuerung ab. Steuerbefehle laufen Ende-zu-Ende über den WebRTC-Datenkanal (nicht über den Server). Risiko bleibt: Wer die Steuerung übernimmt, kann den geteilten Rechner bedienen – nur an vertraute Personen vergeben und ein starkes Passwort wählen.
+* **Selbst-DM „Notizen“ (ab 0.9.0):** gespeicherte Nachrichten liegen als normale Direktnachricht an dich selbst auf dem Server (keine Ende-zu-Ende-Verschlüsselung, wie bei allen Texten).
 * **Öffentliche STUN-Server:** Für Sprache/Video fragen Clients zusätzlich `stun.cloudflare.com` und `stun.l.google.com` nach ihrer öffentlichen Adresse. Diese Dienste sehen dabei die IP-Adresse, aber keine Medien.
 
 ## Welche Daten speichert der Server?

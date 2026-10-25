@@ -7,6 +7,7 @@ import type {
   ApiErr, Category, Channel, Dm, IceConfig, Member, Message, Ready, RelKind, Role, SavedServer, ServerInfo, User, VoiceMember,
 } from "../types";
 import { has, P } from "../types";
+import { t } from "../i18n";
 
 export interface ChannelLog {
   messages: Signal<Message[]>;
@@ -91,6 +92,11 @@ export class ServerStore {
   memberName(uid: number): string {
     const m = this.member(uid);
     return m ? m.display_name || m.username : `Benutzer ${uid}`;
+  }
+
+  /** Name for a DM; the self-DM is shown as "notes to self". */
+  dmName(uid: number): string {
+    return uid === this.me.value?.id ? t("home.notes") : this.memberName(uid);
   }
 
   private async fetchUnknownUsers() {

@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-25T03:22:56.805Z",
+  "date": "2026-10-25T09:30:17.480Z",
   "results": [
     {
       "name": "poll: member sees the new poll",
@@ -42,17 +42,22 @@
       "detail": "linear-gradient(135deg, rgb(255, 42, 109), rgb(252, 238, 10)"
     },
     {
-      "name": "inbox button is gone from the chat header",
+      "name": "inbox button is gone (chat header)",
       "ok": true,
       "detail": ""
     },
     {
-      "name": "inbox (left rail): mention listed",
+      "name": "inbox button is gone (left rail)",
       "ok": true,
       "detail": ""
     },
     {
-      "name": "save for later: listed with reminder",
+      "name": "save for later: goes to the Notes self-DM",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "save for later: note arrives as a DM to myself",
       "ok": true,
       "detail": ""
     },
@@ -117,9 +122,9 @@
       "detail": "Gesamter Bildschirm | Anderer Inhalt"
     },
     {
-      "name": "soundboard: sound sent (cooldown starts, no error)",
+      "name": "soundboard: rapid clicks, mute + 50% volume, no cooldown",
       "ok": true,
-      "detail": ""
+      "detail": "disabled 0, vol 0.5"
     },
     {
       "name": "input sensitivity: mic runs through the gate",

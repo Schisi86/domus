@@ -954,3 +954,25 @@ async fn profiles_call_reactions_inbox_and_voice_messages() {
     assert_eq!(up["mime"], "application/octet-stream", "only voice-message files count as audio");
     ts.stop().await;
 }
+
+#[tokio::test]
+async fn self_dm_notes_to_self() {
+    let (ts, ep, owner, _member) = setup("selfdm").await;
+    let (mut a, ready) = Client::connect(&ep, &owner).await;
+    let me = ready["me"]["id"].as_i64().unwrap();
+    // Opening a DM with myself creates a one-member notes channel.
+    let dm = a.req("dm.open", json!({ "user_id": me })).await.unwrap();
+    let cid = dm["channel_id"].as_i64().unwrap();
+    assert_eq!(dm["user_id"].as_i64(), Some(me));
+    a.req("message.send", json!({ "channel_id": cid, "content": "Nicht vergessen: Milch kaufen" })).await.unwrap();
+    // Opening again returns the same channel (not a new one).
+    let again = a.req("dm.open", json!({ "user_id": me })).await.unwrap();
+    assert_eq!(again["channel_id"].as_i64(), Some(cid));
+    // A fresh session lists the self-DM and can read the note back.
+    let (mut b, ready2) = Client::connect(&ep, &owner).await;
+    let listed = ready2["dms"].as_array().unwrap().iter().any(|d| d["channel_id"].as_i64() == Some(cid) && d["user_id"].as_i64() == Some(me));
+    assert!(listed, "self-DM is listed: {}", ready2["dms"]);
+    let hist = b.req("message.history", json!({ "channel_id": cid })).await.unwrap();
+    assert_eq!(hist["messages"][0]["content"], "Nicht vergessen: Milch kaufen");
+    ts.stop().await;
+}

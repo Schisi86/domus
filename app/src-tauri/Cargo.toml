@@ -35,7 +35,7 @@ igd-next = { version = "0.18", features = ["aio_tokio"] }
 bore-cli = { version = "0.6", default-features = false }
 
 [target."cfg(windows)".dependencies]
-windows-sys = { version = "0.61.2", features = ["Win32_Security_Cryptography", "Win32_Foundation", "Win32_System_Memory", "Win32_UI_Shell", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging", "Win32_System_Registry"] }
+windows-sys = { version = "0.61.2", features = ["Win32_Security_Cryptography", "Win32_Foundation", "Win32_System_Memory", "Win32_UI_Shell", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging", "Win32_System_Registry", "Win32_UI_Input_KeyboardAndMouse"] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"

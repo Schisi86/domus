@@ -694,6 +694,25 @@ pub fn set_override(c: &Connection, channel_id: i64, role_id: i64, allow: Perms,
 // ---------------------------------------------------------------------------
 
 pub fn find_or_create_dm(c: &mut Connection, a: i64, b: i64) -> ApiResult<(i64, bool)> {
+    if a == b {
+        // Self-DM ("notes to self"): a dm channel with a single member.
+        let existing: Option<i64> = c
+            .query_row(
+                "SELECT channel_id FROM dm_members GROUP BY channel_id HAVING count(*) = 1 AND max(user_id) = ?1",
+                params![a],
+                |r| r.get(0),
+            )
+            .optional()?;
+        if let Some(id) = existing {
+            return Ok((id, false));
+        }
+        let tx = c.transaction()?;
+        tx.execute("INSERT INTO channels (kind, name, created_at) VALUES ('dm', '', ?1)", params![now_ms()])?;
+        let id = tx.last_insert_rowid();
+        tx.execute("INSERT INTO dm_members (channel_id, user_id) VALUES (?1, ?2)", params![id, a])?;
+        tx.commit()?;
+        return Ok((id, true));
+    }
     let existing: Option<i64> = c
         .query_row(
             "SELECT x.channel_id FROM dm_members x JOIN dm_members y ON x.channel_id = y.channel_id
@@ -717,7 +736,10 @@ pub fn list_dms(c: &Connection, user_id: i64) -> ApiResult<Vec<DmChannel>> {
     let mut st = c.prepare(
         "SELECT x.channel_id, y.user_id, (SELECT max(m.id) FROM messages m WHERE m.channel_id = x.channel_id)
          FROM dm_members x JOIN dm_members y ON x.channel_id = y.channel_id AND y.user_id != x.user_id
-         WHERE x.user_id = ?1",
+         WHERE x.user_id = ?1
+         UNION
+         SELECT channel_id, ?1, (SELECT max(m.id) FROM messages m WHERE m.channel_id = dm_members.channel_id)
+         FROM dm_members GROUP BY channel_id HAVING count(*) = 1 AND max(user_id) = ?1",
     )?;
     let rows = st
         .query_map(params![user_id], |r| {

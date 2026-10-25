@@ -69,6 +69,8 @@ class Peer {
   lostPrev = 0;
   recvPrev = 0;
   restartTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Bidirectional data channel for remote-control messages. */
+  ctrl: RTCDataChannel | null = null;
 
   constructor(public uid: number, public polite: boolean, config: RTCConfiguration, initiator: boolean) {
     this.pc = new RTCPeerConnection(config);
@@ -79,6 +81,11 @@ class Peer {
 
   close() {
     if (this.restartTimer) clearTimeout(this.restartTimer);
+    try {
+      this.ctrl?.close();
+    } catch {
+      /* already closed */
+    }
     this.pc.close();
     for (const el of [this.micEl, this.screenAudioEl]) {
       el.pause();
@@ -111,6 +118,13 @@ export class VoiceSession {
   sharingScreen = signal(false);
   screenHasAudio = signal<boolean | null>(null);
   cameraOn = signal(false);
+  /** Remote control: whether others may control me, and the password I set. */
+  remoteAllowed = signal(false);
+  remotePassword = signal("");
+  /** The uid currently controlling my computer, or null. */
+  controlledBy = signal<number | null>(null);
+  /** The uid whose computer I am controlling, or null. */
+  controlling = signal<number | null>(null);
   /** The webcam stream also carries system audio. */
   cameraHasAudio = signal(false);
   private cameraAudioTrack: MediaStreamTrack | null = null;
@@ -264,6 +278,8 @@ export class VoiceSession {
 
   async leave() {
     if (this.state.value === "ended") return;
+    this.releaseControl();
+    this.revokeControl();
     this.state.value = "ended";
     voiceHooks.delete(this.hook);
     window.removeEventListener("keydown", this.keyDown);
@@ -346,6 +362,9 @@ export class VoiceSession {
       if (candidate) this.signal(uid, { candidate: candidate.toJSON() });
     };
     pc.ontrack = (ev) => this.onTrack(peer, ev);
+    pc.ondatachannel = (ev) => {
+      if (ev.channel.label === "ctrl") this.setupCtrl(peer, ev.channel);
+    };
     pc.onconnectionstatechange = () => {
       this.updateStats(uid, { state: pc.connectionState });
       if (pc.connectionState === "failed") {
@@ -364,9 +383,121 @@ export class VoiceSession {
     pc.onsignalingstatechange = () => {
       if (pc.signalingState === "stable") void this.tuneSenders(peer);
     };
-    if (initiator) this.attachLocal(peer);
+    if (initiator) {
+      this.attachLocal(peer);
+      this.setupCtrl(peer, pc.createDataChannel("ctrl", { ordered: true }));
+    }
     this.updateStats(uid, { state: "new" });
     return peer;
+  }
+
+  /** Low-latency throttle for outgoing mouse moves while controlling. */
+  private moveSentAt = 0;
+  private pendingMove: { x: number; y: number } | null = null;
+
+  private setupCtrl(peer: Peer, ch: RTCDataChannel) {
+    peer.ctrl = ch;
+    ch.onmessage = (e) => {
+      try {
+        this.onCtrl(peer.uid, JSON.parse(e.data));
+      } catch {
+        /* ignore malformed */
+      }
+    };
+    ch.onclose = () => {
+      if (this.controlledBy.value === peer.uid) this.setControlledBy(null);
+      if (this.controlling.value === peer.uid) this.controlling.value = null;
+    };
+  }
+
+  private sendCtrl(uid: number, obj: unknown) {
+    const ch = this.peers.get(uid)?.ctrl;
+    if (ch && ch.readyState === "open") ch.send(JSON.stringify(obj));
+  }
+
+  /** Host side: enables/disables OS input injection (desktop app only). */
+  private setControlledBy(uid: number | null) {
+    this.controlledBy.value = uid;
+    if (isTauri) void tauriInvoke("remote_set_allowed", { allowed: uid !== null }).catch(() => {});
+  }
+
+  private onCtrl(uid: number, msg: { t: string; pw?: string; c?: unknown[] }) {
+    if (msg.t === "req") {
+      // Someone asks to control my computer.
+      if (!this.remoteAllowed.value || this.controlledBy.value !== null || (this.remotePassword.value && msg.pw !== this.remotePassword.value)) {
+        this.sendCtrl(uid, { t: "deny" });
+        return;
+      }
+      this.setControlledBy(uid);
+      this.sendCtrl(uid, { t: "grant" });
+      toast(t("rc2.nowControlling", { name: this.server.memberName(uid) }), t("rc2.revokeHint"), "warn", 7000);
+    } else if (msg.t === "grant") {
+      this.controlling.value = uid;
+      toast(t("rc2.granted", { name: this.server.memberName(uid) }), t("rc2.grantedHint"), "ok", 6000);
+    } else if (msg.t === "deny") {
+      this.controlling.value = null;
+      toast(t("rc2.denied"), undefined, "warn", 4000);
+    } else if (msg.t === "i") {
+      // Input from the controller – only if it is the one I granted.
+      if (this.controlledBy.value === uid && Array.isArray(msg.c) && isTauri) void tauriInvoke("remote_inject", { cmds: msg.c }).catch(() => {});
+    } else if (msg.t === "end") {
+      if (this.controlledBy.value === uid) this.setControlledBy(null);
+    } else if (msg.t === "rev") {
+      if (this.controlling.value === uid) {
+        this.controlling.value = null;
+        toast(t("rc2.revoked", { name: this.server.memberName(uid) }), undefined, "warn", 4000);
+      }
+    }
+  }
+
+  /** Host: turn remote control on/off and set the password. */
+  setRemote(on: boolean, pw?: string) {
+    this.remoteAllowed.value = on;
+    if (pw !== undefined) this.remotePassword.value = pw;
+    if (!on && this.controlledBy.value !== null) {
+      this.sendCtrl(this.controlledBy.value, { t: "rev" });
+      this.setControlledBy(null);
+    }
+  }
+
+  /** Host: kick the current controller. */
+  revokeControl() {
+    if (this.controlledBy.value !== null) {
+      this.sendCtrl(this.controlledBy.value, { t: "rev" });
+      this.setControlledBy(null);
+    }
+  }
+
+  /** Viewer: ask to control `uid`'s computer with a password. */
+  requestControl(uid: number, pw: string) {
+    this.sendCtrl(uid, { t: "req", pw });
+  }
+
+  /** Viewer: stop controlling and tell the host. */
+  releaseControl() {
+    const uid = this.controlling.value;
+    if (uid !== null) {
+      this.sendCtrl(uid, { t: "end" });
+      this.controlling.value = null;
+    }
+  }
+
+  /** Viewer: send a batch of input actions to the controlled host. */
+  sendInput(cmds: unknown[]) {
+    const uid = this.controlling.value;
+    if (uid !== null && cmds.length) this.sendCtrl(uid, { t: "i", c: cmds });
+  }
+
+  /** Viewer: throttled absolute mouse move (coalesced to ~60/s). */
+  sendMove(x: number, y: number) {
+    this.pendingMove = { x, y };
+    const now = performance.now();
+    if (now - this.moveSentAt >= 16) {
+      this.moveSentAt = now;
+      const m = this.pendingMove;
+      this.pendingMove = null;
+      this.sendInput([{ t: "m", x: m.x, y: m.y }]);
+    }
   }
 
   private closePeer(uid: number) {
@@ -492,7 +623,8 @@ export class VoiceSession {
       setTimeout(() => (this.reactions.value = this.reactions.value.filter((x) => x.id !== r.id)), 3200);
     } else if (ev === "voice.sound" && d.channel_id === this.channelId) {
       const st = settings.value;
-      if (st.soundboard && !this.deafened.value && !st.localMute[`${this.server.id}:${d.user_id}`]) playBoard(d.sound);
+      // Own sounds are played locally on click, so skip the echo from the server.
+      if (d.user_id !== this.selfId && !this.deafened.value && !st.localMute[`${this.server.id}:${d.user_id}`]) playBoard(d.sound);
     } else if (ev === "ready" && d.reconnect) {
       this.state.value = "reconnecting";
       this.joinChannel(true).catch((e) => {
@@ -698,6 +830,7 @@ export class VoiceSession {
 
   async stopScreen() {
     if (!this.screen) return;
+    if (this.remoteAllowed.value) this.setRemote(false);
     const s = this.screen;
     this.screen = null;
     this.sharingScreen.value = false;

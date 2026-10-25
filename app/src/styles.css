@@ -451,6 +451,161 @@
 }
 
 
+:root[data-theme="matrix"] {
+  color-scheme: dark;
+  --solid: #000600;
+  --bg-app: radial-gradient(900px 700px at 50% 0%, rgba(57,255,20,0.14), transparent 60%), linear-gradient(180deg, #001400 0%, #000600 60%, #000 100%);
+  --bg-0: color-mix(in srgb, #000600 82%, transparent);
+  --bg-1: color-mix(in srgb, #000600 58%, transparent);
+  --bg-2: color-mix(in srgb, #000600 36%, transparent);
+  --bg-3: rgba(255, 255, 255, 0.05);
+  --bg-4: rgba(255, 255, 255, 0.10);
+  --bg-float: color-mix(in srgb, #000600 92%, transparent);
+  --line: color-mix(in srgb, #39ff14 13%, transparent);
+  --line-strong: color-mix(in srgb, #39ff14 26%, transparent);
+  --text: #c8ffd4;
+  --text-2: #6fcf86;
+  --text-3: #3f7a4e;
+  --accent: #39ff14;
+  --accent-2: #7cffb2;
+  --accent-grad: linear-gradient(135deg, #7cffb2, #39ff14 50%, #39ff14);
+  --accent-soft: color-mix(in srgb, #39ff14 15%, transparent);
+  --on-accent: #001400;
+  --mention-bg: color-mix(in srgb, #7cffb2 9%, transparent);
+  --mention-line: #7cffb2;
+  --hi: rgba(255, 255, 255, 0.06);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.55), 0 18px 48px rgba(0, 0, 0, 0.65);
+  --glow: 0 0 0 1px color-mix(in srgb, #39ff14 45%, transparent), 0 0 22px color-mix(in srgb, #7cffb2 30%, transparent);
+  --amb-1: #39ff14;
+  --amb-2: #00b84a;
+  --amb-3: #7cffb2;
+}
+
+:root[data-theme="synthwave"] {
+  color-scheme: dark;
+  --solid: #140a24;
+  --bg-app: radial-gradient(800px 520px at 50% 92%, rgba(255,46,151,0.30), transparent 62%), radial-gradient(900px 620px at 15% 8%, rgba(123,97,255,0.30), transparent 60%), linear-gradient(175deg, #241152 0%, #170a33 45%, #2a0b3f 100%);
+  --bg-0: color-mix(in srgb, #140a24 82%, transparent);
+  --bg-1: color-mix(in srgb, #140a24 58%, transparent);
+  --bg-2: color-mix(in srgb, #140a24 36%, transparent);
+  --bg-3: rgba(255, 255, 255, 0.05);
+  --bg-4: rgba(255, 255, 255, 0.10);
+  --bg-float: color-mix(in srgb, #140a24 92%, transparent);
+  --line: color-mix(in srgb, #ff2e97 13%, transparent);
+  --line-strong: color-mix(in srgb, #ff2e97 26%, transparent);
+  --text: #fdeaff;
+  --text-2: #c4a9e6;
+  --text-3: #8a6fb0;
+  --accent: #ff2e97;
+  --accent-2: #00e5ff;
+  --accent-grad: linear-gradient(135deg, #00e5ff, #ff2e97 50%, #ff2e97);
+  --accent-soft: color-mix(in srgb, #ff2e97 15%, transparent);
+  --on-accent: #2a0030;
+  --mention-bg: color-mix(in srgb, #00e5ff 9%, transparent);
+  --mention-line: #00e5ff;
+  --hi: rgba(255, 255, 255, 0.06);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.55), 0 18px 48px rgba(0, 0, 0, 0.65);
+  --glow: 0 0 0 1px color-mix(in srgb, #ff2e97 45%, transparent), 0 0 22px color-mix(in srgb, #00e5ff 30%, transparent);
+  --amb-1: #ff2e97;
+  --amb-2: #00e5ff;
+  --amb-3: #7b61ff;
+}
+
+:root[data-theme="lava"] {
+  color-scheme: dark;
+  --solid: #0c0400;
+  --bg-app: radial-gradient(760px 760px at 20% 110%, rgba(255,106,61,0.40), transparent 60%), radial-gradient(700px 700px at 90% 0%, rgba(255,210,63,0.20), transparent 60%), linear-gradient(170deg, #2a0d04 0%, #140600 55%, #1c0a02 100%);
+  --bg-0: color-mix(in srgb, #0c0400 82%, transparent);
+  --bg-1: color-mix(in srgb, #0c0400 58%, transparent);
+  --bg-2: color-mix(in srgb, #0c0400 36%, transparent);
+  --bg-3: rgba(255, 255, 255, 0.05);
+  --bg-4: rgba(255, 255, 255, 0.10);
+  --bg-float: color-mix(in srgb, #0c0400 92%, transparent);
+  --line: color-mix(in srgb, #ff6a3d 13%, transparent);
+  --line-strong: color-mix(in srgb, #ff6a3d 26%, transparent);
+  --text: #ffece0;
+  --text-2: #d6a98f;
+  --text-3: #9a6a4e;
+  --accent: #ff6a3d;
+  --accent-2: #ffd23f;
+  --accent-grad: linear-gradient(135deg, #ffd23f, #ff6a3d 50%, #ff6a3d);
+  --accent-soft: color-mix(in srgb, #ff6a3d 15%, transparent);
+  --on-accent: #2a0d00;
+  --mention-bg: color-mix(in srgb, #ffd23f 9%, transparent);
+  --mention-line: #ffd23f;
+  --hi: rgba(255, 255, 255, 0.06);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.55), 0 18px 48px rgba(0, 0, 0, 0.65);
+  --glow: 0 0 0 1px color-mix(in srgb, #ff6a3d 45%, transparent), 0 0 22px color-mix(in srgb, #ffd23f 30%, transparent);
+  --amb-1: #ff5722;
+  --amb-2: #ffb300;
+  --amb-3: #ff2d55;
+}
+
+:root[data-theme="holo"] {
+  color-scheme: dark;
+  --solid: #0a0b12;
+  --bg-app: linear-gradient(135deg, #12131f 0%, #0a0b12 50%, #141022 100%);
+  --bg-0: color-mix(in srgb, #0a0b12 82%, transparent);
+  --bg-1: color-mix(in srgb, #0a0b12 58%, transparent);
+  --bg-2: color-mix(in srgb, #0a0b12 36%, transparent);
+  --bg-3: rgba(255, 255, 255, 0.05);
+  --bg-4: rgba(255, 255, 255, 0.10);
+  --bg-float: color-mix(in srgb, #0a0b12 92%, transparent);
+  --line: color-mix(in srgb, #b388ff 13%, transparent);
+  --line-strong: color-mix(in srgb, #b388ff 26%, transparent);
+  --text: #eef0ff;
+  --text-2: #b4b7d6;
+  --text-3: #787ba0;
+  --accent: #b388ff;
+  --accent-2: #80ffea;
+  --accent-grad: linear-gradient(135deg, #80ffea, #b388ff 50%, #b388ff);
+  --accent-soft: color-mix(in srgb, #b388ff 15%, transparent);
+  --on-accent: #120a24;
+  --mention-bg: color-mix(in srgb, #80ffea 9%, transparent);
+  --mention-line: #80ffea;
+  --hi: rgba(255, 255, 255, 0.06);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.55), 0 18px 48px rgba(0, 0, 0, 0.65);
+  --glow: 0 0 0 1px color-mix(in srgb, #b388ff 45%, transparent), 0 0 22px color-mix(in srgb, #80ffea 30%, transparent);
+  --amb-1: #b388ff;
+  --amb-2: #80ffea;
+  --amb-3: #ff8ad8;
+}
+
+:root[data-theme="prism"] {
+  color-scheme: dark;
+  --solid: #060f14;
+  --bg-app: radial-gradient(820px 620px at 12% 4%, rgba(106,215,255,0.26), transparent 60%), radial-gradient(900px 680px at 92% 96%, rgba(192,139,255,0.30), transparent 60%), linear-gradient(160deg, #06252e 0%, #081425 55%, #140a2a 100%);
+  --bg-0: color-mix(in srgb, #060f14 82%, transparent);
+  --bg-1: color-mix(in srgb, #060f14 58%, transparent);
+  --bg-2: color-mix(in srgb, #060f14 36%, transparent);
+  --bg-3: rgba(255, 255, 255, 0.05);
+  --bg-4: rgba(255, 255, 255, 0.10);
+  --bg-float: color-mix(in srgb, #060f14 92%, transparent);
+  --line: color-mix(in srgb, #6ad7ff 13%, transparent);
+  --line-strong: color-mix(in srgb, #6ad7ff 26%, transparent);
+  --text: #e9f6ff;
+  --text-2: #a7c0d4;
+  --text-3: #6c869c;
+  --accent: #6ad7ff;
+  --accent-2: #c08bff;
+  --accent-grad: linear-gradient(135deg, #c08bff, #6ad7ff 50%, #6ad7ff);
+  --accent-soft: color-mix(in srgb, #6ad7ff 15%, transparent);
+  --on-accent: #041019;
+  --mention-bg: color-mix(in srgb, #c08bff 9%, transparent);
+  --mention-line: #c08bff;
+  --hi: rgba(255, 255, 255, 0.06);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.55), 0 18px 48px rgba(0, 0, 0, 0.65);
+  --glow: 0 0 0 1px color-mix(in srgb, #6ad7ff 45%, transparent), 0 0 22px color-mix(in srgb, #c08bff 30%, transparent);
+  --amb-1: #19c3ff;
+  --amb-2: #c08bff;
+  --amb-3: #4affd0;
+}
+
 /* ===================================================================== base */
 * { box-sizing: border-box; }
 html, body, #app { height: 100%; margin: 0; }
@@ -701,8 +856,9 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 650; letter-spacing:
 .sidebar-scroll { flex: 1; overflow-y: auto; padding: 8px 8px 16px; }
 .cat { margin-top: 16px; }
 .cat-head { display: flex; align-items: center; gap: 4px; padding: 0 4px 4px 6px; font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-3); }
-.cat-head .icon-btn { width: 20px; height: 20px; opacity: 0; }
-.cat:hover .cat-head .icon-btn { opacity: 1; }
+.cat-head .icon-btn { width: 22px; height: 22px; border-radius: var(--r-xs); margin-inline-end: 1px; flex: none; opacity: 0; transition: opacity var(--dur), background var(--dur), color var(--dur); }
+.cat-head .icon-btn svg { width: 14px; height: 14px; }
+.cat:hover .cat-head .icon-btn, .cat-head .icon-btn:focus-visible { opacity: 1; }
 .chan { display: flex; align-items: center; gap: 7px; width: 100%; height: 32px; padding: 0 8px; border-radius: var(--r-sm); border: 0; background: transparent; color: var(--text-3); cursor: pointer; text-align: start; position: relative; font-size: var(--fs-md); transition: background var(--dur), color var(--dur); }
 .chan:hover { background: var(--bg-3); color: var(--text-2); }
 .chan.active { background: linear-gradient(90deg, var(--accent-soft), transparent 90%); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
@@ -1044,13 +1200,18 @@ details.advanced[open] > summary::after { transform: rotate(90deg); }
 .poll.ended .poll-opt { opacity: 0.9; }
 
 /* ---------- soundboard ---------- */
-.soundboard { width: 300px; padding: 10px; }
-.sb-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.sb-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--bg-2); color: var(--text-2); cursor: pointer; min-width: 0; transition: transform var(--dur) var(--ease), border-color var(--dur), background var(--dur); }
-.sb-btn .e { font-size: 22px; line-height: 1; }
-.sb-btn span { max-width: 100%; }
-.sb-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); transform: translateY(-2px); }
-.sb-btn:disabled { opacity: 0.5; cursor: default; }
+.soundboard { width: 296px; padding: 10px; }
+/* Minimalist grid of emoji-only tiles, scrolls when there are many sounds. */
+.sb-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; max-height: 232px; overflow-y: auto; padding: 2px; margin: -2px; }
+.sb-btn { aspect-ratio: 1; display: grid; place-items: center; border-radius: var(--r-sm); border: 1px solid transparent; background: var(--bg-2); cursor: pointer; transition: transform 90ms var(--ease), background var(--dur); }
+.sb-btn .e { font-size: 21px; line-height: 1; }
+.sb-btn:hover { background: var(--accent-soft); }
+.sb-btn:active { transform: scale(0.88); }
+.sb-bar { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.sb-mute { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 0; background: var(--bg-3); color: var(--text-2); cursor: pointer; transition: background var(--dur), color var(--dur); }
+.sb-mute:hover { background: var(--accent-soft); color: var(--accent); }
+.sb-mute.off { color: var(--danger); }
+.sb-pct { flex: none; min-width: 34px; text-align: end; font-variant-numeric: tabular-nums; }
 
 /* ---------- living background (ambient light, slow drift, film grain) ---------- */
 .ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
@@ -1175,3 +1336,83 @@ body.resizing, body.resizing * { cursor: col-resize !important; user-select: non
 .content { position: relative; }
 .jump-latest { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); z-index: 4; border: 0; border-radius: 999px; padding: 7px 16px; background: var(--accent-grad); color: var(--on-accent); font-weight: 700; font-size: var(--fs-sm); cursor: pointer; box-shadow: var(--glow), var(--shadow-2); animation: pop 140ms var(--ease); }
 .jump-latest:hover { filter: brightness(1.08); }
+
+/* ---------- camera overlay on a screen share ---------- */
+.cam-overlay { position: absolute; right: 10px; bottom: 10px; width: 26%; max-width: 220px; min-width: 110px; aspect-ratio: 16 / 10; z-index: 2; border-radius: var(--r-sm); overflow: hidden; border: 2px solid var(--bg-float); box-shadow: var(--shadow-2); background: #000; }
+.cam-overlay .tile { position: absolute; inset: 0; min-height: 0; border: 0; border-radius: 0; box-shadow: none; background: #000; }
+.cam-overlay video { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---------- remote control ---------- */
+.rc-menu { width: 260px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.rc-field { display: flex; flex-direction: column; gap: 4px; }
+.rc-active { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--danger) 14%, transparent); font-size: var(--fs-sm); }
+.rc-banner { display: flex; align-items: center; gap: 8px; }
+.rc-surface { position: absolute; inset: 0; z-index: 4; cursor: crosshair; outline: none; background: transparent; }
+.rc-surface.active { box-shadow: inset 0 0 0 3px var(--accent), inset 0 0 22px color-mix(in srgb, var(--accent) 40%, transparent); }
+.rc-surface:not(.active) { background: rgba(0, 0, 0, 0.28); backdrop-filter: blur(1px); display: grid; place-items: center; }
+.rc-surface-bar { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: var(--fs-sm); color: #fff; background: linear-gradient(180deg, rgba(0,0,0,0.6), transparent); }
+.rc-surface:not(.active) .rc-surface-bar { position: static; justify-content: center; background: none; }
+
+/* ======================= special animated designs (0.9) ======================= */
+/* Extra decorative layers; only the active theme switches them on. */
+.ambient .fx, .ambient .fx2 { position: absolute; inset: 0; display: none; pointer-events: none; }
+
+/* --- Matrix: green digital rain + scanlines --- */
+:root[data-theme="matrix"] .ambient .fx { display: block; opacity: 0.5;
+  background-image: repeating-linear-gradient(90deg, transparent 0 22px, rgba(57,255,20,0.11) 22px 23px);
+  mask-image: repeating-linear-gradient(90deg, #000 0 22px, transparent 22px 23px); }
+:root[data-theme="matrix"] .ambient .fx2 { display: block; opacity: 0.35; mix-blend-mode: screen;
+  background: repeating-linear-gradient(0deg, rgba(57,255,20,0.5) 0 2px, transparent 2px 4px);
+  background-size: 100% 220px; animation: matrix-fall 1.8s linear infinite; }
+:root[data-theme="matrix"] .ambient i { filter: blur(120px); opacity: 0.22; }
+@keyframes matrix-fall { from { background-position: 0 0; } to { background-position: 0 220px; } }
+
+/* --- Synthwave: glowing sun + animated perspective grid --- */
+:root[data-theme="synthwave"] .ambient .fx { display: block; bottom: 0; top: auto; height: 46%;
+  background-image: linear-gradient(transparent 0, rgba(255,46,151,0.55) 100%),
+    repeating-linear-gradient(90deg, rgba(0,229,255,0.5) 0 1px, transparent 1px 64px);
+  transform: perspective(340px) rotateX(68deg); transform-origin: bottom; opacity: 0.5;
+  mask-image: linear-gradient(transparent, #000); animation: grid-move 4s linear infinite; }
+:root[data-theme="synthwave"] .ambient .fx2 { display: block; left: 50%; top: 26%; width: 240px; height: 240px; inset: auto;
+  transform: translateX(-50%); border-radius: 50%; opacity: 0.9;
+  background: radial-gradient(circle at 50% 40%, #ffe8a3, #ff2e97 55%, transparent 72%);
+  filter: blur(2px) drop-shadow(0 0 60px rgba(255,46,151,0.6)); }
+@keyframes grid-move { from { background-position: 0 0, 0 0; } to { background-position: 0 0, 0 64px; } }
+
+/* --- Lava: slow morphing warm blobs (gooey) --- */
+:root[data-theme="lava"] .ambient i { filter: blur(70px); opacity: 0.5; mix-blend-mode: screen; }
+:root[data-theme="lava"] .ambient i:nth-child(1) { animation-duration: 26s; }
+:root[data-theme="lava"] .ambient i:nth-child(2) { animation-duration: 30s; }
+:root[data-theme="lava"] .ambient i:nth-child(3) { animation-duration: 22s; }
+:root[data-theme="lava"] .ambient .fx { display: block; opacity: 0.5; mix-blend-mode: overlay;
+  background: radial-gradient(60% 50% at 50% 120%, rgba(255,106,61,0.5), transparent 70%); }
+
+/* --- Holographic: shifting iridescent sheen --- */
+:root[data-theme="holo"] .ambient .fx { display: block; opacity: 0.5; mix-blend-mode: screen;
+  background: conic-gradient(from 0deg at 50% 50%, #ff8ad8, #b388ff, #80ffea, #8affc1, #ffd98a, #ff8ad8);
+  filter: blur(80px) saturate(1.4); animation: holo-spin 18s linear infinite; }
+:root[data-theme="holo"] .ambient .fx2 { display: block; opacity: 0.12; mix-blend-mode: color-dodge;
+  background: repeating-linear-gradient(115deg, transparent 0 40px, rgba(255,255,255,0.25) 40px 42px);
+  animation: holo-slide 7s linear infinite; }
+:root[data-theme="holo"] .msg-author, :root[data-theme="holo"] .wordmark b {
+  background: linear-gradient(90deg, #b388ff, #80ffea, #ff8ad8, #b388ff); background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: holo-text 8s linear infinite; }
+@keyframes holo-spin { from { transform: rotate(0) scale(1.4); } to { transform: rotate(360deg) scale(1.4); } }
+@keyframes holo-slide { from { background-position: 0 0; } to { background-position: 140px 0; } }
+@keyframes holo-text { to { background-position: 300% 0; } }
+
+/* --- Prism: drifting aurora ribbons --- */
+:root[data-theme="prism"] .ambient .fx { display: block; opacity: 0.55; mix-blend-mode: screen;
+  background: linear-gradient(115deg, transparent 20%, rgba(106,215,255,0.5) 38%, rgba(192,139,255,0.5) 54%, rgba(74,255,208,0.4) 68%, transparent 82%);
+  background-size: 260% 260%; filter: blur(42px); animation: prism-drift 16s ease-in-out infinite alternate; }
+@keyframes prism-drift { from { background-position: 0% 0%; } to { background-position: 100% 100%; } }
+
+/* Scanline tint for the whole app in matrix mode for a CRT feel. */
+:root[data-theme="matrix"] .app::after { content: ""; position: fixed; inset: 0; z-index: 60; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0 1px, transparent 1px 3px); opacity: 0.4; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient .fx, .ambient .fx2 { animation: none !important; }
+  :root[data-theme="holo"] .msg-author, :root[data-theme="holo"] .wordmark b { animation: none; }
+}
+:root.bg-paused .ambient .fx, :root.bg-paused .ambient .fx2 { animation-play-state: paused; }

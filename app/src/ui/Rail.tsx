@@ -1,13 +1,12 @@
 // Left server rail: home, servers, add and the hosting center.
 
-import { activeServer, activeServerId, closeModal, isMuted, openModal, removeServer, selectServer, servers, settings, showMenu, updateSettings } from "../state/app";
+import { activeServerId, isMuted, openModal, removeServer, selectServer, servers, settings, showMenu, updateSettings } from "../state/app";
 import type { ServerStore } from "../state/server";
 import { transport } from "../net/transport";
 import { t } from "../i18n";
 import { hosts, reachProblem, runningHosts } from "../state/hosting";
 import { isTauri } from "../platform";
-import { Modal, confirmDialog, initials, useBlobUrl, Icon } from "./components";
-import { InboxPanel } from "./Chat";
+import { confirmDialog, initials, useBlobUrl, Icon } from "./components";
 import { AddServerDialog } from "./dialogs/AddServer";
 import { HostDialog } from "./dialogs/Host";
 import { ServerSettingsDialog } from "./dialogs/ServerSettings";
@@ -89,32 +88,6 @@ function HostButton() {
   );
 }
 
-/** Inbox (mentions, saved for later) – a dialog so it never crowds the chat. */
-function InboxButton() {
-  const server = activeServer.value ?? servers.value[0] ?? null;
-  const due = settings.value.saved.some((x) => x.remindAt);
-  if (!server) return null;
-  return (
-    <div class="rail-item">
-      <button
-        class="rail-btn inbox-btn"
-        title={t("inbox.title")}
-        aria-label={t("inbox.title")}
-        onClick={() =>
-          openModal(
-            <Modal title={t("inbox.title")} sub={server.displayName()} class="inbox-modal">
-              <InboxPanel server={server} onClose={closeModal} />
-            </Modal>,
-          )
-        }
-      >
-        <Icon.Inbox size={20} class="" />
-      </button>
-      {due && <span class="rail-dot" />}
-    </div>
-  );
-}
-
 export function Rail() {
   const home = activeServerId.value === null;
   const hb = homeBadge();
@@ -127,7 +100,6 @@ export function Rail() {
         </button>
         {hb > 0 && <span class="rail-badge">{hb}</span>}
       </div>
-      <InboxButton />
       <div class="rail-sep" />
       {servers.value.map((s) => (
         <ServerButton key={s.id} s={s} />

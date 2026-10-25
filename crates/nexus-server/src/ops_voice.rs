@@ -290,7 +290,7 @@ pub async fn move_member(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
 }
 
 /// Soundboard: at most one sound every few seconds per member.
-pub const SOUND_INTERVAL_MS: i64 = 3000;
+pub const SOUND_INTERVAL_MS: i64 = 300;
 
 #[derive(Deserialize)]
 struct SoundReq {

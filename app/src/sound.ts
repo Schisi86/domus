@@ -165,6 +165,26 @@ export const SOUNDBOARD = [
   { id: "kaching", emoji: "💰", gain: 0.9 },
   { id: "gong", emoji: "🔊", gain: 1.13, max: 4.5 },
   { id: "dramatic", emoji: "😱", gain: 2.07 },
+  { id: "vineboom", emoji: "📢", gain: 0.89 },
+  { id: "bruh", emoji: "🗿", gain: 0.96 },
+  { id: "metalpipe", emoji: "🪠", gain: 0.81 },
+  { id: "coin", emoji: "🪙", gain: 1.25 },
+  { id: "powerup", emoji: "🔺", gain: 1.08 },
+  { id: "gameover", emoji: "🎮", gain: 1.52 },
+  { id: "bonk", emoji: "🔨", gain: 0.86 },
+  { id: "scratch", emoji: "💿", gain: 0.77 },
+  { id: "error", emoji: "🪟", gain: 1.0 },
+  { id: "jump", emoji: "🦘", gain: 1.01 },
+  { id: "laser", emoji: "🔫", gain: 0.76 },
+  { id: "explosion", emoji: "💣", gain: 0.84 },
+  { id: "sword", emoji: "⚔️", gain: 0.85 },
+  { id: "woosh", emoji: "💨", gain: 0.87 },
+  { id: "death", emoji: "☠️", gain: 2.2 },
+  { id: "magic", emoji: "🪄", gain: 2.2 },
+  { id: "victory", emoji: "🏆", gain: 1.39 },
+  { id: "nope", emoji: "🙅", gain: 1.42 },
+  { id: "boo", emoji: "👎", gain: 0.85 },
+  { id: "slidewhistle", emoji: "🎢", gain: 1.44 },
 ] as const;
 export type BoardSound = (typeof SOUNDBOARD)[number]["id"];
 
@@ -192,9 +212,9 @@ export function isBoardSound(id: string): id is BoardSound {
 }
 
 /** Plays a soundboard sound locally at the soundboard volume. */
-export async function playBoard(id: string, volume = settings.value.soundboardVolume) {
+export async function playBoard(id: string, volume = settings.value.soundboardVolume, force = false) {
   const meta = SOUNDBOARD.find((s) => s.id === id);
-  if (!meta) return;
+  if (!meta || (!force && !settings.value.soundboard)) return;
   try {
     const buf = await load(id);
     if (!buf) return;

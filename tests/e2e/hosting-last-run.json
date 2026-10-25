@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T03:38:56.923Z",
+  "at": "2026-10-25T09:34:28.721Z",
   "results": [
     {
       "name": "hosting button sits at the bottom of the rail",
@@ -19,12 +19,12 @@
     {
       "name": "server A: permanent invite link shown",
       "ok": true,
-      "detail": "nexustalk://127.0.0.1:7878/66B844MH#fp=05C50EF69F851B37307A608F9FF3B3336B2D2F588558F9AC17734857D867B9E8"
+      "detail": "nexustalk://127.0.0.1:7878/C97XCCT8#fp=95306BDA730A812F70EE01669BD3EEBF49F651F912B77ED3C0928A8BA09B008B"
     },
     {
       "name": "server B: invite link shown",
       "ok": true,
-      "detail": "nexustalk://127.0.0.1:7879/SMM8BHMB#fp=0BADB313FF0A9FC2BFFD9EF45DB195EDB41255EFED1CDF06CD49B47F73C7D755"
+      "detail": "nexustalk://127.0.0.1:7879/DF3RF5L6#fp=66B696D21C4CC2768FE327210CE7AD52A1C0AA35E4F241CA2AB2119EBC73DCE1"
     },
     {
       "name": "both servers use different ports",
@@ -49,7 +49,7 @@
     {
       "name": "registry stores both servers",
       "ok": true,
-      "detail": "server, servers/sa89fcda0c138"
+      "detail": "server, servers/sbc067cf7ad08"
     },
     {
       "name": "invite link stays the same when reopened",
@@ -59,17 +59,17 @@
     {
       "name": "exposed server gets a public relay address",
       "ok": true,
-      "detail": "bore.pub:51532"
+      "detail": "bore.pub:6340"
     },
     {
       "name": "voice relay (TURN over TCP) gets its own tunnel",
       "ok": true,
-      "detail": "bore.pub:11180"
+      "detail": "bore.pub:34878"
     },
     {
       "name": "invite card shows the internet link first",
       "ok": true,
-      "detail": "nexustalk://bore.pub:51532/66B844MH#fp=05C50EF69F851B37307A608F9FF3B3336B2D2F588558F9AC17734857D867B9E8"
+      "detail": "nexustalk://bore.pub:6340/C97XCCT8#fp=95306BDA730A812F70EE01669BD3EEBF49F651F912B77ED3C0928A8BA09B008B"
     },
     {
       "name": "home network link stays available",

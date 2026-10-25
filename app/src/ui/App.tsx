@@ -117,6 +117,8 @@ export function App() {
           <i />
           <i />
           <b class="stars" />
+          <b class="fx" />
+          <b class="fx2" />
         </div>
       )}
       <TitleBar />

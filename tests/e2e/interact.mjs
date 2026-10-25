@@ -177,20 +177,23 @@ try {
   await pa.keyboard.press("Escape");
   await waitFor(async () => (await pa.locator(".overlay").count()) === 0, 3000);
   await wsCall(a.token, "message.send", { channel_id: await pa.evaluate(() => window.__nexus.servers.value[0].channels.value.find((c) => c.name === "allgemein").id), content: "@bob kannst du später drüberschauen?" });
-  check("inbox button is gone from the chat header", (await pb.locator(".main-head .icon-btn[title='Posteingang']").count()) === 0);
-  await pb.locator(".rail .inbox-btn").click();
-  const mention = await waitFor(() => pb.locator(".inbox-modal .inbox .list-item", { hasText: "später drüberschauen" }).count());
-  check("inbox (left rail): mention listed", !!mention);
-  await pb.keyboard.press("Escape");
-  const target = pb.locator(".msg", { hasText: "später drüberschauen" }).last();
+  check("inbox button is gone (chat header)", (await pb.locator(".main-head .icon-btn[title='Posteingang']").count()) === 0);
+  check("inbox button is gone (left rail)", (await pb.locator(".rail .inbox-btn").count()) === 0);
+  await wsCall(a.token, "message.send", { channel_id: await pa.evaluate(() => window.__nexus.servers.value[0].channels.value.find((c) => c.name === "allgemein").id), content: "merken: Milch kaufen" });
+  const target = pb.locator(".msg", { hasText: "merken: Milch kaufen" }).last();
+  await target.waitFor();
   await target.click({ button: "right" });
-  await menuPath(pb, ["Für später speichern", "In 1 Stunde erinnern"]);
-  await pb.locator(".rail .inbox-btn").click();
-  await pb.locator(".inbox-modal .tabs button", { hasText: "Für später" }).click();
-  const saved = await waitFor(() => pb.locator(".inbox-modal .list-item .reminder-chip").count());
-  check("save for later: listed with reminder", !!saved);
-  await shot(pb, "inbox.png");
-  await pb.keyboard.press("Escape");
+  await menuPath(pb, ["Für später speichern"]);
+  // It is forwarded into the private notes-to-self DM, which appears in the DM list.
+  await pb.locator(".rail .rail-btn.home").click();
+  const notes = await waitFor(() => pb.locator(".chan", { hasText: "Notizen" }).count());
+  check("save for later: goes to the Notes self-DM", !!notes);
+  await pb.locator(".chan", { hasText: "Notizen" }).first().click();
+  const inNotes = await waitFor(() => pb.locator(".msg", { hasText: "Milch kaufen" }).count());
+  check("save for later: note arrives as a DM to myself", !!inNotes);
+  await shot(pb, "notes-dm.png");
+  await pb.locator(".rail-item .rail-btn:not(.home):not(.add):not(.host)").first().click();
+  await pb.locator(".chan", { hasText: "allgemein" }).first().click();
 
   // ------------------------------------------------------------ layout: resizable panes, compact chat, emoji suggestions
   const sbBefore = await pa.locator(".sidebar").evaluate((el) => el.getBoundingClientRect().width);
@@ -279,10 +282,16 @@ try {
   await pb.keyboard.press("Escape");
   await pb.locator(".voice-panel .btn[title='Soundboard']").click();
   await shot(pb, "soundboard.png");
-  await pb.locator(".sb-btn", { hasText: "Airhorn" }).click();
-  const cooling = await waitFor(() => pb.locator(".sb-btn[disabled]").count());
+  await pb.locator(".sb-btn[title='Airhorn']").click();
+  // Overlapping, no cooldown: three quick clicks must all be accepted (no disabled button, no error).
+  await pb.locator(".sb-btn[title='Vine Boom']").click();
+  await pb.locator(".sb-btn[title='Bruh']").click();
+  const disabled = await pb.locator(".sb-btn[disabled]").count();
   const errToast = await pb.locator(".toast", { hasText: "Sound" }).count();
-  check("soundboard: sound sent (cooldown starts, no error)", !!cooling && !errToast);
+  const hasMute = await pb.locator(".sb-mute").count();
+  const vol = await pb.locator(".soundboard .range").inputValue();
+  check("soundboard: rapid clicks, mute + 50% volume, no cooldown", disabled === 0 && !errToast && hasMute === 1 && Math.abs(Number(vol) - 0.5) < 0.001, `disabled ${disabled}, vol ${vol}`);
+  await shot(pb, "soundboard.png");
   await pb.keyboard.press("Escape");
 
   // ------------------------------------------------------------ call reactions, raised hand, input gate

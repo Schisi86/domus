@@ -321,6 +321,7 @@ function Voice() {
         </select>
       </Field>
       <Toggle checked={s.cameraAudio} onChange={(x) => set({ cameraAudio: x })} label={t("cam.audio")} desc={t("cam.audioDesc")} />
+      <Toggle checked={s.cameraOverlay} onChange={(x) => set({ cameraOverlay: x })} label={t("cam.overlay")} desc={t("cam.overlayDesc")} />
       <div class="faint xs">{t("settings.privacyHint")}</div>
     </>
   );

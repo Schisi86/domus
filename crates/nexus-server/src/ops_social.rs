@@ -203,7 +203,10 @@ async fn target_active(ctx: &Ctx, user_id: i64) -> ApiResult<store::User> {
 
 pub async fn dm_open(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     let r: UserReq = parse(d)?;
-    target_active(ctx, r.user_id).await?;
+    // A DM with yourself is the "notes to self" channel; others must be active.
+    if r.user_id != ctx.uid {
+        target_active(ctx, r.user_id).await?;
+    }
     let (a, b) = (ctx.uid, r.user_id);
     let (cid, created) = ctx
         .st
