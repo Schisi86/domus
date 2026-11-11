@@ -198,6 +198,17 @@ const MIGRATIONS: &[&str] = &[
     ALTER TABLE users ADD COLUMN bio TEXT NOT NULL DEFAULT '';
     ALTER TABLE users ADD COLUMN banner TEXT NOT NULL DEFAULT '';
     "#,
+    // v5: public keys for end-to-end encrypted direct messages. The server only
+    // stores and hands out public keys; private keys never leave the devices.
+    r#"
+    CREATE TABLE e2e_keys (
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kid TEXT NOT NULL,
+        public_key TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (user_id, kid)
+    );
+    "#,
 ];
 
 pub const SCHEMA_VERSION: i64 = MIGRATIONS.len() as i64;

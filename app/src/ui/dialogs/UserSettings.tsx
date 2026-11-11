@@ -2,7 +2,7 @@
 // notifications, design & language, app & diagnostics, about.
 
 import { useEffect, useRef, useState } from "preact/hooks";
-import { activeServer, closeModal, minimizeToTray, openModal, persistNow, removeServer, servers, settings, toast, updateSettings, type Settings } from "../../state/app";
+import { activeServer, closeModal, hostsAutostart, minimizeToTray, openModal, persistNow, removeServer, servers, settings, toast, updateSettings, type Settings } from "../../state/app";
 import type { ServerStore } from "../../state/server";
 import { errorText, lang, LANGS, presenceText, t, type Key } from "../../i18n";
 import { transport } from "../../net/transport";
@@ -11,6 +11,7 @@ import { Avatar, Field, IconButton, Icon, LogoMark, Modal, Toggle, bannerCss, co
 import { pickAndCropImage } from "../ImageCrop";
 import { voice } from "../../rtc/voice";
 import { ScreenOptions } from "../ScreenShare";
+import { REMOTE_KEYS } from "../remotecontrol";
 import { THEMES, ACCENTS } from "../../themes";
 import { Flag } from "../flags";
 import { DonateCard } from "./About";
@@ -329,6 +330,7 @@ function Voice() {
 
 function Screen() {
   const v = voice.value;
+  const s = settings.value;
   return (
     <>
       <h2>{t("screen.title")}</h2>
@@ -337,6 +339,48 @@ function Screen() {
         {v?.sharingScreen.value && <button class="btn primary" onClick={() => void v.applyScreenProfile()}>{t("sc.apply")}</button>}
       </div>
       <div class="notice">{t("screen.notice")}</div>
+      <h3>{t("st.together")}</h3>
+      <div class="card col">
+        <Toggle
+          checked={s.allowInk}
+          onChange={(x) => {
+            updateSettings({ allowInk: x });
+            v?.announceStream();
+          }}
+          label={t("st.allowInk")}
+          desc={t("st.allowInkDesc")}
+        />
+        <Field label={t("st.remoteKey")} hint={t("st.remoteKeyHint")}>
+          <select class="select" style={{ maxWidth: "140px" }} value={s.remoteKey} onChange={(e) => updateSettings({ remoteKey: (e.target as HTMLSelectElement).value })}>
+            {REMOTE_KEYS.filter((k) => k !== s.clipKey).map((k) => (
+              <option key={k} value={k}>{k}</option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <h3>{t("clip.settings")}</h3>
+      <div class="card col">
+        <Toggle checked={s.clips} onChange={(x) => updateSettings({ clips: x })} label={t("clip.enable")} desc={t("clip.enableDesc")} />
+        {s.clips && (
+          <>
+            <Field label={t("clip.length")} hint={t("clip.lengthHint")}>
+              <div class="chips">
+                {[15, 30, 60, 120].map((n) => (
+                  <button key={n} class={`chip${s.clipSeconds === n ? " on" : ""}`} onClick={() => updateSettings({ clipSeconds: n })}>{n} s</button>
+                ))}
+              </div>
+            </Field>
+            <Toggle checked={s.clipVoices} onChange={(x) => updateSettings({ clipVoices: x })} label={t("clip.voices")} desc={t("clip.voicesDesc")} />
+            <Field label={t("clip.key")}>
+              <select class="select" style={{ maxWidth: "140px" }} value={s.clipKey} onChange={(e) => updateSettings({ clipKey: (e.target as HTMLSelectElement).value })}>
+                {REMOTE_KEYS.filter((k) => k !== s.remoteKey).map((k) => (
+                  <option key={k} value={k}>{k}</option>
+                ))}
+              </select>
+            </Field>
+          </>
+        )}
+      </div>
     </>
   );
 }
@@ -477,6 +521,15 @@ function AppTab() {
             }}
             label={t("settings.autostart")}
             desc={t("settings.autostartDesc")}
+          />
+          <Toggle
+            checked={hostsAutostart.value}
+            onChange={(x) => {
+              hostsAutostart.value = x;
+              void persistNow();
+            }}
+            label={t("settings.hostsAutostart")}
+            desc={t("settings.hostsAutostartDesc")}
           />
         </div>
       )}

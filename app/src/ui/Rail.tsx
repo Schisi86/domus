@@ -1,10 +1,10 @@
 // Left server rail: home, servers, add and the hosting center.
 
-import { activeServerId, isMuted, openModal, removeServer, selectServer, servers, settings, showMenu, updateSettings } from "../state/app";
+import { activeServerId, isMuted, openModal, removeServer, selectServer, servers, settings, showMenu, toast, updateSettings } from "../state/app";
 import type { ServerStore } from "../state/server";
 import { transport } from "../net/transport";
 import { t } from "../i18n";
-import { hosts, reachProblem, runningHosts } from "../state/hosting";
+import { hostFor, hosts, reachProblem, runningHosts, startHost } from "../state/hosting";
 import { isTauri } from "../platform";
 import { confirmDialog, initials, useBlobUrl, Icon } from "./components";
 import { AddServerDialog } from "./dialogs/AddServer";
@@ -31,8 +31,22 @@ function ServerButton({ s }: { s: ServerStore }) {
   const state = s.conn.state.value;
   const active = activeServerId.value === s.id;
   const name = s.displayName();
+  const host = hostFor(s);
+  const stopped = !!host && !host.running;
   const menu = (e: MouseEvent) =>
     showMenu(e, [
+      ...(stopped
+        ? [
+            {
+              label: t("host.start"),
+              onClick: async () => {
+                const err = await startHost(host.id);
+                if (err) toast(t("host.startFailed"), err, "error");
+              },
+            },
+            { separator: true, label: "" },
+          ]
+        : []),
       { label: t("rail.markRead"), onClick: () => s.channels.value.forEach((c) => void s.ack(c.id)) },
       {
         label: isMuted(s.id) ? t("rail.unmute") : t("rail.mute"),
@@ -64,8 +78,8 @@ function ServerButton({ s }: { s: ServerStore }) {
       {mentions > 0 && <span class="rail-badge">{mentions > 99 ? "99+" : mentions}</span>}
       {state !== "ready" && (
         <span
-          class={`rail-status${state === "auth_failed" || state.startsWith("cert") ? " offline" : ""}`}
-          title={state === "reconnecting" || state === "connecting" ? t("conn.connecting") : t("conn.disconnected")}
+          class={`rail-status${stopped || state === "auth_failed" || state.startsWith("cert") ? " offline" : ""}`}
+          title={stopped ? t("host.stoppedBanner") : state === "reconnecting" || state === "connecting" ? t("conn.connecting") : t("conn.disconnected")}
         />
       )}
     </div>

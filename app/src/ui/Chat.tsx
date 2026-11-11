@@ -13,6 +13,14 @@ import { transport } from "../net/transport";
 import { pickFiles } from "../platform";
 import { joinVoice, voice } from "../rtc/voice";
 import { ProfileCard, memberMenu, timeoutActive } from "./Members";
+import { E2eError } from "../crypto/e2e";
+import { E2eDialog, keyChanged, markKeySeen } from "./dialogs/E2e";
+import { sendDirect } from "./Transfers";
+
+/** Error text for a failed send, including the encryption-specific reasons. */
+function sendError(e: unknown): string {
+  return e instanceof E2eError ? t(`e2e.err.${e.reason}` as "e2e.err.nokey") : errorText(e);
+}
 import { Markdown, wrapSelection } from "./markdown";
 import { EmojiPicker } from "./EmojiPicker";
 import { shortcode, suggestEmoji } from "./shortcodes";
@@ -403,11 +411,13 @@ function ForwardDialog({ server, msg }: { server: ServerStore; msg: Message }) {
   const send = async (cid: number) => {
     setBusy(cid);
     try {
-      await server.rpc("message.forward", { message_id: msg.id, channel_id: cid });
-      toast(t("fwd.done"), undefined, "ok", 2500);
+      // The server cannot copy an encrypted message: it is sent again from here.
+      if (msg.e2e) await server.send(cid, msg.content, null);
+      else await server.rpc("message.forward", { message_id: msg.id, channel_id: cid });
+      toast(t("fwd.done"), msg.e2e && msg.attachments.length ? t("e2e.fwdNoFiles") : undefined, "ok", 2500);
       closeModal();
     } catch (e) {
-      toast(t("fwd.failed"), errorText(e), "error");
+      toast(t("fwd.failed"), sendError(e), "error");
       setBusy(null);
     }
   };
@@ -475,10 +485,10 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
     const text = draft.trim();
     if (text === msg.content) return setEditing(null);
     try {
-      await server.rpc("message.edit", { message_id: msg.id, content: text });
+      await server.rpc("message.edit", { message_id: msg.id, content: await server.seal(msg.channel_id, text, !!msg.e2e) });
       setEditing(null);
     } catch (e) {
-      toast(t("chat.editFailed"), errorText(e), "error");
+      toast(t("chat.editFailed"), sendError(e), "error");
     }
   };
   const endPoll = () => server.rpc("poll.end", { message_id: msg.id }).catch((e) => toast(t("common.error"), errorText(e), "error"));
@@ -490,11 +500,11 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
     showMenu(e, [
       { label: t("chat.reply"), onClick: () => onReply(msg) },
       ...(canReact ? [{ label: t("chat.addReaction"), onClick: () => setPicker((e.target as HTMLElement).getBoundingClientRect()) }] : []),
-      ...(!msg.poll ? [{ label: t("fwd.action"), onClick: () => openModal(<ForwardDialog server={server} msg={msg} />) }] : []),
-      ...(own && !msg.poll ? [{ label: t("common.edit"), onClick: () => { setDraft(msg.content); setEditing(msg.id); } }] : []),
+      ...(!msg.poll && msg.e2e !== "fail" ? [{ label: t("fwd.action"), onClick: () => openModal(<ForwardDialog server={server} msg={msg} />) }] : []),
+      ...(own && !msg.poll && msg.e2e !== "fail" ? [{ label: t("common.edit"), onClick: () => { setDraft(msg.content); setEditing(msg.id); } }] : []),
       ...(canPin ? [{ label: msg.pinned_at ? t("chat.unpin") : t("chat.pin"), onClick: pin }] : []),
       ...(msg.poll && (own || canManage) && !(msg.poll.ends_at && msg.poll.ends_at <= Date.now()) ? [{ label: t("poll.end"), onClick: endPoll }] : []),
-      ...(!msg.poll ? [{ label: t("later.save"), onClick: () => void saveToSelf() }] : []),
+      ...(!msg.poll && msg.e2e !== "fail" ? [{ label: t("later.save"), onClick: () => void saveToSelf() }] : []),
       { label: t("chat.markUnread"), onClick: markUnread },
       { separator: true, label: "" },
       { label: t("chat.copyText"), onClick: () => copyText(msg.content) },
@@ -509,7 +519,8 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
     if (me === undefined) return;
     try {
       const dm = await server.rpc<{ channel_id: number }>("dm.open", { user_id: me });
-      await server.rpc("message.forward", { message_id: msg.id, channel_id: dm.channel_id });
+      if (msg.e2e) await server.send(dm.channel_id, msg.content, null);
+      else await server.rpc("message.forward", { message_id: msg.id, channel_id: dm.channel_id });
       toast(t("later.saved"), t("later.savedHint"), "ok", 2500);
     } catch (e) {
       toast(t("common.error"), errorText(e), "error");
@@ -546,6 +557,7 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
             </span>
             {timeoutActive(author) && <span class="timeout-mark" title={t("mod.timeoutUntil", { time: fmtFull(author!.timeout_until!) })}><Icon.Clock size={12} /></span>}
             <span class="msg-time" title={fmtFull(msg.created_at)}>{fmtStamp(msg.created_at)}</span>
+            {msg.e2e === "ok" && <span class="msg-lock" title={t("e2e.msgOk")}><Icon.Lock size={11} /></span>}
           </div>
         )}
         {msg.forwarded_from != null && (
@@ -572,6 +584,8 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
             />
             <div class="faint xs" style={{ padding: "0 8px 6px" }}>{t("chat.editHint")}</div>
           </div>
+        ) : msg.e2e === "fail" ? (
+          <div class="msg-text msg-sealed" title={t("e2e.msgFailHint")}><Icon.Lock size={13} /> {t("e2e.msgFail")}</div>
         ) : (
           msg.content && (
             <div class="msg-text">
@@ -662,10 +676,13 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
   const perms = server.channelPerms(channelId);
   const canSend = has(perms, P.SEND_MESSAGES);
   const canAttach = has(perms, P.ATTACH_FILES) && (server.info.value?.uploads_enabled ?? false);
-  const maxLen = server.info.value?.max_message_len ?? 4000;
-  const maxUpload = (server.info.value?.max_upload_mb ?? 25) * 1024 * 1024;
   const ch = server.channel(channelId);
   const dm = server.dm(channelId);
+  const sealed = server.e2eOn(channelId);
+  // Ciphertext is longer than the text, so encrypted messages are shorter.
+  const maxLen = sealed ? 2000 : (server.info.value?.max_message_len ?? 4000);
+  const maxUpload = (server.info.value?.max_upload_mb ?? 25) * 1024 * 1024;
+  const directPeer = dm && dm.user_id !== server.me.value?.id ? dm.user_id : null;
   const meMember = server.me.value ? server.member(server.me.value.id) : undefined;
   const timedOut = !dm && timeoutActive(meMember);
   const slow = ch?.slowmode ?? 0;
@@ -685,7 +702,7 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
         : ch
           ? t("chat.placeholderChannel", { name: ch.name })
           : dm
-            ? t("chat.placeholderDm", { name: server.dmName(dm.user_id) })
+            ? `${sealed ? "🔒 " : ""}${t("chat.placeholderDm", { name: server.dmName(dm.user_id) })}`
             : t("chat.placeholder");
 
   useEffect(() => {
@@ -732,9 +749,20 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
   const addFiles = (list: File[]) => {
     if (!canAttach) return toast(t("chat.noAttach"), t("chat.noAttachBody"), "warn");
     const ok: PendingFile[] = [];
+    const big: File[] = [];
     for (const f of list) {
-      if (f.size > maxUpload) toast(t("chat.fileTooLarge"), t("chat.fileTooLargeBody", { name: f.name, size: fmtBytes(f.size), max: fmtBytes(maxUpload) }), "warn");
-      else ok.push({ file: f, progress: 0 });
+      if (f.size <= maxUpload) ok.push({ file: f, progress: 0 });
+      else if (directPeer !== null) big.push(f);
+      else toast(t("chat.fileTooLarge"), t("chat.fileTooLargeBody", { name: f.name, size: fmtBytes(f.size), max: fmtBytes(maxUpload) }), "warn");
+    }
+    // Too big for the server? In a DM it can go directly, without any limit.
+    if (big.length && directPeer !== null) {
+      const peer = directPeer;
+      void confirmDialog({
+        title: t("xfer.tooBigTitle"),
+        body: t("xfer.tooBigBody", { name: big.map((f) => f.name).join(", "), max: fmtBytes(maxUpload), who: server.memberName(peer) }),
+        confirm: t("xfer.sendDirect"),
+      }).then((yes) => yes && void sendDirect(server, peer, big));
     }
     setFiles((cur) => [...cur, ...ok].slice(0, 10));
   };
@@ -795,7 +823,7 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
       if (slow > 0 && !slowExempt) setCooldown(slow);
       await server.send(channelId, content, replyId, ids);
     } catch (e) {
-      toast(t("chat.sendFailed"), errorText(e), "error");
+      toast(t("chat.sendFailed"), sendError(e), "error");
     } finally {
       setSending(false);
     }
@@ -940,6 +968,7 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
               onClick={(e) =>
                 showMenu(e as unknown as MouseEvent, [
                   ...(canAttach ? [{ label: t("chat.attach"), onClick: async () => addFiles(await pickFiles()) }] : []),
+                  ...(directPeer !== null ? [{ label: t("xfer.sendDirectMenu"), onClick: () => void sendDirect(server, directPeer) }] : []),
                   { label: t("poll.create"), onClick: () => openModal(<PollDialog server={server} channelId={channelId} />) },
                 ])
               }
@@ -1134,6 +1163,8 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
   };
 
   const title = ch ? ch.name : dm ? server.dmName(dm.user_id) : "";
+  const sealed = server.e2eOn(channelId);
+  void server.e2e.peerKids.value;
   const inDmCall = dm && server.voiceMembers(channelId).length > 0;
   const v = voice.value;
   const inThisCall = v && v.server === server && v.channelId === channelId;
@@ -1154,7 +1185,9 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
     const prev = msgs[i - 1];
     const compact =
       !dense &&
-      !!prev && prev.author_id === m.author_id && m.created_at - prev.created_at < GROUP_MS && fmtDay(prev.created_at) === day && !m.reply_preview && !(unreadShown && prev.id <= unreadFrom.current);
+      !!prev && prev.author_id === m.author_id && m.created_at - prev.created_at < GROUP_MS && fmtDay(prev.created_at) === day && !m.reply_preview && !(unreadShown && prev.id <= unreadFrom.current) &&
+      // A change between plain and encrypted starts a new block, so the lock is visible.
+      prev.e2e === m.e2e;
     items.push(
       <MessageItem
         key={m.nonce ?? m.id}
@@ -1181,6 +1214,16 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
             <span class="ellipsis">{title}</span>
           </div>
           {ch?.topic ? <div class="topic ellipsis grow">{ch.topic}</div> : <div class="grow" />}
+          {dm && (
+            <IconButton title={sealed ? t("e2e.headerOn") : t("e2e.headerOff")} active={sealed} class={sealed ? "sealed" : ""} onClick={() => openModal(<E2eDialog server={server} dm={dm} />)}>
+              {sealed ? <Icon.Lock /> : <Icon.Unlock />}
+            </IconButton>
+          )}
+          {dm && dm.user_id !== me && (
+            <IconButton title={t("xfer.sendDirectMenu")} onClick={() => void sendDirect(server, dm.user_id)}>
+              <Icon.Zap />
+            </IconButton>
+          )}
           {dm && (
             <IconButton title={inThisCall ? t("chat.inCall") : inDmCall ? t("chat.joinCall") : t("chat.startCall")} active={!!inThisCall} onClick={() => void joinVoice(server, channelId)}>
               <Icon.Speaker />
@@ -1211,6 +1254,13 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
             </IconButton>
           )}
         </header>
+        {dm && sealed && dm.user_id !== me && keyChanged(server, dm.user_id) && (
+          <div class="conn-banner err">
+            <span class="grow">{t("e2e.keyChanged", { name: title })}</span>
+            <button class="btn sm" onClick={() => openModal(<E2eDialog server={server} dm={dm} />)}>{t("e2e.number")}</button>
+            <button class="btn sm" onClick={() => markKeySeen(server, dm.user_id)}>{t("e2e.keyChangedOk")}</button>
+          </div>
+        )}
         {inDmCall && !inThisCall && (
           <div class="conn-banner ok">
             <span class="grow">{t("chat.callRunning")}</span>
@@ -1262,7 +1312,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
           server={server}
           title={t("chat.searchTitle", { q: panel.q })}
           empty={t("chat.noResults")}
-          load={() => server.rpc<{ messages: Message[] }>("message.search", { query: panel.q }).then((r) => r.messages)}
+          load={() => server.rpc<{ messages: Message[] }>("message.search", { query: panel.q }).then((r) => server.open(r.messages))}
           onClose={() => {
             setPanel(null);
             setSearchInput("");
@@ -1274,7 +1324,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
           server={server}
           title={t("chat.pins")}
           empty={t("chat.noPins")}
-          load={() => server.rpc<{ messages: Message[] }>("message.pins", { channel_id: channelId }).then((r) => r.messages)}
+          load={() => server.rpc<{ messages: Message[] }>("message.pins", { channel_id: channelId }).then((r) => server.open(r.messages))}
           onClose={() => setPanel(null)}
         />
       )}

@@ -65,6 +65,9 @@ pub struct HostEntry {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 struct Registry {
     hosts: Vec<HostEntry>,
+    /// One-time upgrades already applied to this file.
+    #[serde(default)]
+    rev: u32,
 }
 
 #[derive(Default)]
@@ -309,9 +312,16 @@ impl HostManager {
                 reg.hosts.push(HostEntry { id: MAIN_ID.into(), name: String::new(), dir: "server".into(), autostart: legacy_autostart });
             }
         }
+        // 0.10: every server starts together with the app by default (one global
+        // switch in the settings turns that off; the per-server switch remains).
+        let upgraded = reg.rev < 1;
+        if upgraded {
+            reg.hosts.iter_mut().for_each(|h| h.autostart = true);
+            reg.rev = 1;
+        }
         let instances = reg.hosts.iter().map(|h| Arc::new(HostInstance::new(h.id.clone(), base.join(&h.dir)))).collect();
         let mgr = Self { base, registry: Mutex::new(reg), instances: Mutex::new(instances) };
-        if fresh {
+        if fresh || upgraded {
             let _ = mgr.save_registry();
         }
         mgr

@@ -7,7 +7,7 @@ import { loadConfig, log, notify, requestAttention, saveConfig, type StoredConfi
 import type { Message, SavedServer } from "../types";
 import { ServerStore } from "./server";
 import { detectLang, setLang, t } from "../i18n";
-import { applyTheme } from "../themes";
+import { applyTheme, RETIRED_THEMES } from "../themes";
 import { play, playChime } from "../sound";
 
 // ------------------------------------------------------------- settings
@@ -76,6 +76,22 @@ export interface Settings {
   compact: boolean;
   /** One-time UI migrations already applied. */
   uiRev: number;
+  /** Remote control: key that switches between my PC and the stream / stops control. */
+  remoteKey: string;
+  /** Remote control (host): ask for a password instead of confirming each request. */
+  rcUsePassword: boolean;
+  /** Others may draw and point on my shared screen. */
+  allowInk: boolean;
+  /** Instant clips: keep the last seconds of the watched stream in memory. */
+  clips: boolean;
+  clipSeconds: number;
+  /** Record the voices of the call into clips (the others are told). */
+  clipVoices: boolean;
+  clipKey: string;
+  /** `${serverId}:${channelId}` → end-to-end encryption on/off for that DM. */
+  e2eDm: Record<string, boolean>;
+  /** `${serverId}:${userId}` → key id last seen for that person (key-change warning). */
+  e2eSeen: Record<string, string>;
   lastChannel: Record<string, number>;
 }
 
@@ -117,7 +133,7 @@ export const defaultSettings: Settings = {
   pushToTalk: false,
   pttKey: "KeyV",
   globalPtt: false,
-  globalPttKey: "F8",
+  globalPttKey: "F7",
   notifications: true,
   notifySound: true,
   uiSounds: true,
@@ -148,11 +164,22 @@ export const defaultSettings: Settings = {
   membersWidth: 236,
   compact: false,
   uiRev: 3,
+  remoteKey: "F8",
+  rcUsePassword: false,
+  allowInk: true,
+  clips: true,
+  clipSeconds: 30,
+  clipVoices: true,
+  clipKey: "F9",
+  e2eDm: {},
+  e2eSeen: {},
   lastChannel: {},
 };
 
 export const settings = signal<Settings>(defaultSettings);
 export const hostAutostart = signal(false);
+/** Hosted servers start together with the app (Settings › App). */
+export const hostsAutostart = signal(true);
 export const minimizeToTray = signal(true);
 
 export const PANE_LIMITS = { sidebarWidth: [200, 440, 246], membersWidth: [180, 420, 236] } as const;
@@ -388,6 +415,7 @@ export async function persistNow() {
     servers: servers.value.map((s) => s.saved.value),
     settings: settings.value as unknown as Record<string, unknown>,
     host_autostart: hostAutostart.value,
+    hosts_autostart: hostsAutostart.value,
     minimize_to_tray: minimizeToTray.value,
   };
   try {
@@ -408,6 +436,8 @@ export async function initApp() {
     stored.theme = "emerald";
     stored.followSystemTheme = true;
   }
+  // Designs that no longer exist move to their closest successor.
+  if (stored.theme && RETIRED_THEMES[stored.theme]) stored.theme = RETIRED_THEMES[stored.theme];
   if (!stored.screen) {
     const migrated = migrateScreen(stored as never);
     if (migrated) stored.screen = migrated;
@@ -421,6 +451,7 @@ export async function initApp() {
   applyTheme(settings.value.theme, settings.value.followSystemTheme, settings.value.accent);
   await setLang(settings.value.language || detectLang());
   hostAutostart.value = config.host_autostart;
+  hostsAutostart.value = config.hosts_autostart !== false;
   minimizeToTray.value = config.minimize_to_tray;
   for (const s of config.servers) {
     // Entries of the single hosted server of version 0.2 belong to host "main".

@@ -6,14 +6,17 @@
 // or remove tracks (screen, camera) at any time without glare problems.
 
 import { signal } from "@preact/signals";
-import { settings, toast, voiceHooks, type ScreenOpts, type ScreenRes } from "../state/app";
+import { settings, toast, updateSettings, voiceHooks, type ScreenOpts, type ScreenRes } from "../state/app";
 import type { ServerStore } from "../state/server";
 import type { IceConfig, VoiceMember } from "../types";
 import { errorText, t } from "../i18n";
-import { isTauri, log, tauriInvoke } from "../platform";
+import { isTauri, log, notify, requestAttention, secretGet, secretSet, tauriInvoke } from "../platform";
 import { normalizeAddress } from "../net/transport";
 import { play, playBoard, preloadBoard } from "../sound";
 import { createGate, type Gate } from "./gate";
+import { InkSession } from "./ink";
+import { stopFilePlay, WatchSession } from "./watch";
+import { ClipBuffer } from "./clips";
 
 export type StreamKind = "mic" | "screen" | "camera";
 
@@ -94,6 +97,31 @@ class Peer {
   }
 }
 
+/** STUN/TURN servers for media and direct connections on `server`. */
+export function iceServersFor(server: ServerStore): RTCIceServer[] {
+  const ice = server.ice;
+  const host = normalizeAddress(server.saved.value.address)?.host ?? "localhost";
+  const h = host.includes(":") ? `[${host}]` : host;
+  const list: RTCIceServer[] = [];
+  if (ice?.stun_port) list.push({ urls: `stun:${h}:${ice.stun_port}` });
+  if (ice?.turn) {
+    const { username, credential } = ice.turn;
+    const urls = [`turn:${h}:${ice.turn.port}?transport=udp`];
+    if (ice.turn.tcp) urls.push(`turn:${h}:${ice.turn.port}?transport=tcp`);
+    list.push({ urls, username, credential });
+    // Reachable from anywhere: TURN over TCP through the host's internet tunnel.
+    if (ice.turn.public) list.push({ urls: `turn:${ice.turn.public}?transport=tcp`, username, credential });
+  }
+  for (const s of ice?.servers ?? []) list.push({ urls: s.urls, username: s.username, credential: s.credential });
+  // Public STUN as fallback: needed when the server is only reachable through
+  // the internet relay or sits behind CGNAT (its own STUN port is unreachable).
+  list.push({ urls: ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"] });
+  return list;
+}
+
+/** Why a remote-control request was refused. */
+export type DenyReason = "off" | "busy" | "pw" | "locked" | "declined" | "timeout";
+
 /** Hides WebView2's floating "sharing your screen" bar while a share runs (desktop app). */
 let captureUsers = 0;
 function captureBar(active: boolean) {
@@ -120,13 +148,31 @@ export class VoiceSession {
   /** Whether the current share is the whole screen (remote control needs this). */
   screenIsMonitor = signal(false);
   cameraOn = signal(false);
-  /** Remote control: whether others may control me, and the password I set. */
+  /** Remote control (host): allowed at all, password required, the password. */
   remoteAllowed = signal(false);
+  remoteUsePassword = signal(settings.value.rcUsePassword);
   remotePassword = signal("");
+  /** Host: a viewer asks for control and waits for my answer (no password set). */
+  remoteRequest = signal<{ uid: number; at: number } | null>(null);
   /** The uid currently controlling my computer, or null. */
   controlledBy = signal<number | null>(null);
   /** The uid whose computer I am controlling, or null. */
   controlling = signal<number | null>(null);
+  /** Viewer: my mouse and keyboard currently go to the remote computer. */
+  controlActive = signal(false);
+  /** Viewer: I asked `uid` for control and wait for the answer. */
+  controlPending = signal<number | null>(null);
+  /** Viewer: who offers remote control right now (and whether a password is needed). */
+  remoteOffers = signal<Map<number, { pw: boolean }>>(new Map());
+  /** Whose stream may be drawn on (false = the sharer turned annotations off). */
+  inkAllowed = signal<Map<number, boolean>>(new Map());
+  // Declared before the helpers below, which subscribe in their constructors.
+  private dataHandlers = new Map<string, (from: number, msg: any) => void>();
+  private readyHandlers = new Set<(uid: number) => void>();
+  /** Drawing and pointing on streams, watching together, instant clips. */
+  readonly ink = new InkSession(this);
+  readonly watch = new WatchSession(this);
+  readonly clips = new ClipBuffer(this);
   /** The webcam stream also carries system audio. */
   cameraHasAudio = signal(false);
   private cameraAudioTrack: MediaStreamTrack | null = null;
@@ -177,6 +223,10 @@ export class VoiceSession {
     await this.joinChannel(false);
     this.loops.push(setInterval(() => this.pollSpeaking(), 200));
     this.loops.push(setInterval(() => void this.pollStats(), 2000));
+    void secretGet("rc.password").then((pw) => {
+      if (pw && !this.remotePassword.value) this.remotePassword.value = pw;
+    });
+    this.clips.start();
   }
 
   private async openMic() {
@@ -282,6 +332,11 @@ export class VoiceSession {
     if (this.state.value === "ended") return;
     this.releaseControl();
     this.revokeControl();
+    this.remoteRequest.value = null;
+    this.clips.stop();
+    this.watch.dispose();
+    this.ink.dispose();
+    void this.setRcHotkey(null);
     this.state.value = "ended";
     voiceHooks.delete(this.hook);
     window.removeEventListener("keydown", this.keyDown);
@@ -290,7 +345,7 @@ export class VoiceSession {
     this.loops.forEach(clearInterval);
     for (const p of this.peers.values()) p.close();
     this.peers.clear();
-    if (this.screen) captureBar(false);
+    if (this.screen && this.screenCapture) captureBar(false);
     if (this.cameraAudioTrack) captureBar(false);
     for (const s of [this.mic, this.rawMic, this.screen, this.camera]) s?.getTracks().forEach((t) => t.stop());
     this.mic = this.rawMic = this.screen = this.camera = null;
@@ -303,24 +358,7 @@ export class VoiceSession {
   // ------------------------------------------------------------- peers
 
   private iceServers(): RTCIceServer[] {
-    const ice = this.server.ice;
-    const host = normalizeAddress(this.server.saved.value.address)?.host ?? "localhost";
-    const h = host.includes(":") ? `[${host}]` : host;
-    const list: RTCIceServer[] = [];
-    if (ice?.stun_port) list.push({ urls: `stun:${h}:${ice.stun_port}` });
-    if (ice?.turn) {
-      const { username, credential } = ice.turn;
-      const urls = [`turn:${h}:${ice.turn.port}?transport=udp`];
-      if (ice.turn.tcp) urls.push(`turn:${h}:${ice.turn.port}?transport=tcp`);
-      list.push({ urls, username, credential });
-      // Reachable from anywhere: TURN over TCP through the host's internet tunnel.
-      if (ice.turn.public) list.push({ urls: `turn:${ice.turn.public}?transport=tcp`, username, credential });
-    }
-    for (const s of ice?.servers ?? []) list.push({ urls: s.urls, username: s.username, credential: s.credential });
-    // Public STUN as fallback: needed when the server is only reachable through
-    // the internet relay or sits behind CGNAT (its own STUN port is unreachable).
-    list.push({ urls: ["stun:stun.cloudflare.com:3478", "stun:stun.l.google.com:19302"] });
-    return list;
+    return iceServersFor(this.server);
   }
 
   private localKinds(): Record<string, StreamKind> {
@@ -393,22 +431,48 @@ export class VoiceSession {
     return peer;
   }
 
-  /** Low-latency throttle for outgoing mouse moves while controlling. */
-  private moveSentAt = 0;
-  private pendingMove: { x: number; y: number } | null = null;
+  // ------------------------------------------------------------- data channel
+
+  /** Subscribes to messages of one type on the peers' data channel. */
+  onData(type: string, fn: (from: number, msg: any) => void) {
+    this.dataHandlers.set(type, fn);
+  }
+
+  /** Runs when the data channel to a peer opens (to hand over current state). */
+  onPeerReady(fn: (uid: number) => void) {
+    this.readyHandlers.add(fn);
+  }
+
+  sendTo(uid: number, obj: unknown) {
+    this.sendCtrl(uid, obj);
+  }
+
+  /** Sends a small message to everyone in the call (end-to-end, not via the server). */
+  broadcast(obj: unknown) {
+    const text = JSON.stringify(obj);
+    for (const p of this.peers.values()) if (p.ctrl?.readyState === "open") p.ctrl.send(text);
+  }
 
   private setupCtrl(peer: Peer, ch: RTCDataChannel) {
     peer.ctrl = ch;
     ch.onmessage = (e) => {
       try {
         this.onCtrl(peer.uid, JSON.parse(e.data));
-      } catch {
-        /* ignore malformed */
+      } catch (err) {
+        log("warn", `data message from ${peer.uid} ignored: ${err}`);
       }
     };
+    const ready = () => {
+      this.sendStreamState(peer.uid);
+      this.readyHandlers.forEach((fn) => fn(peer.uid));
+    };
+    if (ch.readyState === "open") ready();
+    else ch.onopen = ready;
     ch.onclose = () => {
       if (this.controlledBy.value === peer.uid) this.setControlledBy(null);
-      if (this.controlling.value === peer.uid) this.controlling.value = null;
+      if (this.controlling.value === peer.uid) this.endControlling();
+      if (this.remoteRequest.value?.uid === peer.uid) this.remoteRequest.value = null;
+      this.dropOffer(peer.uid);
     };
   }
 
@@ -417,62 +481,223 @@ export class VoiceSession {
     if (ch && ch.readyState === "open") ch.send(JSON.stringify(obj));
   }
 
+  /** Tells one peer (or all) what my stream offers: remote control, annotations. */
+  private sendStreamState(uid?: number) {
+    const msg = {
+      t: "ss",
+      rc: this.remoteAllowed.value && this.screenIsMonitor.value ? { pw: this.remoteUsePassword.value && !!this.remotePassword.value } : null,
+      ink: settings.value.allowInk,
+    };
+    if (uid === undefined) this.broadcast(msg);
+    else this.sendCtrl(uid, msg);
+  }
+
+  private dropOffer(uid: number) {
+    if (this.remoteOffers.value.has(uid)) {
+      const m = new Map(this.remoteOffers.value);
+      m.delete(uid);
+      this.remoteOffers.value = m;
+    }
+    if (this.controlPending.value === uid) this.controlPending.value = null;
+  }
+
+  // ------------------------------------------------------------- remote control
+
+  private rcFails = new Map<number, { n: number; until: number }>();
+  private requestTimer: ReturnType<typeof setTimeout> | null = null;
+  private rcHotkey: string | null = null;
+
   /** Host side: enables/disables OS input injection (desktop app only). */
   private setControlledBy(uid: number | null) {
     this.controlledBy.value = uid;
     if (isTauri) void tauriInvoke("remote_set_allowed", { allowed: uid !== null }).catch(() => {});
+    // While someone controls this computer, the hotkey ends it at once.
+    void this.setRcHotkey(uid !== null ? () => this.revokeControl() : null);
   }
 
-  private onCtrl(uid: number, msg: { t: string; pw?: string; c?: unknown[] }) {
-    if (msg.t === "req") {
-      // Someone asks to control my computer.
-      if (!this.remoteAllowed.value || this.controlledBy.value !== null || (this.remotePassword.value && msg.pw !== this.remotePassword.value)) {
-        this.sendCtrl(uid, { t: "deny" });
+  /**
+   * Registers the remote-control key system-wide (desktop app): for the host it
+   * is the emergency stop, for the viewer it switches between the own computer
+   * and the stream – even while another program has the focus.
+   */
+  private async setRcHotkey(fn: (() => void) | null) {
+    if (!isTauri) return;
+    try {
+      const gs = await import("@tauri-apps/plugin-global-shortcut");
+      if (this.rcHotkey) {
+        const old = this.rcHotkey;
+        this.rcHotkey = null;
+        await gs.unregister(old).catch(() => {});
+      }
+      const key = settings.value.remoteKey;
+      if (!fn || !key || this.state.value === "ended") return;
+      if (key === this.globalKey) {
+        toast(t("rc2.keyConflict", { key }), undefined, "warn", 7000);
         return;
       }
-      this.setControlledBy(uid);
-      this.sendCtrl(uid, { t: "grant" });
-      toast(t("rc2.nowControlling", { name: this.server.memberName(uid) }), t("rc2.revokeHint"), "warn", 7000);
-    } else if (msg.t === "grant") {
-      this.controlling.value = uid;
-      toast(t("rc2.granted", { name: this.server.memberName(uid) }), t("rc2.grantedHint"), "ok", 6000);
-    } else if (msg.t === "deny") {
-      this.controlling.value = null;
-      toast(t("rc2.denied"), undefined, "warn", 4000);
-    } else if (msg.t === "i") {
-      // Input from the controller – only if it is the one I granted.
-      if (this.controlledBy.value === uid && Array.isArray(msg.c) && isTauri) void tauriInvoke("remote_inject", { cmds: msg.c }).catch(() => {});
-    } else if (msg.t === "end") {
-      if (this.controlledBy.value === uid) this.setControlledBy(null);
-    } else if (msg.t === "rev") {
-      if (this.controlling.value === uid) {
-        this.controlling.value = null;
-        toast(t("rc2.revoked", { name: this.server.memberName(uid) }), undefined, "warn", 4000);
+      await gs.register(key, (ev) => {
+        if (ev.state === "Pressed") fn();
+      });
+      this.rcHotkey = key;
+    } catch (e) {
+      log("warn", `remote-control hotkey unavailable: ${e}`);
+    }
+  }
+
+  private grant(uid: number) {
+    this.remoteRequest.value = null;
+    if (this.requestTimer) clearTimeout(this.requestTimer);
+    this.setControlledBy(uid);
+    this.sendCtrl(uid, { t: "grant" });
+    toast(t("rc2.nowControlling", { name: this.server.memberName(uid) }), t("rc2.revokeHint", { key: settings.value.remoteKey }), "warn", 8000);
+  }
+
+  private deny(uid: number, why: DenyReason) {
+    this.sendCtrl(uid, { t: "deny", why });
+  }
+
+  /** Host: answers a pending request that needs my confirmation. */
+  answerRemoteRequest(ok: boolean) {
+    const r = this.remoteRequest.value;
+    if (!r) return;
+    this.remoteRequest.value = null;
+    if (this.requestTimer) clearTimeout(this.requestTimer);
+    if (ok && this.remoteAllowed.value && this.controlledBy.value === null) this.grant(r.uid);
+    else this.deny(r.uid, "declined");
+  }
+
+  private onRemoteRequest(uid: number, pw: unknown) {
+    if (!this.remoteAllowed.value || !this.screenIsMonitor.value) return this.deny(uid, "off");
+    if (this.controlledBy.value !== null || (this.remoteRequest.value && this.remoteRequest.value.uid !== uid)) return this.deny(uid, "busy");
+    const fail = this.rcFails.get(uid);
+    if (fail && fail.until > Date.now()) return this.deny(uid, "locked");
+    if (this.remoteUsePassword.value && this.remotePassword.value) {
+      if (typeof pw !== "string" || pw !== this.remotePassword.value) {
+        // Five wrong attempts lock this person out for five minutes.
+        const n = (fail?.n ?? 0) + 1;
+        this.rcFails.set(uid, { n: n >= 5 ? 0 : n, until: n >= 5 ? Date.now() + 5 * 60_000 : 0 });
+        return this.deny(uid, n >= 5 ? "locked" : "pw");
       }
+      this.rcFails.delete(uid);
+      return this.grant(uid);
+    }
+    // No password: I decide myself, request by request.
+    this.remoteRequest.value = { uid, at: Date.now() };
+    const name = this.server.memberName(uid);
+    void notify(t("rc2.askTitle"), t("rc2.askBody", { name }));
+    void requestAttention();
+    play("call", true);
+    if (this.requestTimer) clearTimeout(this.requestTimer);
+    this.requestTimer = setTimeout(() => {
+      if (this.remoteRequest.value?.uid === uid) {
+        this.remoteRequest.value = null;
+        this.deny(uid, "timeout");
+      }
+    }, 30_000);
+  }
+
+  private onCtrl(uid: number, msg: { t: string; [k: string]: any }) {
+    switch (msg.t) {
+      case "req":
+        this.onRemoteRequest(uid, msg.pw);
+        break;
+      case "grant":
+        if (this.controlPending.value !== uid) break;
+        this.controlPending.value = null;
+        this.controlling.value = uid;
+        this.controlActive.value = true;
+        void this.setRcHotkey(() => this.toggleControl());
+        toast(t("rc2.granted", { name: this.server.memberName(uid) }), t("rc2.grantedHint", { key: settings.value.remoteKey }), "ok", 7000);
+        break;
+      case "deny": {
+        if (this.controlPending.value !== uid) break;
+        this.controlPending.value = null;
+        const why = (["off", "busy", "pw", "locked", "declined", "timeout"] as const).find((w) => w === msg.why) ?? "pw";
+        toast(t("rc2.denied"), t(`rc2.deny.${why}` as "rc2.deny.pw"), "warn", 5000);
+        break;
+      }
+      case "i":
+        // Input from the controller – only if it is the one I granted.
+        if (this.controlledBy.value === uid && Array.isArray(msg.c) && isTauri) void tauriInvoke("remote_inject", { cmds: msg.c }).catch(() => {});
+        break;
+      case "end":
+        if (this.controlledBy.value === uid) {
+          this.setControlledBy(null);
+          toast(t("rc2.ended", { name: this.server.memberName(uid) }), undefined, "info", 4000);
+        }
+        break;
+      case "rev":
+        if (this.controlling.value === uid) {
+          this.endControlling();
+          toast(t("rc2.revoked", { name: this.server.memberName(uid) }), undefined, "warn", 4000);
+        }
+        break;
+      case "ss": {
+        const offers = new Map(this.remoteOffers.value);
+        if (msg.rc && typeof msg.rc === "object") offers.set(uid, { pw: !!msg.rc.pw });
+        else offers.delete(uid);
+        this.remoteOffers.value = offers;
+        const ink = new Map(this.inkAllowed.value);
+        ink.set(uid, msg.ink !== false);
+        this.inkAllowed.value = ink;
+        break;
+      }
+      default:
+        this.dataHandlers.get(msg.t)?.(uid, msg);
     }
   }
 
-  /** Host: turn remote control on/off and set the password. */
-  setRemote(on: boolean, pw?: string) {
-    this.remoteAllowed.value = on;
-    if (pw !== undefined) this.remotePassword.value = pw;
-    if (!on && this.controlledBy.value !== null) {
-      this.sendCtrl(this.controlledBy.value, { t: "rev" });
-      this.setControlledBy(null);
+  /** Host: turn remote control on/off; the password is optional. */
+  setRemote(on: boolean, opts: { password?: string; usePassword?: boolean } = {}) {
+    if (opts.password !== undefined) {
+      this.remotePassword.value = opts.password;
+      void secretSet("rc.password", opts.password || null);
     }
+    if (opts.usePassword !== undefined) {
+      this.remoteUsePassword.value = opts.usePassword;
+      if (settings.value.rcUsePassword !== opts.usePassword) updateSettings({ rcUsePassword: opts.usePassword });
+    }
+    this.remoteAllowed.value = on && this.screenIsMonitor.value;
+    if (!this.remoteAllowed.value) {
+      this.revokeControl();
+      if (this.remoteRequest.value) this.answerRemoteRequest(false);
+    }
+    this.sendStreamState();
   }
 
-  /** Host: kick the current controller. */
+  /** Re-announces what my stream offers (after a setting changed). */
+  announceStream() {
+    this.sendStreamState();
+  }
+
+  /** Host: end the current control session immediately. */
   revokeControl() {
-    if (this.controlledBy.value !== null) {
-      this.sendCtrl(this.controlledBy.value, { t: "rev" });
+    const uid = this.controlledBy.value;
+    if (uid !== null) {
+      this.sendCtrl(uid, { t: "rev" });
       this.setControlledBy(null);
+      toast(t("rc2.stopped"), undefined, "ok", 3000);
     }
   }
 
-  /** Viewer: ask to control `uid`'s computer with a password. */
-  requestControl(uid: number, pw: string) {
+  /** Viewer: ask to control `uid`'s computer (with the password, if one is set). */
+  requestControl(uid: number, pw?: string) {
+    if (this.controlling.value !== null) this.releaseControl();
+    this.controlPending.value = uid;
     this.sendCtrl(uid, { t: "req", pw });
+    setTimeout(() => {
+      if (this.controlPending.value === uid) {
+        this.controlPending.value = null;
+        toast(t("rc2.denied"), t("rc2.deny.timeout"), "warn", 5000);
+      }
+    }, 35_000);
+  }
+
+  private endControlling() {
+    this.controlActive.value = false;
+    this.controlling.value = null;
+    void this.setRcHotkey(null);
+    if (document.pointerLockElement) document.exitPointerLock();
   }
 
   /** Viewer: stop controlling and tell the host. */
@@ -480,26 +705,47 @@ export class VoiceSession {
     const uid = this.controlling.value;
     if (uid !== null) {
       this.sendCtrl(uid, { t: "end" });
-      this.controlling.value = null;
+      this.endControlling();
     }
   }
+
+  /** Viewer: switch between my own computer and the remote one (the F8 key). */
+  toggleControl(on = !this.controlActive.value) {
+    if (this.controlling.value === null) return;
+    this.controlActive.value = on;
+    if (on && isTauri) {
+      // Pressed while another program had the focus: bring NexUs to the front.
+      void import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
+        const w = getCurrentWindow();
+        void w.show().then(() => w.setFocus()).catch(() => {});
+      });
+    }
+  }
+
+  private pendingMove: { x: number; y: number } | null = null;
+  private moveFrame = 0;
 
   /** Viewer: send a batch of input actions to the controlled host. */
   sendInput(cmds: unknown[]) {
     const uid = this.controlling.value;
-    if (uid !== null && cmds.length) this.sendCtrl(uid, { t: "i", c: cmds });
+    if (uid === null || !cmds.length) return;
+    // A queued mouse position goes first, so clicks land where the cursor is.
+    const m = this.pendingMove;
+    this.pendingMove = null;
+    this.sendCtrl(uid, { t: "i", c: m ? [{ t: "m", x: m.x, y: m.y }, ...cmds] : cmds });
   }
 
-  /** Viewer: throttled absolute mouse move (coalesced to ~60/s). */
+  /** Viewer: absolute mouse move, coalesced to one message per frame. */
   sendMove(x: number, y: number) {
     this.pendingMove = { x, y };
-    const now = performance.now();
-    if (now - this.moveSentAt >= 16) {
-      this.moveSentAt = now;
+    if (this.moveFrame) return;
+    this.moveFrame = requestAnimationFrame(() => {
+      this.moveFrame = 0;
       const m = this.pendingMove;
       this.pendingMove = null;
-      this.sendInput([{ t: "m", x: m.x, y: m.y }]);
-    }
+      const uid = this.controlling.value;
+      if (m && uid !== null) this.sendCtrl(uid, { t: "i", c: [{ t: "m", x: m.x, y: m.y }] });
+    });
   }
 
   private closePeer(uid: number) {
@@ -507,6 +753,7 @@ export class VoiceSession {
     if (!p) return;
     p.close();
     this.peers.delete(uid);
+    this.dropOffer(uid);
     this.dropRemote(uid, "screen");
     this.dropRemote(uid, "camera");
     const stats = new Map(this.stats.value);
@@ -577,6 +824,10 @@ export class VoiceSession {
   private dropRemote(uid: number, kind: "screen" | "camera") {
     const target = kind === "screen" ? this.screens : this.cameras;
     if (!target.value.has(uid)) return;
+    if (kind === "screen" && uid !== this.selfId) {
+      this.ink.streamEnded(uid);
+      if (this.controlling.value === uid) this.releaseControl();
+    }
     const map = new Map(target.value);
     map.delete(uid);
     target.value = map;
@@ -799,28 +1050,12 @@ export class VoiceSession {
       if (name !== "NotAllowedError" && name !== "AbortError") toast(t("voice.screenFailed"), String(e), "error");
       return;
     }
-    try {
-      await this.server.rpc("voice.update", { screen: true });
-    } catch (e) {
-      stream.getTracks().forEach((t) => t.stop());
-      captureBar(false);
-      toast(t("voice.screenDenied"), errorText(e), "error");
-      return;
-    }
     const video = stream.getVideoTracks()[0];
-    if (video) {
-      video.contentHint = prof.motion ? "motion" : "detail";
-      video.onended = () => void this.stopScreen();
-    }
     // Remote control is only offered for a whole-screen share, so the controller
     // can see the entire desktop they are driving (not just one window).
     const surf = (video?.getSettings() as MediaTrackSettings & { displaySurface?: string })?.displaySurface;
-    this.screenIsMonitor.value = surf ? surf === "monitor" : surface === "monitor";
-    if (!this.screenIsMonitor.value && this.remoteAllowed.value) this.setRemote(false);
-    this.screen = stream;
-    this.sharingScreen.value = true;
-    play("streamStart");
-    this.screenHasAudio.value = stream.getAudioTracks().length > 0;
+    const monitor = surf ? surf === "monitor" : surface === "monitor";
+    if (!(await this.publishScreen(stream, { monitor, capture: true }))) return;
     if (st.screenAudio && !this.screenHasAudio.value) {
       toast(
         t("voice.noSystemAudio"),
@@ -829,20 +1064,61 @@ export class VoiceSession {
         10000,
       );
     }
+  }
+
+  /** True while the "screen" is a video file played for everyone (not a capture). */
+  screenIsFile = signal(false);
+  private screenCapture = false;
+
+  /**
+   * Sends `stream` to everyone as my screen share. Used for real captures and
+   * for a local video file that is played for the whole call.
+   */
+  async publishScreen(stream: MediaStream, opts: { monitor: boolean; capture: boolean; file?: boolean }): Promise<boolean> {
+    if (this.sharingScreen.value) await this.stopScreen();
+    try {
+      await this.server.rpc("voice.update", { screen: true });
+    } catch (e) {
+      stream.getTracks().forEach((t) => t.stop());
+      if (opts.capture) captureBar(false);
+      toast(t("voice.screenDenied"), errorText(e), "error");
+      return false;
+    }
+    const prof = screenProfile();
+    const video = stream.getVideoTracks()[0];
+    if (video) {
+      video.contentHint = opts.file || prof.motion ? "motion" : "detail";
+      video.onended = () => void this.stopScreen();
+    }
+    this.screenCapture = opts.capture;
+    this.screenIsFile.value = !!opts.file;
+    this.screenIsMonitor.value = opts.monitor;
+    if (opts.monitor && isTauri) void tauriInvoke("remote_set_target", { label: video?.label ?? null }).catch(() => {});
+    this.screen = stream;
+    this.sharingScreen.value = true;
+    play("streamStart");
+    this.screenHasAudio.value = stream.getAudioTracks().length > 0;
     const map = new Map(this.screens.value);
     map.set(this.selfId, stream);
     this.screens.value = map;
     for (const p of this.peers.values()) for (const t of stream.getTracks()) p.pc.addTrack(t, stream);
+    this.sendStreamState();
+    return true;
   }
 
   async stopScreen() {
     if (!this.screen) return;
-    if (this.remoteAllowed.value) this.setRemote(false);
     const s = this.screen;
     this.screen = null;
     this.sharingScreen.value = false;
     this.screenIsMonitor.value = false;
-    captureBar(false);
+    if (this.screenIsFile.value) stopFilePlay();
+    this.screenIsFile.value = false;
+    if (this.remoteAllowed.value || this.controlledBy.value !== null) this.setRemote(false);
+    else this.sendStreamState();
+    this.ink.streamEnded(this.selfId);
+    if (this.screenCapture) captureBar(false);
+    this.screenCapture = false;
     play("streamStop");
     this.screenHasAudio.value = null;
     for (const p of this.peers.values()) {
@@ -874,9 +1150,9 @@ export class VoiceSession {
       const enc = params.encodings[0];
       if (isScreen) {
         enc.maxBitrate = prof.kbps * 1000;
-        enc.maxFramerate = prof.fps;
+        enc.maxFramerate = this.screenIsFile.value ? 60 : prof.fps;
         (params as RTCRtpSendParameters & { degradationPreference?: string }).degradationPreference =
-          prof.motion ? "maintain-framerate" : "maintain-resolution";
+          prof.motion || this.screenIsFile.value ? "maintain-framerate" : "maintain-resolution";
       } else {
         enc.maxBitrate = 600_000;
         enc.maxFramerate = 24;
@@ -1048,6 +1324,24 @@ export class VoiceSession {
 
   peerIds() {
     return [...this.peers.keys()];
+  }
+
+  /** Audio that can be recorded into a clip: every voice plus my own microphone. */
+  voiceStreams(): MediaStream[] {
+    const out: MediaStream[] = [];
+    for (const p of this.peers.values()) {
+      const s = p.micEl.srcObject;
+      if (s instanceof MediaStream && s.getAudioTracks().length) out.push(s);
+    }
+    if (this.mic?.getAudioTracks().length) out.push(this.mic);
+    return out;
+  }
+
+  /** System audio that belongs to `uid`'s screen share (null if it has none). */
+  screenAudio(uid: number): MediaStream | null {
+    if (uid === this.selfId) return this.screen?.getAudioTracks().length ? this.screen : null;
+    const s = this.peers.get(uid)?.screenAudioEl.srcObject;
+    return s instanceof MediaStream && s.getAudioTracks().length ? s : null;
   }
 }
 

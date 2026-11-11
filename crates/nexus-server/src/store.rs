@@ -753,8 +753,11 @@ pub fn list_dms(c: &Connection, user_id: i64) -> ApiResult<Vec<DmChannel>> {
 // Messages
 // ---------------------------------------------------------------------------
 
+// An end-to-end encrypted reply preview is passed on whole: the client cannot
+// decrypt a cut-off envelope.
 const MSG_SELECT: &str = "SELECT m.id, m.channel_id, m.author_id, m.content, m.reply_to, m.created_at, m.edited_at,
-    r.id, r.author_id, substr(r.content, 1, 160), m.pinned_at, m.forwarded_from FROM messages m LEFT JOIN messages r ON r.id = m.reply_to";
+    r.id, r.author_id, CASE WHEN r.content LIKE 'nxe1.%' THEN r.content ELSE substr(r.content, 1, 160) END, m.pinned_at, m.forwarded_from
+    FROM messages m LEFT JOIN messages r ON r.id = m.reply_to";
 
 fn row_message(r: &Row) -> rusqlite::Result<Message> {
     let rid: Option<i64> = r.get(7)?;
@@ -1344,6 +1347,44 @@ pub fn is_blocked_either(c: &Connection, a: i64, b: i64) -> ApiResult<bool> {
         |r| r.get(0),
     )?;
     Ok(n > 0)
+}
+
+// ---------------------------------------------------------------------------
+// End-to-end encryption: public keys
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize)]
+pub struct E2eKey {
+    pub user_id: i64,
+    pub kid: String,
+    pub key: String,
+    pub created_at: i64,
+}
+
+/// Stores a public key; returns false if it was already known. Only the
+/// newest `keep` keys per user are kept.
+pub fn e2e_add_key(c: &Connection, uid: i64, kid: &str, key: &str, keep: i64) -> ApiResult<bool> {
+    let n = c.execute(
+        "INSERT OR IGNORE INTO e2e_keys (user_id, kid, public_key, created_at) VALUES (?1, ?2, ?3, ?4)",
+        params![uid, kid, key, now_ms()],
+    )?;
+    c.execute(
+        "DELETE FROM e2e_keys WHERE user_id=?1 AND kid NOT IN (SELECT kid FROM e2e_keys WHERE user_id=?1 ORDER BY created_at DESC, kid LIMIT ?2)",
+        params![uid, keep],
+    )?;
+    Ok(n > 0)
+}
+
+pub fn e2e_keys(c: &Connection, uids: &[i64]) -> ApiResult<Vec<E2eKey>> {
+    let mut out = Vec::new();
+    let mut st = c.prepare("SELECT kid, public_key, created_at FROM e2e_keys WHERE user_id=?1 ORDER BY created_at DESC, kid")?;
+    for &uid in uids {
+        let rows = st.query_map(params![uid], |r| Ok(E2eKey { user_id: uid, kid: r.get(0)?, key: r.get(1)?, created_at: r.get(2)? }))?;
+        for k in rows {
+            out.push(k?);
+        }
+    }
+    Ok(out)
 }
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 # Tests und Ergebnisse
 
-Stand: 22.10.2026, Windows 11 Pro, Rust 1.98, Node 24, WebView2 155.
+Stand: 11.11.2026, Windows 11 Pro, Rust 1.98, Node 24, WebView2 155.
 
 ## Ausführen
 
@@ -17,6 +17,14 @@ node tests/e2e/features.mjs
 node tests/e2e/hosting.mjs
 # Titelleiste, Fußzeile, Einstellungen (Beispielserver: node tests/e2e/seed.mjs)
 node tests/e2e/chrome.mjs <adresse> <token>
+# 0.10: Fernsteuerung, Zeichnen, Clips, Gemeinsam schauen, Direktversand, E2E-DMs (UI-Devserver muss laufen)
+node tests/e2e/collab.mjs
+# 0.10: Server-Autostart und native Helfer in der echten App (Testbuild wie bei hosting.mjs)
+node tests/e2e/native.mjs
+# Übersetzungen: alle 15 Sprachen vollständig, gleiche Platzhalter
+python tests/i18n-check.py
+# Echte Zeigerbewegung der Fernsteuerung (bewegt kurz die Maus, daher nur auf Wunsch)
+cargo test -p nexustalk real_cursor -- --ignored
 ```
 
 Einmalig für die Browsertests: `cd tests/e2e && npm install && npx playwright-core install chromium-headless-shell`.
@@ -25,7 +33,7 @@ Einmalig für die Browsertests: `cd tests/e2e && npm install && npx playwright-c
 
 Stand 0.2.0 (23.10.2026): Rust-Tests und Medien-E2E erneut ausgeführt. Desktop-E2E und Installer-Test stammen noch von 0.1.0 – beim 0.2.0-Lauf lief auf dem Testrechner eine installierte NexusTalk-Instanz, die der Single-Instance-Schutz bevorzugt hätte.
 
-### Rust – 69 Tests, alle bestanden
+### Rust – 89 Tests, alle bestanden (0.10.0; weitere 5 nur auf Wunsch: Internet-Relay, echte Zeigerbewegung)
 
 **Unit-Tests (42, `nexus-server`)**
 * Authentifizierung: Argon2id-Hash/Verifikation, Salt, Token-Hashes.
@@ -80,7 +88,15 @@ Echte Weboberfläche, echter Server, 3–4 Clients in Chromium mit virtuellem Mi
 | Verlassen/erneuter Beitritt baut Medien neu auf | ✅ |
 | Gast ohne Bildschirmrecht wird serverseitig abgelehnt (mit Meldung) | ✅ |
 
-### Interaktion – `tests/e2e/interact.mjs`: 34/34 bestanden (0.9.1)
+### Zusammenarbeit und Verschlüsselung – `tests/e2e/collab.mjs`: 46/46 bestanden (0.10.0)
+
+Zwei bis drei Browser-Clients gegen einen frischen Server: Fernsteuerung (Angebot, Bestätigung durch den Host, Passwort richtig/falsch, F8 pausiert und übernimmt, Tasten als Scancodes, Maus zentriert, gehaltene Tasten werden losgelassen, Widerruf, verdecktes Passwortfeld), Zeichnen und Laserpointer (inkl. Abschalten durch den Teilenden), Sofort-Clip (Puffer, Video, Dialog, Hinweis an andere), Gemeinsam schauen (Start, Pause, Spulen, Nachzügler, Ende; Datei als Stream), Direktversand (6 MB, SHA-256 identisch, Ablehnen) und E2E-DMs (Server speichert nur Chiffrat, Gegenseite liest und antwortet verschlüsselt, gleiche Sicherheitsnummer, Bearbeiten, Schlüsselsicherung, unlesbare Nachricht wird gekennzeichnet). Die Eingabe-Injektion selbst ist nicht Teil dieses Tests (Browser), siehe Rust-Tests.
+
+### Server-Autostart und native Helfer – `tests/e2e/native.mjs`: 17/17 bestanden (0.10.0)
+
+Echte Desktop-App (WebView2, eigene Kennung, eigenes Datenverzeichnis): Server startet nach einem Update von selbst (alte `hosts.json` ohne Schalter), globaler Schalter hält Server gestoppt, Banner „läuft gerade nicht“ startet ihn mit einem Klick; Geräte-Geheimnisse (DPAPI) lesen/schreiben/löschen, Datei stückweise schreiben (5 MB, SHA-256) und Abbruch ohne Rest, Ziel-Monitor der Fernsteuerung, Overlay-Fenster öffnet durchsichtig, zeichnet einen weitergeleiteten Strich und schließt wieder.
+
+### Interaktion – `tests/e2e/interact.mjs`: 34/34 bestanden (0.10.0)
 
 Zwei Browser-Clients (Inhaber + Mitglied) gegen einen frischen Server: Breiten per Ziehen und Zurücksetzen, kompakter Chat, Emoji-Vorschläge, Bildschirm-Startknöpfe, Posteingang in der linken Leiste, Sprachnachricht aufnehmen/senden/abspielbar mit Wellenform, Profil-Banner und „Über mich“, Posteingang (Erwähnung, „Für später“ mit Erinnerung), Anruf-Reaktion und Hand heben, Noise-Gate im Mikrofonweg, Umfrage erstellen/abstimmen/live zählen, Weiterleiten, Als ungelesen markieren, Auszeit über das Personen-Menü (Eingabe gesperrt, Uhr-Symbol, aufheben), Slow-Mode (Hinweis, Countdown), Soundboard, serverseitig stummschalten (Mitglied kann nicht selbst aufheben), Verschieben in anderen Sprachkanal, Kicken (abgemeldet, wartet auf Freischaltung).
 
@@ -92,7 +108,7 @@ Zwei Chromium-Verbindungen, die nur TURN über TCP benutzen dürfen: Datenkanal 
 cargo test -p nexustalk turn_through_relay -- --ignored --nocapture
 ```
 
-Rust-Integrationstests neu in 0.6.0: `timeout_kick_and_voice_moderation`, `polls_forwarding_slowmode_and_mark_unread`; 0.7.0: `profiles_call_reactions_inbox_and_voice_messages`; 0.9.0: `self_dm_notes_to_self`, Unit-Tests `remotectl` (Freigabe-Gate, Eingabe-Parsen). Soundboard-Dateien per Skript geprüft (36/36 dekodieren); 0.9.1: Applaus/Grillen/Gong neu kodiert und in der Browser-Engine (decodeAudioData) gegengeprüft.
+Rust-Integrationstests neu in 0.6.0: `timeout_kick_and_voice_moderation`, `polls_forwarding_slowmode_and_mark_unread`; 0.7.0: `profiles_call_reactions_inbox_and_voice_messages`; 0.9.0: `self_dm_notes_to_self`, Unit-Tests `remotectl` (Freigabe-Gate, Eingabe-Parsen). 0.10.0: `e2e_key_directory_and_direct_signaling` (Schlüsselverzeichnis, ungekürzte verschlüsselte Antwort-Vorschau, Vermittlung für den Direktversand samt Größenlimit, Blockieren, Offline); Unit-Tests `remotectl` (Zuordnung auf den geteilten Monitor bei mehreren Bildschirmen, Scancode-/Relativ-Befehle), `local` (Geheimnisse, Datei-Schreiber); auf Wunsch `real_cursor_lands_where_the_controller_points` (echte Zeigerbewegung, auf diesem PC ≤ 2 px Abweichung). Soundboard-Dateien per Skript geprüft (36/36 dekodieren); 0.9.1: Applaus/Grillen/Gong neu kodiert und in der Browser-Engine (decodeAudioData) gegengeprüft.
 
 ### Hosting-Zentrale (Desktop-App) – `tests/e2e/hosting.mjs`: 19/19 bestanden (0.6.0, inkl. Internet-Link und eigenem TURN-Tunnel; ohne Internet: `E2E_NO_INTERNET=1`)
 
@@ -102,7 +118,7 @@ Echte Desktop-App (Testbuild mit eigener App-Kennung, Datenordner per `APPDATA` 
 
 Browser-UI mit virtueller Bildschirmquelle: Menü öffnet sich statt sofort zu übertragen, 6 Schnellwahlen / 5 Auflösungen / 4 Bildraten / 3 Inhaltsarten, Markierung der Auswahl, gewählte Grenzen am Track (`getConstraints`: 1280×720, 15 FPS, `contentHint` detail), Änderung während der Übertragung (1080p60, motion), Anzeige im Kopfbereich, Stoppen. Ein 900×400-Bild wird im Zuschneide-Dialog über den geöffneten Servereinstellungen bearbeitet und als 512×512-WebP gespeichert (vom Server zurückgeladen und vermessen).
 
-### Fensterrahmen und Verbindungshilfen – `tests/e2e/chrome.mjs`: 11/11 bestanden
+### Fensterrahmen und Verbindungshilfen – `tests/e2e/chrome.mjs`: 17/17 bestanden (0.10.0)
 
 Isolierter Desktop-Testbuild: Firewall-Status lesbar ohne Adminrechte, Hilfetext bei „kein Server auf dem Port“ (abgelehnte Verbindung) und bei „keine Antwort“ (Firewall/Servermodus); eigene Titelleiste mit Ziehbereich und drei Fensterknöpfen, native Windows-Leiste aus (`is_decorated = false`), Maximieren/Wiederherstellen über die Knöpfe, Fußzeile mit „Spenden“, Copyright und Flagge unten rechts, kein Herz/keine Flagge mehr in der Leiste, Schließen-Knopf der Einstellungen bleibt nach dem Scrollen im sichtbaren Bereich und schließt. Dazu Screenshots in mehreren Designs. `features.mjs` prüft zusätzlich, dass beim Betreten des Sprachkanals, beim Teilen und beim Kanalwechsel Sounds ausgelöst werden (16/16).
 

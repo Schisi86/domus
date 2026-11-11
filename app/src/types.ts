@@ -116,6 +116,8 @@ export interface Message {
   nonce?: string;
   pending?: boolean;
   failed?: boolean;
+  /** End-to-end encrypted: decrypted on this device ("ok") or not readable here. */
+  e2e?: "ok" | "fail";
 }
 
 export interface Poll {

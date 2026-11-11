@@ -17,10 +17,32 @@ import { ScreenShareControl } from "./ScreenShare";
 import { memberMenu } from "./Members";
 import { SOUNDBOARD, playBoard } from "../sound";
 import { useState } from "preact/hooks";
+import { hostFor, startHost, startingHosts } from "../state/hosting";
+import { TransfersPanel } from "./Transfers";
 
 function ConnBanner({ server }: { server: ServerStore }) {
   const st = server.conn.state.value;
   if (st === "ready") return null;
+  // One of my own servers that is not running: offer to start it with one click.
+  const host = hostFor(server);
+  if (host && !host.running && !st.startsWith("cert") && st !== "auth_failed") {
+    const busy = startingHosts.value.has(host.id);
+    return (
+      <div class="conn-banner stopped" role="status">
+        <span class="grow">{busy ? t("host.starting") : t("host.stoppedBanner")}</span>
+        <button
+          class="btn sm primary"
+          disabled={busy}
+          onClick={async () => {
+            const err = await startHost(host.id);
+            if (err) toast(t("host.startFailed"), err, "error");
+          }}
+        >
+          <Icon.Play size={12} /> {t("host.start")}
+        </button>
+      </div>
+    );
+  }
   const text =
     st === "auth_failed"
       ? (server.conn.error.value ?? t("conn.authExpired"))
@@ -390,6 +412,7 @@ export function Sidebar() {
   return (
     <aside class="sidebar" aria-label={t("chan.channels")}>
       {activeServerId.value === null ? <HomeSidebar /> : server ? <ServerSidebar server={server} /> : null}
+      <TransfersPanel />
       <VoicePanel />
       <UserPanel />
     </aside>

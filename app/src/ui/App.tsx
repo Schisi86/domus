@@ -1,8 +1,9 @@
 // Root layout: server rail | floating shell (sidebar, main content, member list).
 
 import { useEffect } from "preact/hooks";
-import { activeChannelId, activeServer, activeServerId, contextMenu, dialog, homeDm, modal, openChannel, openModal, selectChannel, settings } from "../state/app";
-import { ContextMenu, EmptyState, Lightbox, Resizer, Toasts } from "./components";
+import { activeChannelId, activeServer, activeServerId, contextMenu, dialog, homeDm, modal, openChannel, openModal, selectChannel, settings, toast } from "../state/app";
+import { ContextMenu, EmptyState, Icon, Lightbox, Resizer, Toasts } from "./components";
+import { hostFor, startHost, startingHosts } from "../state/hosting";
 import { Rail } from "./Rail";
 import { Sidebar } from "./Sidebar";
 import { ChatView } from "./Chat";
@@ -15,6 +16,8 @@ import { applyTheme } from "../themes";
 import { isTauri, tauriInvoke } from "../platform";
 import { QuickSwitcher, ShortcutsDialog } from "./QuickSwitcher";
 import { Footer, TitleBar } from "./Chrome";
+import { ControlRequestPrompt } from "./remotecontrol";
+import { useClipHotkey } from "./StreamTools";
 
 function useAppearance() {
   const s = settings.value;
@@ -76,9 +79,24 @@ function Main() {
   }
   if (!server) return <EmptyState title={t("app.serverNotFound")} />;
   if (!open) {
+    const host = hostFor(server);
+    const stopped = !!host && !host.running && server.conn.state.value !== "ready";
+    const busy = !!host && startingHosts.value.has(host.id);
     return (
       <EmptyState title={server.displayName()}>
-        <p class="muted">{server.conn.state.value === "ready" ? t("app.pickChannel") : t("app.connecting")}</p>
+        <p class="muted">{stopped ? (busy ? t("host.starting") : t("host.stoppedBanner")) : server.conn.state.value === "ready" ? t("app.pickChannel") : t("app.connecting")}</p>
+        {stopped && (
+          <button
+            class="btn primary lg"
+            disabled={busy}
+            onClick={async () => {
+              const err = await startHost(host.id);
+              if (err) toast(t("host.startFailed"), err, "error");
+            }}
+          >
+            <Icon.Play size={15} /> {t("host.start")}
+          </button>
+        )}
       </EmptyState>
     );
   }
@@ -100,6 +118,7 @@ function Main() {
 export function App() {
   useAppearance();
   useShortcuts();
+  useClipHotkey();
   void voice.value;
   void lang.value;
   return (
@@ -137,6 +156,7 @@ export function App() {
       {dialog.value}
       {contextMenu.value && <ContextMenu />}
       <Lightbox />
+      <ControlRequestPrompt />
       <Toasts />
     </div>
   );

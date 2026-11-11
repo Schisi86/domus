@@ -10,6 +10,8 @@ mod capture_bar;
 mod host;
 mod net;
 mod reach;
+mod ink;
+mod local;
 mod remotectl;
 mod store;
 mod tunnel;
@@ -186,7 +188,14 @@ pub fn run() {
             host::host_set_relay,
             capture_bar::capture_bar_hide,
             remotectl::remote_set_allowed,
+            remotectl::remote_set_target,
             remotectl::remote_inject,
+            ink::ink_overlay,
+            local::secret_get,
+            local::secret_set,
+            local::file_save_begin,
+            local::file_save_chunk,
+            local::file_save_end,
             host::host_config,
             host::host_config_save,
             host::host_config_reset,
@@ -217,17 +226,42 @@ pub fn run() {
                 .build()?;
             build_tray(app.handle())?;
             let handle = app.handle().clone();
+            let autostart = initial.hosts_autostart;
             tauri::async_runtime::spawn(async move {
+                if !autostart {
+                    tracing::info!("Server-Autostart ist in den Einstellungen abgeschaltet");
+                    return;
+                }
                 let hosts = handle.state::<host::HostManager>();
-                for id in hosts.autostart_ids() {
-                    if let Err(e) = async { hosts.get(&id)?.start().await }.await {
-                        tracing::error!(host = %id, "Server-Autostart fehlgeschlagen: {e}");
+                // Right after the Windows sign-in the network may not be ready yet,
+                // so a failed start is retried a few times before giving up.
+                let mut pending = hosts.autostart_ids();
+                for wait in [0u64, 3, 8, 20] {
+                    if pending.is_empty() {
+                        break;
                     }
+                    tokio::time::sleep(std::time::Duration::from_secs(wait)).await;
+                    let mut failed = Vec::new();
+                    for id in pending {
+                        match async { hosts.get(&id)?.start().await }.await {
+                            Ok(_) => tracing::info!(host = %id, "Server automatisch gestartet"),
+                            Err(e) => {
+                                tracing::error!(host = %id, "Server-Autostart fehlgeschlagen: {e}");
+                                failed.push(id);
+                            }
+                        }
+                    }
+                    pending = failed;
                 }
             });
             Ok(())
         })
         .on_window_event(|window, event| {
+            // Only the main window decides between tray and exit; helper windows
+            // (the annotation overlay) simply close.
+            if window.label() != "main" {
+                return;
+            }
             if let WindowEvent::CloseRequested { api, .. } = event {
                 let app = window.app_handle();
                 let host_running = app.state::<host::HostManager>().any_running();

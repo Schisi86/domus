@@ -41,6 +41,9 @@ pub struct ClientConfig {
     pub settings: serde_json::Value,
     #[serde(default)]
     pub host_autostart: bool,
+    /// Start the hosted servers together with the app (default: on).
+    #[serde(default = "default_true")]
+    pub hosts_autostart: bool,
     #[serde(default = "default_true")]
     pub minimize_to_tray: bool,
 }
@@ -105,6 +108,15 @@ mod dpapi {
     }
 }
 
+/// Protects bytes with the Windows user account (DPAPI).
+pub fn protect(data: &[u8]) -> Option<Vec<u8>> {
+    dpapi::protect(data)
+}
+
+pub fn unprotect(data: &[u8]) -> Option<Vec<u8>> {
+    dpapi::unprotect(data)
+}
+
 fn b64() -> base64::engine::GeneralPurpose {
     base64::engine::general_purpose::STANDARD
 }
@@ -113,7 +125,7 @@ impl ConfigStore {
     pub fn load(&self) -> (ClientConfig, Option<String>) {
         let text = match std::fs::read_to_string(&self.path) {
             Ok(t) => t,
-            Err(_) => return (ClientConfig { minimize_to_tray: true, ..Default::default() }, None),
+            Err(_) => return (ClientConfig { minimize_to_tray: true, hosts_autostart: true, ..Default::default() }, None),
         };
         match serde_json::from_str::<ClientConfig>(&text) {
             Ok(mut cfg) => {

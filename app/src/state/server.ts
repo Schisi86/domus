@@ -8,6 +8,8 @@ import type {
 } from "../types";
 import { has, P } from "../types";
 import { t } from "../i18n";
+import { E2e, isEnvelope } from "../crypto/e2e";
+import { settings, updateSettings } from "./app";
 
 export interface ChannelLog {
   messages: Signal<Message[]>;
@@ -46,6 +48,10 @@ export class ServerStore {
   voice = signal<Map<number, VoiceMember>>(new Map());
   typing = signal<Record<number, Record<number, number>>>({});
   ice: IceConfig | null = null;
+  /** End-to-end encryption for direct messages on this server. */
+  readonly e2e = new E2e(this);
+  /** Keeps encrypted messages in their order of arrival while they are decrypted. */
+  private openChain: Promise<void> = Promise.resolve();
 
   private logs = new Map<number, ChannelLog>();
   private typingTimer: ReturnType<typeof setInterval> | null = null;
@@ -184,6 +190,7 @@ export class ServerStore {
     l.loading.value = true;
     try {
       const r = await this.rpc<{ messages: Message[]; has_more: boolean }>("message.history", { channel_id: cid, limit: 50 });
+      r.messages = await this.open(r.messages);
       batch(() => {
         const pending = l.messages.value.filter((m) => m.pending || m.failed);
         l.messages.value = [...r.messages, ...pending];
@@ -203,6 +210,7 @@ export class ServerStore {
     l.loading.value = true;
     try {
       const r = await this.rpc<{ messages: Message[]; has_more: boolean }>("message.history", { channel_id: cid, before: first.id, limit: 50 });
+      r.messages = await this.open(r.messages);
       batch(() => {
         l.messages.value = [...r.messages, ...l.messages.value];
         l.hasMore.value = r.has_more;
@@ -219,6 +227,8 @@ export class ServerStore {
     if (l.messages.value.some((m) => m.id === mid)) return;
     const before = await this.rpc<{ messages: Message[]; has_more: boolean }>("message.history", { channel_id: cid, before: mid + 1, limit: 40 });
     const after = await this.rpc<{ messages: Message[] }>("message.history", { channel_id: cid, after: mid, limit: 40 });
+    before.messages = await this.open(before.messages);
+    after.messages = await this.open(after.messages);
     batch(() => {
       l.messages.value = [...before.messages, ...after.messages];
       l.hasMore.value = before.has_more;
@@ -232,6 +242,53 @@ export class ServerStore {
       l.messages.value = msgs.slice(msgs.length - MAX_CACHED_MESSAGES);
       l.hasMore.value = true;
     }
+  }
+
+  // ------------------------------------------------------------- end-to-end encryption
+
+  /** Is end-to-end encryption switched on for this DM (on this device)? */
+  e2eOn(cid: number): boolean {
+    return !!this.dm(cid) && settings.value.e2eDm[`${this.id}:${cid}`] === true;
+  }
+
+  setE2e(cid: number, on: boolean) {
+    updateSettings({ e2eDm: { ...settings.value.e2eDm, [`${this.id}:${cid}`]: on } });
+  }
+
+  /** What goes over the wire for `content` in channel `cid` (ciphertext in an encrypted DM). */
+  async seal(cid: number, content: string, force = false): Promise<string> {
+    const dm = this.dm(cid);
+    if (!dm || !content || !(force || this.e2eOn(cid))) return content;
+    return this.e2e.encrypt(dm.user_id, content, this.info.value?.max_message_len ?? 4000);
+  }
+
+  /** Decrypts the encrypted messages in `list` (others pass through unchanged). */
+  async open(list: Message[]): Promise<Message[]> {
+    if (!list.some((m) => isEnvelope(m.content) || (m.reply_preview && isEnvelope(m.reply_preview.content)))) return list;
+    const me = this.me.value?.id;
+    const out: Message[] = [];
+    for (const m of list) {
+      const dm = this.dm(m.channel_id);
+      const mine = m.author_id === me;
+      // The other side of the conversation: for my own messages the DM partner.
+      const peer = dm ? (mine ? dm.user_id : m.author_id) : null;
+      let next = m;
+      if (isEnvelope(m.content)) {
+        const r = peer !== null ? await this.e2e.decrypt(m.content, peer, mine) : ({ fail: "key" } as const);
+        next = "text" in r ? { ...m, content: r.text, e2e: "ok" } : { ...m, content: "", e2e: "fail" };
+        // The other side writes encrypted: answer the same way from now on.
+        if (dm && !mine && settings.value.e2eDm[`${this.id}:${m.channel_id}`] === undefined) this.setE2e(m.channel_id, true);
+      }
+      const rp = m.reply_preview;
+      if (rp && isEnvelope(rp.content)) {
+        const rMine = rp.author_id === me;
+        const rPeer = dm ? (rMine ? dm.user_id : rp.author_id) : null;
+        const r = rPeer !== null ? await this.e2e.decrypt(rp.content, rPeer, rMine) : ({ fail: "key" } as const);
+        next = { ...next, reply_preview: { ...rp, content: "text" in r ? r.text.slice(0, 160) : "🔒" } };
+      }
+      out.push(next);
+    }
+    return out;
   }
 
   async send(cid: number, content: string, replyTo: number | null, attachments: string[] = []) {
@@ -252,11 +309,13 @@ export class ServerStore {
       pinned_at: null,
       nonce,
       pending: true,
+      ...(content && this.e2eOn(cid) ? { e2e: "ok" as const } : {}),
     };
     l.messages.value = [...l.messages.value, temp];
     try {
-      const msg = await this.rpc<Message>("message.send", { channel_id: cid, content, reply_to: replyTo, attachments, nonce });
-      this.upsertMessage(msg, nonce);
+      const wire = await this.seal(cid, content);
+      const msg = await this.rpc<Message>("message.send", { channel_id: cid, content: wire, reply_to: replyTo, attachments, nonce });
+      this.upsertMessage((await this.open([msg]))[0], nonce);
     } catch (e) {
       l.messages.value = l.messages.value.map((m) => (m.nonce === nonce ? { ...m, pending: false, failed: true } : m));
       throw e;
@@ -348,6 +407,7 @@ export class ServerStore {
         this.saved.value = { ...this.saved.value, name: r.server.name, username: r.me.username };
       }
     });
+    this.e2e.onReady();
     if (reconnect) {
       // Messages may have been missed while offline: reload open histories.
       for (const [cid, l] of this.logs) {
@@ -397,7 +457,28 @@ export class ServerStore {
   }
 
   private onEvent(ev: string, d: any) {
+    // Encrypted messages are decrypted first; a queue keeps their order.
+    if ((ev === "message.created" || ev === "message.updated") && this.needsOpen(ev === "message.created" ? d.message : d)) {
+      this.openChain = this.openChain
+        .then(async () => {
+          const [m] = await this.open([ev === "message.created" ? d.message : d]);
+          this.applyEvent(ev, ev === "message.created" ? { ...d, message: m } : m);
+        })
+        .catch(() => {});
+      return;
+    }
+    this.applyEvent(ev, d);
+  }
+
+  private needsOpen(m: Message | undefined): boolean {
+    return !!m && (isEnvelope(m.content) || (!!m.reply_preview && isEnvelope(m.reply_preview.content)));
+  }
+
+  private applyEvent(ev: string, d: any) {
     switch (ev) {
+      case "e2e.key":
+        this.e2e.onKeyEvent(d.user_id);
+        break;
       case "message.created": {
         const m = d.message as Message;
         this.upsertMessage(m, d.nonce);

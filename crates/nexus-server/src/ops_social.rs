@@ -324,3 +324,87 @@ pub async fn rel_unblock(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     notify_rel(ctx, me, other, None);
     Ok(json!({}))
 }
+
+// ---------------------------------------------------------------------------
+// Direct connections between two users (file transfer without the server)
+// ---------------------------------------------------------------------------
+
+/// Upper bound for one relayed signaling payload (an SDP with all candidates).
+const MAX_P2P_SIGNAL: usize = 64 * 1024;
+
+#[derive(Deserialize)]
+struct P2pReq {
+    to: i64,
+    data: Value,
+}
+
+/// Relays a small signaling message (offer, answer, accept/decline) to another
+/// online user so the two clients can open a direct WebRTC data channel. The
+/// transferred data itself never touches the server.
+pub async fn p2p_signal(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: P2pReq = parse(d)?;
+    if r.data.to_string().len() > MAX_P2P_SIGNAL {
+        return Err(ApiError::invalid("Signal ist zu groß"));
+    }
+    target_active(ctx, r.to).await?;
+    let (a, b) = (ctx.uid, r.to);
+    if ctx.st.db.call(move |c| store::is_blocked_either(c, a, b)).await? {
+        return Err(ApiError::new(Code::Blocked, "Direktübertragung mit diesem Benutzer ist nicht möglich"));
+    }
+    if !ctx.st.hub.is_online(r.to) {
+        return Err(ApiError::new(Code::NotFound, "Benutzer ist nicht online"));
+    }
+    ctx.st.hub.send_user(r.to, &hub::event("p2p.signal", &json!({ "from": ctx.uid, "data": r.data })));
+    Ok(json!({}))
+}
+
+// ---------------------------------------------------------------------------
+// End-to-end encryption: public key directory
+// ---------------------------------------------------------------------------
+
+/// Keys kept per user (older ones stay so old messages remain readable).
+const MAX_E2E_KEYS: i64 = 20;
+
+#[derive(Deserialize)]
+struct E2ePublishReq {
+    kid: String,
+    key: String,
+}
+
+fn valid_kid(k: &str) -> bool {
+    k.len() == 16 && k.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+}
+
+fn valid_pubkey(k: &str) -> bool {
+    (80..=200).contains(&k.len()) && k.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_' || b == b'+' || b == b'/' || b == b'=')
+}
+
+/// Publishes the caller's public key for encrypted direct messages.
+pub async fn e2e_publish(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: E2ePublishReq = parse(d)?;
+    if !valid_kid(&r.kid) || !valid_pubkey(&r.key) {
+        return Err(ApiError::invalid("Ungültiger Schlüssel"));
+    }
+    let uid = ctx.uid;
+    let (kid, key) = (r.kid.clone(), r.key);
+    let added = ctx.st.db.call(move |c| store::e2e_add_key(c, uid, &kid, &key, MAX_E2E_KEYS)).await?;
+    if added {
+        ctx.st.hub.broadcast(&hub::event("e2e.key", &json!({ "user_id": uid, "kid": r.kid })), |_| true);
+    }
+    Ok(json!({ "added": added }))
+}
+
+#[derive(Deserialize)]
+struct E2eKeysReq {
+    user_ids: Vec<i64>,
+}
+
+/// Public keys of the given users, newest first per user.
+pub async fn e2e_keys(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
+    let r: E2eKeysReq = parse(d)?;
+    if r.user_ids.is_empty() || r.user_ids.len() > 50 {
+        return Err(ApiError::invalid("user_ids: 1 bis 50 Einträge"));
+    }
+    let keys = ctx.st.db.call(move |c| store::e2e_keys(c, &r.user_ids)).await?;
+    Ok(json!({ "keys": keys }))
+}

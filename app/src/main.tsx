@@ -5,10 +5,13 @@ import { initApp } from "./state/app";
 import { startHostPolling } from "./state/hosting";
 import { isTauri, log } from "./platform";
 import { voice } from "./rtc/voice";
-import { servers, updateSettings } from "./state/app";
+import { servers, settings, startDm, updateSettings } from "./state/app";
+import { acceptTransfer, offerFile, transfers } from "./rtc/transfer";
+import { playFileForAll } from "./rtc/watch";
+import { inkTool } from "./rtc/ink";
 
 // Inspection hook for automated browser tests (not present in the desktop app).
-if (!isTauri) (window as unknown as Record<string, unknown>).__nexus = { voice, servers, updateSettings };
+if (!isTauri) (window as unknown as Record<string, unknown>).__nexus = { voice, servers, updateSettings, settings, transfers, offerFile, acceptTransfer, playFileForAll, inkTool, startDm };
 
 window.addEventListener("error", (e) => log("error", `${e.message} @ ${e.filename}:${e.lineno}`));
 window.addEventListener("unhandledrejection", (e) => {

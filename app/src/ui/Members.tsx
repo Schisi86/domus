@@ -10,6 +10,7 @@ import { P } from "../types";
 import { errorText, fmtFull, presenceText, t } from "../i18n";
 import { Avatar, Icon, Modal, bannerCss, confirmDialog, copyText, promptDialog } from "./components";
 import { joinVoice, voice } from "../rtc/voice";
+import { sendDirect } from "./Transfers";
 import { insertText } from "./Chat";
 
 function relationAction(server: ServerStore, m: Member) {
@@ -120,6 +121,7 @@ export function memberMenuItems(server: ServerStore, m: Member): MenuItem[] {
     items.push(
       { label: t("member.sendDm"), onClick: () => void startDm(server, m.id).catch(fail) },
       { label: t("member.call"), onClick: () => void callMember(server, m.id) },
+      { label: t("xfer.sendDirectMenu"), onClick: () => void sendDirect(server, m.id) },
     );
   }
   items.push(

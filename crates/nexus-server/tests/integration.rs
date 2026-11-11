@@ -976,3 +976,67 @@ async fn self_dm_notes_to_self() {
     assert_eq!(hist["messages"][0]["content"], "Nicht vergessen: Milch kaufen");
     ts.stop().await;
 }
+
+#[tokio::test]
+async fn e2e_key_directory_and_direct_signaling() {
+    let (ts, ep, owner, member) = setup("e2e").await;
+    let (mut a, ready_a) = Client::connect(&ep, &owner).await;
+    let (mut b, ready_b) = Client::connect(&ep, &member).await;
+    let (ida, idb) = (ready_a["me"]["id"].as_i64().unwrap(), ready_b["me"]["id"].as_i64().unwrap());
+
+    // Public keys: published once, announced to everyone, listed newest first.
+    let key = "BHq1v0mB7vJm1mXq9T0J1Jw3w2aYt8mX2n8pQJ0mQF8kq4h6ZrM0n3c1v5b7x9z1A3C5E7G9I1K3M5O7Q9S1U3W5Y7a";
+    let r = a.req("e2e.publish", json!({ "kid": "00112233aabbccdd", "key": key })).await.unwrap();
+    assert_eq!(r["added"], true);
+    assert_eq!(b.event("e2e.key").await["user_id"], ida);
+    assert_eq!(a.req("e2e.publish", json!({ "kid": "00112233aabbccdd", "key": key })).await.unwrap()["added"], false);
+    a.req("e2e.publish", json!({ "kid": "ffeeddccbbaa0099", "key": key })).await.unwrap();
+    let keys = b.req("e2e.keys", json!({ "user_ids": [ida, idb] })).await.unwrap();
+    let list = keys["keys"].as_array().unwrap();
+    assert_eq!(list.len(), 2, "only alice has keys: {keys}");
+    assert!(list.iter().all(|k| k["user_id"] == ida && k["key"] == key));
+    // Malformed keys and ids are refused.
+    for (kid, k) in [("short", key), ("00112233AABBCCDD", key), ("00112233aabbccdd", "zu kurz"), ("00112233aabbccdd", "<script>alert(1)</script>....................................................................")] {
+        assert_eq!(code(&a.req("e2e.publish", json!({ "kid": kid, "key": k })).await.unwrap_err()), "VALIDATION");
+    }
+    assert_eq!(code(&a.req("e2e.keys", json!({ "user_ids": [] })).await.unwrap_err()), "VALIDATION");
+
+    // The server stores an encrypted DM as it is, and hands the whole envelope
+    // back in a reply preview (a cut-off envelope could not be decrypted).
+    let dm = a.req("dm.open", json!({ "user_id": idb })).await.unwrap();
+    let cid = dm["channel_id"].as_i64().unwrap();
+    let envelope = format!("nxe1.00112233aabbccdd.ffeeddccbbaa0099.AAAAAAAAAAAAAAAA.{}", "Qk".repeat(150));
+    let first = a.req("message.send", json!({ "channel_id": cid, "content": envelope })).await.unwrap();
+    assert_eq!(first["content"], envelope);
+    let reply = b.req("message.send", json!({ "channel_id": cid, "content": "ok", "reply_to": first["id"] })).await.unwrap();
+    assert_eq!(reply["reply_preview"]["content"], envelope);
+    let plain = a.req("message.send", json!({ "channel_id": cid, "content": "x".repeat(400) })).await.unwrap();
+    let reply2 = b.req("message.send", json!({ "channel_id": cid, "content": "ok", "reply_to": plain["id"] })).await.unwrap();
+    assert_eq!(reply2["reply_preview"]["content"].as_str().unwrap().len(), 160);
+
+    // Direct transfer handshake: relayed to the other user, not stored.
+    a.req("p2p.signal", json!({ "to": idb, "data": { "x": "t1", "k": "offer", "name": "film.mkv", "size": 5_000_000_000u64 } })).await.unwrap();
+    let sig = b.event("p2p.signal").await;
+    assert_eq!(sig["from"], ida);
+    assert_eq!(sig["data"]["size"], 5_000_000_000u64);
+    // Oversized payloads, unknown and blocked users are refused.
+    let big = "y".repeat(70_000);
+    assert_eq!(code(&a.req("p2p.signal", json!({ "to": idb, "data": { "sdp": big } })).await.unwrap_err()), "VALIDATION");
+    assert_eq!(code(&a.req("p2p.signal", json!({ "to": 9999, "data": {} })).await.unwrap_err()), "NOT_FOUND");
+    b.req("relationship.block", json!({ "user_id": ida })).await.unwrap();
+    assert_eq!(code(&a.req("p2p.signal", json!({ "to": idb, "data": {} })).await.unwrap_err()), "BLOCKED");
+    b.req("relationship.unblock", json!({ "user_id": ida })).await.unwrap();
+    // Offline: the sender is told instead of the offer vanishing.
+    drop(b);
+    let mut refused = false;
+    for _ in 0..40 {
+        if let Err(e) = a.req("p2p.signal", json!({ "to": idb, "data": {} })).await {
+            assert_eq!(code(&e), "NOT_FOUND");
+            refused = true;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    assert!(refused, "signal to an offline user must be refused");
+    ts.stop().await;
+}

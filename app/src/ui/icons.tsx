@@ -98,3 +98,15 @@ export const WebcamOff = I(<><circle cx="12" cy="10" r="7" /><circle cx="12" cy=
 export const Volume = I(<><path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /></>);
 export const VolumeOff = I(<><path d="M11 5 6 9H2v6h4l5 4z" /><path d="M22 9l-6 6M16 9l6 6" /></>);
 export const Remote = I(<><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /><circle cx="12" cy="10" r="2.3" /></>);
+export const Pen = I(<><path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.6 7.6" /><circle cx="11" cy="11" r="2" /></>);
+export const Pointer = I(<><path d="M4 4l7.1 16.4 2.3-6.6 6.6-2.3z" /><path d="M14 14l5.5 5.5" /></>);
+export const Scissors = I(<><circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12" /></>);
+export const Film = I(<><rect x="2" y="3" width="20" height="18" rx="2.5" /><path d="M7 3v18M17 3v18M2 8h5M2 12h20M2 16h5M17 8h5M17 16h5" /></>);
+export const Eye = I(<><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>);
+export const EyeOff = I(<><path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.2 3.2M6.6 6.6A17.3 17.3 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2M2 2l20 20" /></>);
+export const Unlock = I(<><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 9.6-2" /></>);
+export const Gamepad = I(<><path d="M6 11h4M8 9v4M15 12h.01M18 10h.01" /><path d="M17.3 5H6.7a4 4 0 0 0-4 3.6C2.1 13.1 2 15.4 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.4-1.4a2 2 0 0 1 1.4-.6h4.4a2 2 0 0 1 1.4.6L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-.6-.1-2.9-.7-7.4a4 4 0 0 0-4-3.6z" /></>);
+export const Upload = I(<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />);
+export const Eraser = I(<><path d="M20 20H9L3.6 14.6a2 2 0 0 1 0-2.8l8.2-8.2a2 2 0 0 1 2.8 0l5.8 5.8a2 2 0 0 1 0 2.8L13 20" /><path d="M7.5 9.5l7 7" /></>);
+export const Minimize = I(<path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3" />);
+export const Zap = I(<path d="M13 2 3 14h9l-1 8 10-12h-9z" />);

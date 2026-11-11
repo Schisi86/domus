@@ -330,6 +330,9 @@ async fn dispatch(ctx: &mut Ctx, op: &str, d: Value) -> ApiResult<Value> {
         "voice.react" => ops_voice::react(ctx, d).await,
         "mention.list" => ops_chat::mention_list(ctx, d).await,
         "rtc.signal" => ops_voice::signal(ctx, d).await,
+        "p2p.signal" => ops_social::p2p_signal(ctx, d).await,
+        "e2e.publish" => ops_social::e2e_publish(ctx, d).await,
+        "e2e.keys" => ops_social::e2e_keys(ctx, d).await,
         _ => Err(ApiError::bad(format!("Unbekannte Operation: {op}"))),
     }
 }

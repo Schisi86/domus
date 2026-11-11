@@ -127,6 +127,35 @@ export function startHostPolling() {
   timer = setInterval(() => void refreshHosts(), 4000);
 }
 
+/** The hosted server behind a client entry, if it is one of this app's own. */
+export function hostFor(s: ServerStore): HostStatus | undefined {
+  const id = s.saved.value.host_id;
+  return id ? hosts.value.find((h) => h.id === id) : undefined;
+}
+
+/** Servers that are being started right now (for the one-click start buttons). */
+export const startingHosts = signal<Set<string>>(new Set());
+
+/** Starts a hosted server and reconnects its client entry. Returns an error text or null. */
+export async function startHost(id: string): Promise<string | null> {
+  if (startingHosts.value.has(id)) return null;
+  startingHosts.value = new Set([...startingHosts.value, id]);
+  try {
+    await tauriInvoke("host_start", { id });
+    await refreshHosts();
+    const c = clientFor(id);
+    if (c) setTimeout(() => c.conn.retryNow(), 300);
+    return null;
+  } catch (e) {
+    await refreshHosts();
+    return String(e);
+  } finally {
+    const next = new Set(startingHosts.value);
+    next.delete(id);
+    startingHosts.value = next;
+  }
+}
+
 /** The local address the app itself uses to reach a hosted server. */
 export function localAddress(h: Pick<HostStatus, "tls" | "port">) {
   return `${h.tls ? "https" : "http"}://127.0.0.1:${h.port}`;

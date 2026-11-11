@@ -10,5 +10,7 @@ export default defineConfig({
     cssCodeSplit: false,
     sourcemap: false,
     chunkSizeWarningLimit: 400,
+    // Second page: the transparent annotation overlay of the desktop app.
+    rollupOptions: { input: { main: "index.html", ink: "ink.html" } },
   },
 });

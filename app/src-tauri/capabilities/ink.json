@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "ink",
+  "description": "The annotation overlay only listens for drawing events",
+  "windows": ["ink"],
+  "permissions": ["core:event:default"]
+}

@@ -1,6 +1,6 @@
 // Voice channel view: participant tiles, screen shares, cameras, controls.
 
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { toast } from "../state/app";
 import { errorText } from "../i18n";
 import { Popover } from "./components";
@@ -39,12 +39,17 @@ import { ScreenQualityChip, ScreenShareControl } from "./ScreenShare";
 import { UserSettingsDialog } from "./dialogs/UserSettings";
 import { memberMenu } from "./Members";
 import { ControlBanner, ControlHostButton, ControlSurface, takeControl } from "./remotecontrol";
+import { ClipButton, FileBar, InkLayer, InkTools, WatchButton, WatchTile } from "./StreamTools";
 
 export function VoiceView({ server, channel }: { server: ServerStore; channel: Channel }) {
   const v = voice.value;
   const inHere = v && v.server === server && v.channelId === channel.id;
   const members = server.voiceMembers(channel.id);
   const [focus, setFocus] = useState<string | null>(null);
+  // The stream I look at is the one kept in the clip buffer.
+  useEffect(() => {
+    if (inHere && v) v.clips.preferred.value = focus?.startsWith("s") ? Number(focus.slice(1)) : null;
+  }, [focus, inHere]);
 
   if (!inHere) {
     const can = has(channel.perms, P.CONNECT);
@@ -67,7 +72,9 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
   // on their screen tile instead of a second tile. Toggle in voice settings.
   const overlay = settings.value.cameraOverlay;
   const overlaidCams = new Set(overlay ? screens.map(([uid]) => uid).filter((uid) => cams.has(uid)) : []);
-  const focused = focus ? screens.find(([uid]) => `s${uid}` === focus) : undefined;
+  // The screen I control is always the big one.
+  const controlled = v.controlling.value;
+  const focused = controlled !== null ? screens.find(([uid]) => uid === controlled) : focus ? screens.find(([uid]) => `s${uid}` === focus) : undefined;
   const canShare = has(channel.perms, P.SCREEN_SHARE);
   const canVideo = has(channel.perms, P.VIDEO);
   const handOrder = members.filter((m) => m.hand).sort((a, b) => (a.hand ?? 0) - (b.hand ?? 0)).map((m) => m.user_id);
@@ -132,11 +139,15 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
           <VideoTile stream={cams.get(uid)!} label="" muted />
         </div>
       )}
+      <InkLayer v={v} uid={uid} />
       {uid !== v.selfId && v.controlling.value === uid && <ControlSurface v={v} uid={uid} />}
+      {uid === v.selfId && <FileBar v={v} />}
       <div class="tile-tools">
-        {uid !== v.selfId && v.controlling.value !== uid && (
+        {uid !== v.selfId && v.controlling.value !== uid && v.remoteOffers.value.has(uid) && (
           <IconButton
-            title={t("rc2.take")}
+            title={v.controlPending.value === uid ? t("rc2.waitingShort") : t("rc2.take")}
+            class={v.controlPending.value === uid ? "pulse" : "accent"}
+            disabled={v.controlPending.value !== null}
             onClick={(e) => {
               e.stopPropagation();
               void takeControl(v, uid);
@@ -145,6 +156,8 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
             <Icon.Remote />
           </IconButton>
         )}
+        {v.controlling.value !== uid && <InkTools v={v} uid={uid} />}
+        <ClipButton v={v} uid={uid} />
         {"pictureInPictureEnabled" in document && (
           <IconButton
             title={t("call.pip")}
@@ -163,12 +176,14 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
           title={t("voice.fullscreen")}
           onClick={(e) => {
             e.stopPropagation();
-            ((e.currentTarget as HTMLElement).closest(".tile")?.querySelector("video") as HTMLVideoElement | null)?.requestFullscreen?.();
+            // The whole tile goes full screen, so marks and the control bar stay visible.
+            if (document.fullscreenElement) void document.exitFullscreen();
+            else void ((e.currentTarget as HTMLElement).closest(".tile") as HTMLElement | null)?.requestFullscreen?.();
           }}
         >
           <Icon.Maximize />
         </IconButton>
-        {big && (
+        {big && controlled !== uid && (
           <IconButton title={t("voice.shrink")} onClick={(e) => { e.stopPropagation(); setFocus(null); }}>
             <Icon.X />
           </IconButton>
@@ -178,6 +193,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
   );
 
   const ids = [v.selfId, ...members.map((m) => m.user_id).filter((u) => u !== v.selfId)];
+  const watching = !!v.watch.state.value && !v.watch.hidden.value;
 
   return (
     <div class="voice-view">
@@ -187,7 +203,15 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
         {handOrder.length > 0 && <div class="hand-count" title={handOrder.map((u) => server.memberName(u)).join(", ")}>✋ {handOrder.length}</div>}
         {v.sharingScreen.value && <ScreenQualityChip v={v} />}
       </header>
-      {focused ? (
+      {watching ? (
+        <div class="voice-grid has-focus">
+          <WatchTile v={v} />
+          <div class="voice-strip" style={{ padding: "0px" }}>
+            {screens.map((s) => screenTile(s))}
+            {ids.map(participantTile)}
+          </div>
+        </div>
+      ) : focused ? (
         <div class="voice-grid has-focus">
           {screenTile(focused, true)}
           <div class="voice-strip" style={{ padding: "0px" }}>
@@ -202,7 +226,13 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
         </div>
       )}
       <ControlBanner v={v} />
-      {v.sharingScreen.value && <div class="notice warn" style={{ margin: "0 14px 6px" }}>🔴 {v.screenHasAudio.value ? t("voice.sharingNoticeAudio") : t("voice.sharingNotice")}</div>}
+      {v.sharingScreen.value && !v.screenIsFile.value && <div class="notice warn" style={{ margin: "0 14px 6px" }}>🔴 {v.screenHasAudio.value ? t("voice.sharingNoticeAudio") : t("voice.sharingNotice")}</div>}
+      {v.watch.state.value && v.watch.hidden.value && (
+        <div class="notice row" style={{ margin: "0 14px 6px" }}>
+          <span class="grow">{t("watch.running", { name: server.memberName(v.watch.state.value.by) })}</span>
+          <button class="btn sm" onClick={() => (v.watch.hidden.value = false)}>{t("watch.show")}</button>
+        </div>
+      )}
       {!v.hasMic.value && <div class="notice warn" style={{ margin: "0 14px 6px" }}>{t("voice.noMicNotice")}</div>}
       {v.suppressed.value && <div class="notice" style={{ margin: "0 14px 6px" }}>{t("voice.suppressed")}</div>}
       {(v.serverMuted.value || v.serverDeafened.value) && <div class="notice warn" style={{ margin: "0 14px 6px" }}>{v.serverDeafened.value ? t("voice.serverDeafenedBody") : t("voice.serverMutedBody")}</div>}
@@ -224,6 +254,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
         </button>
         <ScreenShareControl v={v} variant="round" disabled={!canShare} />
         <ControlHostButton v={v} />
+        <WatchButton v={v} />
         <ReactionButton v={v} />
         <button class={`round-btn${myHand ? " on" : ""}`} title={myHand ? t("call.lowerHand") : t("call.raiseHand")} onClick={() => void v.setHand(!myHand).catch(() => {})}>
           <span style={{ fontSize: "18px", lineHeight: "1" }}>✋</span>

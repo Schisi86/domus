@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.9.1)
+# Funktionsstand (Version 0.10.0)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -78,6 +78,18 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Fehlerprotokolle (Client + Server, rotierend) | ✅ |
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
+
+### Zusammenarbeit, Verschlüsselung, Autostart, Designs (neu in 0.10.0)
+| Funktion | Stand |
+|---|---|
+| **Server-Autostart:** alle eigenen Server starten mit der App (letzte Einstellungen, ohne Rückfrage; bei Fehlstart bis zu drei Wiederholungen). Globaler Schalter unter Einstellungen › App; pro Server weiter abschaltbar. Gestoppte Server starten mit einem Klick: Banner in der Kanalliste, Startseite des Servers, Rechtsklick in der Leiste, Liste der Hosting-Zentrale. Beim Update wird der Server-Schalter einmalig eingeschaltet (vorher war er bei übernommenen Servern aus – deshalb „passierte nichts“) | ✅ Desktop-E2E `native.mjs` (Start nach Update, globaler Schalter, Ein-Klick-Start) |
+| **Fernsteuerung überarbeitet:** Umschalt-Taste (Standard **F8**, wählbar) wechselt zwischen eigenem PC und Stream, in der Desktop-App systemweit; beim Gesteuerten beendet dieselbe Taste die Steuerung sofort. Passwort **optional** und verdeckt (Auge zum Anzeigen); ohne Passwort bestätigt der Host jede Anfrage. Fünf Fehlversuche sperren fünf Minuten. Tasten gehen als Hardware-Scancodes (richtige Belegung auch bei QWERTZ, Pfeil-/Navigationstasten als „extended“), Maus auf den geteilten Monitor statt auf den gesamten virtuellen Desktop, Spielmodus mit relativer Mausbewegung, horizontales Scrollen, Menü für Tastenkombinationen (Win, Alt+Tab, Task-Manager …), gehaltene Tasten werden beim Pausieren/Beenden losgelassen, Vollbild mit Tastatursperre | ✅ Browser-E2E `collab.mjs` (Anfrage, Bestätigung, Passwort, F8, Scancodes, Maus, Loslassen, Widerruf); ✅ Rust-Tests inkl. echter Zeigerbewegung auf diesem PC (≤ 2 px); 🟡 **zwischen zwei echten Rechnern nicht getestet**; Erkennung des geteilten Monitors bei mehreren Bildschirmen nur per Unit-Test (dieser PC hat einen) |
+| **Auf den Stream zeichnen + Laserpointer:** jeder im Anruf kann auf jedem Stream markieren und zeigen; Striche verblassen nach einigen Sekunden. Beim Teilenden erscheinen die Markierungen zusätzlich in einem durchsichtigen, durchklickbaren Overlay direkt auf dem Desktop (von der Aufnahme ausgenommen). Abschaltbar | ✅ Browser-E2E (Strich, Pointer, Abschalten); ✅ Desktop-E2E (Overlay-Fenster öffnet, zeichnet, schließt); 🟡 Overlay während einer echten Übertragung nur einzeln, nicht im Zusammenspiel getestet |
+| **Direktversand ohne Größenlimit:** Dateien gehen per WebRTC-Datenkanal direkt von Rechner zu Rechner; der Server vermittelt nur den Verbindungsaufbau und speichert nichts. In DMs automatisch angeboten, wenn eine Datei das Upload-Limit übersteigt | ✅ Browser-E2E (6 MB, SHA-256 identisch, Ablehnen); ✅ Desktop-E2E für das stückweise Schreiben auf die Platte; 🟡 sehr große Dateien (GB) und Übertragung über das Internet-Relay nicht gemessen |
+| **Sofort-Clip:** die letzten Sekunden (15–120 s wählbar, Clip bis zum Doppelten) des angesehenen oder eigenen Streams als MP4/WebM, mit Stream-Ton und optional den Stimmen; Taste **F9** (systemweit in der Desktop-App), Speichern oder im Chat teilen; die anderen sehen einen Hinweis | ✅ Browser-E2E (Puffer, Clip, Dialog, Hinweis); 🟡 Rechenlast des Puffers nicht gemessen |
+| **Gemeinsam schauen:** YouTube-Link oder direkte Video-Adresse – jeder spielt selbst ab, Start/Pause/Spulen gelten für alle, Nachzügler steigen an der richtigen Stelle ein. Lokale Videodatei wird als Stream für alle abgespielt | ✅ Browser-E2E (Synchronisation, Nachzügler, Datei als Stream); 🟡 YouTube-Bild in der Desktop-App nicht automatisiert geprüft (im Test lädt der Player und liefert Titel/Position) |
+| **Ende-zu-Ende-verschlüsselte Direktnachrichten:** pro Unterhaltung einschaltbar (Schloss im Kopf), ECDH P-256 + AES-256-GCM, privater Schlüssel nur auf dem Gerät (Windows-DPAPI), Sicherheitsnummer zum Vergleichen, Warnung bei Schlüsselwechsel, Schlüsselsicherung mit Kennwort. Grenzen siehe SECURITY.md | ✅ Browser-E2E (Server speichert nur Chiffrat, Gegenseite liest, Bearbeiten, Sicherung/Wiederherstellung); ✅ Rust-Integrationstest (Schlüsselverzeichnis) |
+| **Designs:** 5 entfernt (Neon, Matrix, Lava, Hologramm, Prisma – zu grell bzw. schlecht lesbar; Einstellungen wechseln automatisch auf das nächstliegende), 6 neue ruhige: Graphit, Fjord, Papier (hell), Mokka, Bordeaux, Mono – jetzt 20. Oberfläche insgesamt ruhiger: weniger Glanz und Leuchten, Farbe markiert nur noch Aktives; Meldungen oben rechts statt über den Anruf-Knöpfen | ✅ Screenshots geprüft |
 
 ### Korrekturen (0.9.1)
 | Funktion | Stand |

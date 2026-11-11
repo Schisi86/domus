@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-25T21:10:14.875Z",
+  "date": "2026-11-11T04:00:35.663Z",
   "results": [
     {
       "name": "users registered",
@@ -14,12 +14,12 @@
     {
       "name": "audio: bytes flowing A→B",
       "ok": true,
-      "detail": "385 → 7359 bytes"
+      "detail": "369 → 7268 bytes"
     },
     {
       "name": "audio: bytes flowing B→A",
       "ok": true,
-      "detail": "6834 bytes"
+      "detail": "6814 bytes"
     },
     {
       "name": "audio: active speaker detected",
@@ -49,7 +49,7 @@
     {
       "name": "screen: frames decoded on B",
       "ok": true,
-      "detail": "0 → 50 frames"
+      "detail": "0 → 24 frames"
     },
     {
       "name": "screen: rendered in B's UI",
@@ -84,7 +84,7 @@
     {
       "name": "restart: media kept flowing",
       "ok": true,
-      "detail": "25689 → 60083 bytes, 2 peers"
+      "detail": "48895 → 81310 bytes, 2 peers"
     },
     {
       "name": "leave: others see participant leave",

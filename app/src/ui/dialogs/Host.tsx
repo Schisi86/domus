@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "preact/hooks";
 import { addServer, closeModal, removeServer, selectServer, servers, toast } from "../../state/app";
-import { checkFirewall, clientFor, firewall, firewallOk, hostName, hosts, internetAddress, localAddress, openFirewall, refreshHosts, setRelay, whenReady, type HostConfig, type HostStatus } from "../../state/hosting";
+import { checkFirewall, clientFor, firewall, firewallOk, hostName, hosts, internetAddress, localAddress, openFirewall, refreshHosts, setRelay, startHost, startingHosts, whenReady, type HostConfig, type HostStatus } from "../../state/hosting";
 import type { ServerStore } from "../../state/server";
 import type { Invite, InviteLinkInfo } from "../../types";
 import { errorText, t } from "../../i18n";
@@ -632,7 +632,23 @@ export function HostDialog({ select }: { select?: string } = {}) {
           <button key={h.id} class={current?.id === h.id ? "active" : ""} onClick={() => setSel(h.id)}>
             <span class={`dot${h.running ? " on" : ""}${h.error ? " err" : ""}`} />
             <span class="grow ellipsis">{hostName(h, t("host.myServer"))}</span>
-            <span class="faint xs mono">:{h.port}</span>
+            {h.running ? (
+              <span class="faint xs mono">:{h.port}</span>
+            ) : (
+              <span
+                class="host-quick"
+                role="button"
+                tabIndex={0}
+                title={t("host.start")}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  const err = await startHost(h.id);
+                  if (err) toast(t("host.startFailed"), err, "error");
+                }}
+              >
+                {startingHosts.value.has(h.id) ? <Spinner /> : <Icon.Play size={13} />}
+              </span>
+            )}
           </button>
         ))}
         <button class={`add-host${creating ? " active" : ""}`} onClick={() => setSel("new")}>

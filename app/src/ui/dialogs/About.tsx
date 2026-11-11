@@ -48,7 +48,7 @@ export function AboutDialog() {
         <div>
           <h2 style={{ margin: 0, fontSize: "var(--fs-2xl)" }} class="wordmark">Nex<b>Us</b></h2>
           <div class="muted">{t("about.tagline")}</div>
-          <div class="faint small">{t("about.version", { version: version ?? "0.9.1" })}</div>
+          <div class="faint small">{t("about.version", { version: version ?? "0.10.0" })}</div>
         </div>
       </div>
       <dl class="kv card">

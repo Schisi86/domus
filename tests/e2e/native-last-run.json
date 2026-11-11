@@ -1,0 +1,90 @@
+{
+  "date": "2026-11-11T04:01:48.935Z",
+  "results": [
+    {
+      "name": "a new server is created with autostart on",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "secrets: stored protected and read back",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "secrets: invalid names are refused",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "secrets: can be removed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "file sink: pieces arrive complete and in order",
+      "ok": true,
+      "detail": "5242950 bytes"
+    },
+    {
+      "name": "file sink: a cancelled transfer leaves no partial file",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "remote: target monitor resolved (label, fallback to primary)",
+      "ok": true,
+      "detail": "primary [0,0,1920,1080], screen:0 [0,0,1920,1080]"
+    },
+    {
+      "name": "remote: input is ignored while no session is allowed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "ink: transparent overlay window opens with its canvas",
+      "ok": true,
+      "detail": "{\"w\":1920,\"bg\":\"rgba(0, 0, 0, 0)\"}"
+    },
+    {
+      "name": "ink: a forwarded stroke is drawn on the overlay",
+      "ok": true,
+      "detail": "24295"
+    },
+    {
+      "name": "ink: overlay closes again",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "autostart: the server starts by itself after the upgrade",
+      "ok": true,
+      "detail": "127.0.0.1:7996"
+    },
+    {
+      "name": "autostart: per-server switch was turned on once",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "autostart: the global switch keeps servers stopped",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "stopped server: banner with a start button instead of 'connecting'",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "stopped server: one click starts it",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the settings offer the global switch",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}
