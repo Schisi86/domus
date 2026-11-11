@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NexUs – selbst hostbare Discord-Alternative für Windows</title>
-<meta name="description" content="NexUs: schlanke, selbst hostbare Kommunikationsplattform mit Text, Sprache, Video und Bildschirmübertragung. Mehrere eigene Server per Klick, keine Cloud, keine Werbung, 15 Sprachen, 19 Designs. Von Christian Schiessl.">
+<meta name="description" content="NexUs: schlanke, selbst hostbare Kommunikationsplattform für Windows. Text, Sprache, Video, Bildschirm teilen, Fernsteuerung, Direktversand ohne Dateilimit und verschlüsselte Direktnachrichten – auf deinem eigenen Server. Keine Cloud, keine Werbung. Von Christian Schiessl.">
 <meta name="author" content="Christian Schiessl">
-<meta name="theme-color" content="#06140f">
+<meta name="theme-color" content="#07060f">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="canonical" href="https://nexustalk-app.netlify.app/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="NexUs – Deine Community. Dein Server.">
-<meta property="og:description" content="Selbst hostbare Alternative zu Discord: Text, Sprache, Video und Bildschirm – ohne Cloud, ohne Werbung, ohne Tracking.">
-<meta property="og:image" content="https://nexustalk-app.netlify.app/assets/shots/desk-emerald.jpg">
+<meta property="og:description" content="Selbst hostbare Alternative zu Discord: Text, Sprache, Video, Bildschirm, Fernsteuerung und Direktversand – ohne Cloud, ohne Werbung, ohne Tracking.">
+<meta property="og:image" content="https://nexustalk-app.netlify.app/assets/shots/rc-control.jpg">
 <meta property="og:url" content="https://nexustalk-app.netlify.app/">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">
@@ -22,382 +22,301 @@
   "name": "NexUs",
   "operatingSystem": "Windows 10, Windows 11 (x64)",
   "applicationCategory": "CommunicationApplication",
-  "softwareVersion": "0.9.1",
+  "softwareVersion": "0.10.0",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-  "downloadUrl": "https://nexustalk-app.netlify.app/download/NexUs_0.9.1_x64-setup.exe",
+  "downloadUrl": "https://nexustalk-app.netlify.app/download/NexUs_0.10.0_x64-setup.exe",
   "image": "https://nexustalk-app.netlify.app/assets/logo.png",
-  "screenshot": "https://nexustalk-app.netlify.app/assets/shots/desk-emerald.jpg",
+  "screenshot": "https://nexustalk-app.netlify.app/assets/shots/rc-control.jpg",
   "license": "https://opensource.org/licenses/MIT",
   "author": { "@type": "Person", "name": "Christian Schiessl", "url": "https://cjs86.netlify.app" }
 }
 </script>
 <style>
 :root {
-  --bg: #040e0a;
-  --bg2: #071812;
-  --card: rgba(16, 38, 29, 0.55);
-  --card-solid: #0c1f18;
-  --line: rgba(143, 245, 207, 0.11);
-  --line-strong: rgba(143, 245, 207, 0.22);
-  --text: #e8f6ef;
-  --muted: #9cb8ab;
-  --faint: #6c8a7d;
-  --accent: #2ee59d;
-  --accent-2: #8ff5cf;
-  --accent-deep: #0a8f5c;
-  --hi: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  --shadow: 0 1px 1px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.35), 0 30px 80px rgba(0,0,0,.35);
-  --radius: 18px;
-  --maxw: 1180px;
+  --bg: #07060f;
+  --bg-2: #0c0a18;
+  --panel: rgba(20, 17, 38, 0.62);
+  --panel-solid: #110e22;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-2: rgba(255, 255, 255, 0.16);
+  --text: #f4f1ff;
+  --muted: #b3acd2;
+  --faint: #7c769f;
+  --y: #fcee0a;
+  --p: #ff2a6d;
+  --c: #05d9e8;
+  --g: #3df2a4;
+  --grad: linear-gradient(100deg, var(--y) 0%, var(--p) 52%, var(--c) 100%);
+  --r: 14px;
+  --r-lg: 22px;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Noto Sans", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Noto Sans", Roboto, sans-serif;
+  --mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 15.5px/1.6 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
-body::before {
-  content: "";
-  position: fixed; inset: 0; z-index: -2;
-  background:
-    radial-gradient(1200px 700px at 78% -10%, rgba(46, 229, 157, 0.16), transparent 60%),
-    radial-gradient(900px 600px at -10% 20%, rgba(16, 140, 95, 0.14), transparent 60%),
-    radial-gradient(1000px 800px at 50% 120%, rgba(46, 229, 157, 0.08), transparent 60%),
-    linear-gradient(180deg, #040e0a 0%, #05120d 50%, #040e0a 100%);
-}
-body::after {
-  content: "";
-  position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background-image: linear-gradient(rgba(143,245,207,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(143,245,207,.035) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 70%);
-}
-a { color: var(--accent-2); text-decoration: none; }
-a:hover { color: #fff; }
+html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+body { margin: 0; font-family: var(--font); font-size: 16.5px; line-height: 1.6; color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 img { max-width: 100%; height: auto; display: block; }
-.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+a { color: inherit; }
+h1, h2, h3, h4 { font-family: var(--display); letter-spacing: -0.02em; line-height: 1.08; margin: 0; }
+p { margin: 0; }
+svg { width: 20px; height: 20px; flex: none; }
+code { font-family: var(--mono); font-size: 0.88em; padding: 2px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.07); border: 1px solid var(--line); }
+.wrap { width: min(1220px, calc(100% - 40px)); margin-inline: auto; }
+.mono { font-family: var(--mono); }
+:focus-visible { outline: 2px solid var(--y); outline-offset: 3px; border-radius: 6px; }
+
+/* ---------- backdrop: neon haze + faint grid ---------- */
+.backdrop { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.backdrop::before { content: ""; position: absolute; inset: -20%;
+  background: radial-gradient(46% 40% at 12% 8%, rgba(255, 42, 109, 0.30), transparent 70%), radial-gradient(42% 44% at 92% 18%, rgba(5, 217, 232, 0.22), transparent 70%), radial-gradient(36% 30% at 50% 0%, rgba(252, 238, 10, 0.10), transparent 70%), radial-gradient(60% 50% at 60% 110%, rgba(120, 60, 255, 0.20), transparent 70%);
+  animation: haze 26s ease-in-out infinite alternate; }
+.backdrop::after { content: ""; position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px; mask-image: radial-gradient(80% 60% at 50% 0%, #000 0%, transparent 78%); -webkit-mask-image: radial-gradient(80% 60% at 50% 0%, #000 0%, transparent 78%); }
+@keyframes haze { from { transform: translate3d(-2%, -1%, 0) scale(1); } to { transform: translate3d(3%, 2%, 0) scale(1.08); } }
 
 /* ---------- nav ---------- */
-header.nav {
-  position: sticky; top: 0; z-index: 50;
-  backdrop-filter: blur(18px) saturate(1.4);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  background: rgba(4, 14, 10, 0.62);
-  border-bottom: 1px solid var(--line);
-}
-.nav .wrap { display: flex; align-items: center; gap: 24px; height: 64px; }
-.brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 650; letter-spacing: .2px; font-size: 17px; }
-.brand img { width: 34px; height: 34px; filter: drop-shadow(0 4px 10px rgba(46,229,157,.35)); }
+.nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); background: rgba(7, 6, 15, 0.66); border-bottom: 1px solid var(--line); }
+.nav .wrap { display: flex; align-items: center; gap: 22px; height: 64px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 750; font-size: 19px; text-decoration: none; letter-spacing: -0.01em; }
+.brand img { width: 34px; height: 34px; border-radius: 9px; }
+.brand b { color: var(--c); font-weight: 750; }
 .nav nav { display: flex; gap: 4px; margin-left: auto; }
-.nav nav a { color: var(--muted); font-size: 14px; padding: 7px 12px; border-radius: 9px; transition: color .15s, background .15s; }
-.nav nav a:hover { color: var(--text); background: rgba(143,245,207,.07); }
-.nav .cta-mini { margin-left: 8px; }
+.nav nav a { padding: 8px 12px; border-radius: 9px; text-decoration: none; color: var(--muted); font-size: 14.5px; transition: color 0.15s, background 0.15s; }
+.nav nav a:hover { color: var(--text); background: rgba(255, 255, 255, 0.07); }
 
 /* ---------- buttons ---------- */
-.btn {
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 13px 22px; border-radius: 13px;
-  font-weight: 600; font-size: 15px; letter-spacing: .1px;
-  border: 1px solid var(--line-strong);
-  color: var(--text);
-  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-  box-shadow: var(--hi), 0 6px 18px rgba(0,0,0,.25);
-  transition: transform .15s ease, box-shadow .2s ease, background .2s;
-  cursor: pointer;
-}
-.btn:hover { transform: translateY(-2px); color: #fff; box-shadow: var(--hi), 0 12px 28px rgba(0,0,0,.35); }
-.btn svg { width: 18px; height: 18px; flex: none; }
-.btn.primary {
-  color: #022417; border-color: transparent;
-  background: linear-gradient(180deg, #7ff7c8 0%, #2ee59d 45%, #14c180 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.18), 0 10px 30px rgba(46,229,157,.35), 0 2px 4px rgba(0,0,0,.3);
-}
-.btn.primary:hover { color: #011a10; box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -2px 0 rgba(0,0,0,.18), 0 16px 44px rgba(46,229,157,.45), 0 2px 4px rgba(0,0,0,.3); }
-.btn.small { padding: 8px 14px; font-size: 13.5px; border-radius: 10px; }
-.btn.heart { color: #fff; border-color: transparent; background: linear-gradient(180deg, #ff86b1, #f2447f 55%, #d42a66); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 10px 28px rgba(242,68,127,.35); }
-.btn.heart:hover { color: #fff; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 50px; padding: 0 22px; border-radius: 13px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.06); color: var(--text); font: 650 15.5px var(--font); text-decoration: none; cursor: pointer; transition: transform 0.15s var(--ease), background 0.15s, border-color 0.15s, box-shadow 0.2s; }
+.btn:hover { background: rgba(255, 255, 255, 0.11); border-color: rgba(255, 255, 255, 0.3); transform: translateY(-1px); }
+.btn.primary { background: var(--y); color: #14110a; border-color: transparent; box-shadow: 0 0 0 1px rgba(252, 238, 10, 0.4), 0 10px 34px -8px rgba(252, 238, 10, 0.55); }
+.btn.primary:hover { background: #fff566; box-shadow: 0 0 0 1px rgba(252, 238, 10, 0.6), 0 14px 44px -8px rgba(252, 238, 10, 0.7); }
+.btn.small { height: 38px; padding: 0 14px; font-size: 14px; border-radius: 10px; }
+.btn.pink { background: linear-gradient(135deg, #ff5c8f, var(--p)); border-color: transparent; color: #fff; box-shadow: 0 10px 30px -10px var(--p); }
 
 /* ---------- hero ---------- */
-.hero { padding: 72px 0 40px; position: relative; }
-.hero-grid { display: grid; grid-template-columns: 1.02fr 1.2fr; gap: 56px; align-items: center; }
-.eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 12.5px; letter-spacing: .6px; text-transform: uppercase; color: var(--accent-2);
-  padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong);
-  background: rgba(46,229,157,.07); box-shadow: var(--hi);
-}
-.eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(46,229,157,.18), 0 0 12px var(--accent); }
-h1 {
-  font-size: clamp(40px, 5.4vw, 66px); line-height: 1.04; margin: 20px 0 18px; letter-spacing: -1.6px; font-weight: 750;
-  background: linear-gradient(180deg, #ffffff 0%, #d7f7e9 55%, #8ff5cf 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-h1 em { font-style: normal; background: linear-gradient(90deg, #2ee59d, #8ff5cf); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.lead { font-size: 18px; color: var(--muted); max-width: 540px; margin: 0 0 30px; }
-.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.hero-meta { margin-top: 18px; font-size: 13px; color: var(--faint); display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.hero { padding: 76px 0 30px; text-align: center; position: relative; }
+.pill { display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px 7px 8px; border-radius: 999px; font-size: 13.5px; color: var(--muted); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line-2); text-decoration: none; transition: border-color 0.15s, color 0.15s; }
+.pill:hover { border-color: var(--y); color: var(--text); }
+.pill b { flex: none; white-space: nowrap; padding: 2px 9px; border-radius: 999px; background: var(--y); color: #14110a; font-size: 12px; letter-spacing: 0.03em; }
+.hero h1 { font-size: clamp(44px, 8.2vw, 104px); font-weight: 800; letter-spacing: -0.045em; margin: 26px auto 0; max-width: 12ch; }
+.hero h1 em { font-style: normal; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { max-width: 720px; margin: 24px auto 0; font-size: clamp(17px, 1.6vw, 20px); color: var(--muted); }
+.hero-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 34px; }
+.hero-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; margin-top: 20px; font-size: 13.5px; color: var(--faint); }
 .hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
-.hero-meta svg { width: 14px; height: 14px; color: var(--accent); }
+.hero-meta svg { width: 15px; height: 15px; color: var(--g); }
 
-.logo3d { width: 120px; height: 120px; margin-bottom: 4px; perspective: 600px; }
-.logo3d img {
-  width: 100%; height: 100%;
-  filter: drop-shadow(0 18px 24px rgba(0,0,0,.5)) drop-shadow(0 6px 22px rgba(46,229,157,.35));
-  animation: float 6s ease-in-out infinite;
-  transform-style: preserve-3d;
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0) rotateX(8deg) rotateY(-12deg); }
-  50% { transform: translateY(-10px) rotateX(-4deg) rotateY(10deg); }
-}
+/* app window with glow, tilting flat while you scroll */
+.stage { position: relative; margin: 64px auto 0; width: min(1180px, calc(100% - 40px)); perspective: 1800px; }
+.stage::before { content: ""; position: absolute; inset: 8% 6% -4%; background: var(--grad); filter: blur(90px); opacity: 0.42; z-index: -1; }
+.win { border-radius: 16px; overflow: hidden; background: #0b0918; border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 40px 120px -20px rgba(0, 0, 0, 0.85), 0 0 80px -30px var(--p); transform: rotateX(var(--tilt, 14deg)) scale(var(--zoom, 0.94)); transform-origin: 50% 0%; will-change: transform; }
+.win-bar { display: flex; align-items: center; gap: 9px; height: 34px; padding: 0 12px; background: linear-gradient(180deg, #17132b, #100d20); border-bottom: 1px solid rgba(255, 255, 255, 0.07); font-size: 12.5px; color: var(--muted); }
+.win-bar img { width: 16px; height: 16px; border-radius: 4px; }
+.win-bar i { margin-left: auto; display: flex; gap: 16px; padding-right: 4px; color: var(--faint); font-style: normal; font-size: 13px; }
+.win img.shot { width: 100%; }
+.chip-float { position: absolute; z-index: 2; display: flex; align-items: center; gap: 11px; padding: 11px 15px 11px 11px; border-radius: 15px; background: rgba(14, 11, 30, 0.86); border: 1px solid var(--line-2); box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.8); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); text-align: left; animation: bob 7s ease-in-out infinite; }
+.chip-float .ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; color: #14110a; background: var(--y); font: 800 13px var(--mono); }
+.chip-float b { display: block; font-size: 14.5px; }
+.chip-float small { color: var(--muted); font-size: 12.5px; }
+.cf1 { left: -26px; top: 22%; }
+.cf2 { right: -30px; top: 46%; animation-delay: -2.4s; }
+.cf2 .ic { background: var(--g); }
+.cf3 { left: 4%; bottom: -22px; animation-delay: -4.6s; }
+.cf3 .ic { background: var(--c); }
+@keyframes bob { 50% { transform: translateY(-9px); } }
 
-.stage { perspective: 1800px; position: relative; }
-.stage::before {
-  content: ""; position: absolute; inset: 8% 4% -6% 8%; z-index: -1;
-  background: radial-gradient(closest-side, rgba(46,229,157,.35), transparent);
-  filter: blur(40px);
-}
-.device {
-  border-radius: 16px; overflow: hidden;
-  border: 1px solid rgba(143,245,207,.22);
-  box-shadow: 0 2px 0 rgba(255,255,255,.06) inset, 0 50px 100px -20px rgba(0,0,0,.7), 0 30px 60px -30px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.4);
-  transform: rotateY(-14deg) rotateX(7deg) rotateZ(1deg);
-  transform-style: preserve-3d;
-  transition: transform .5s cubic-bezier(.2,.7,.2,1);
-  background: #07140f;
-  position: relative;
-}
-.device::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(115deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 32%);
-}
-.device .bar { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 12px; background: linear-gradient(180deg, #0f231b, #0a1a14); border-bottom: 1px solid rgba(143,245,207,.1); }
-.device .bar i { width: 10px; height: 10px; border-radius: 50%; background: #23463a; }
-.device .bar i:first-child { background: #ff5f57; } .device .bar i:nth-child(2) { background: #febc2e; } .device .bar i:nth-child(3) { background: #28c840; }
-.device .bar span { margin-left: 8px; font-size: 12px; color: var(--faint); }
-.floating-card {
-  position: absolute; z-index: 3;
-  background: rgba(10, 28, 21, .82); backdrop-filter: blur(14px);
-  border: 1px solid var(--line-strong); border-radius: 14px;
-  box-shadow: var(--hi), 0 20px 40px rgba(0,0,0,.45);
-  padding: 12px 14px; font-size: 13px; display: flex; gap: 10px; align-items: center;
-  animation: bob 7s ease-in-out infinite;
-}
-.floating-card b { display: block; font-size: 13.5px; }
-.floating-card small { color: var(--muted); }
-.floating-card .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(180deg, #2ee59d, #0e9f68); color: #022417; box-shadow: inset 0 1px 0 rgba(255,255,255,.5); }
-.floating-card .ic svg { width: 18px; height: 18px; }
-.fc1 { left: -28px; bottom: 14%; }
-.fc2 { right: -18px; top: 9%; animation-delay: -3s; }
-@keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
-
-/* ---------- stats ---------- */
-.stats { margin: 56px auto 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: var(--line); box-shadow: var(--shadow); }
-.stat { background: linear-gradient(180deg, rgba(14,34,26,.92), rgba(9,24,18,.92)); padding: 22px 18px; text-align: center; box-shadow: var(--hi); }
-.stat b { display: block; font-size: 28px; letter-spacing: -.6px; font-weight: 700; background: linear-gradient(180deg, #fff, #8ff5cf); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.stat span { font-size: 12.5px; color: var(--muted); }
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 84px; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); overflow: hidden; }
+.stat { padding: 26px 16px; text-align: center; border-left: 1px solid var(--line); }
+.stat:first-child { border-left: 0; }
+.stat b { display: block; font: 800 clamp(24px, 2.6vw, 34px) var(--display); letter-spacing: -0.03em; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.stat > span { font-size: 13.5px; color: var(--muted); }
 
 /* ---------- sections ---------- */
-section { padding: 96px 0 0; }
-.sec-head { text-align: center; max-width: 720px; margin: 0 auto 44px; }
-.sec-head .kicker { font-size: 12.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); font-weight: 600; }
-h2 { font-size: clamp(30px, 3.6vw, 42px); line-height: 1.12; margin: 10px 0 14px; letter-spacing: -.9px; font-weight: 720; }
-.sec-head p { color: var(--muted); font-size: 16.5px; margin: 0; }
+section { padding: 108px 0 0; }
+.sec-head { text-align: center; max-width: 780px; margin: 0 auto 52px; }
+.kicker { display: inline-block; font: 700 12.5px var(--font); letter-spacing: 0.16em; text-transform: uppercase; color: var(--y); margin-bottom: 14px; }
+.sec-head h2 { font-size: clamp(32px, 4.6vw, 56px); font-weight: 800; letter-spacing: -0.035em; }
+.sec-head p { margin-top: 16px; color: var(--muted); font-size: 18px; }
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
+.reveal.in { opacity: 1; transform: none; }
 
-.grid { display: grid; gap: 18px; }
-.features { grid-template-columns: repeat(4, 1fr); }
-.card {
-  position: relative; border-radius: var(--radius); padding: 24px 22px;
-  background: linear-gradient(180deg, rgba(18,42,32,.72), rgba(10,26,20,.72));
-  border: 1px solid var(--line);
-  box-shadow: var(--hi), 0 10px 30px rgba(0,0,0,.25);
-  transition: transform .25s ease, border-color .25s, box-shadow .25s;
-  transform-style: preserve-3d;
-}
-.card:hover { transform: translateY(-4px); border-color: var(--line-strong); box-shadow: var(--hi), 0 20px 48px rgba(0,0,0,.4), 0 0 0 1px rgba(46,229,157,.08); }
-.card h3 { font-size: 16.5px; margin: 16px 0 8px; letter-spacing: -.1px; }
-.card p { margin: 0; color: var(--muted); font-size: 14.2px; }
-.ficon {
-  width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center;
-  color: #032619;
-  background: linear-gradient(160deg, #9af9d5 0%, #2ee59d 45%, #0c9a64 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 -3px 0 rgba(0,0,0,.18), 0 8px 20px rgba(46,229,157,.25), 0 2px 3px rgba(0,0,0,.35);
-  transform: translateZ(20px);
-}
-.ficon svg { width: 22px; height: 22px; }
+/* ---------- spotlight: what is new ---------- */
+.spot-tabs { display: flex; gap: 8px; padding: 6px; margin: 0 auto 26px; width: fit-content; max-width: 100%; overflow-x: auto; border-radius: 16px; background: rgba(255, 255, 255, 0.045); border: 1px solid var(--line); scrollbar-width: none; }
+.spot-tabs::-webkit-scrollbar { display: none; }
+.spot-tabs button { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 11px; border: 0; background: transparent; color: var(--muted); font: 600 14.5px var(--font); white-space: nowrap; cursor: pointer; transition: color 0.15s, background 0.15s; }
+.spot-tabs button:hover { color: var(--text); }
+.spot-tabs button[aria-selected="true"] { background: var(--y); color: #14110a; box-shadow: 0 8px 26px -10px var(--y); }
+.spot-tabs button svg { width: 18px; height: 18px; }
+.panel { display: grid; grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.5fr); gap: 44px; align-items: center; padding: 34px; margin-bottom: 22px; border-radius: 28px; border: 1px solid var(--line); background: linear-gradient(160deg, rgba(26, 20, 52, 0.72), rgba(12, 10, 24, 0.72)); position: relative; overflow: hidden; }
+.panel::before { content: ""; position: absolute; width: 520px; height: 520px; right: -160px; top: -220px; background: radial-gradient(circle, var(--glow, rgba(255, 42, 109, 0.35)), transparent 68%); pointer-events: none; }
+.tabs-on .panel { display: none; margin-bottom: 0; }
+.tabs-on .panel.on { display: grid; animation: panel-in 0.45s var(--ease); }
+@keyframes panel-in { from { opacity: 0; transform: translateY(14px); } }
+.panel-text { position: relative; }
+.panel-num { font: 800 13px var(--mono); color: var(--y); letter-spacing: 0.1em; }
+.panel h3 { font-size: clamp(26px, 2.9vw, 38px); font-weight: 800; letter-spacing: -0.03em; margin: 10px 0 14px; }
+.panel p { color: var(--muted); }
+.ticks { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 11px; }
+.ticks li { position: relative; padding-left: 32px; font-size: 15.5px; }
+.ticks li::before { content: ""; position: absolute; left: 0; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: rgba(61, 242, 164, 0.16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233df2a4' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12 4 4 8-9'/%3E%3C/svg%3E") center/13px no-repeat; }
+.ticks kbd, .panel kbd { font: 700 12.5px var(--mono); padding: 2px 7px; border-radius: 6px; background: #fff; color: #111; }
+.honest-line { margin-top: 18px; padding: 10px 14px; border-radius: 12px; font-size: 13.5px; color: var(--muted); background: rgba(255, 255, 255, 0.045); border: 1px dashed var(--line-2); }
+.panel-media { position: relative; min-width: 0; }
+.frame { display: block; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 30px 80px -24px rgba(0, 0, 0, 0.85); background: #0b0918; cursor: zoom-in; }
+.frame img { width: 100%; transition: opacity 0.25s; }
+.thumbs { display: flex; gap: 10px; margin-top: 12px; overflow-x: auto; scrollbar-width: none; }
+.thumbs button { flex: 0 0 132px; padding: 0; border-radius: 9px; overflow: hidden; border: 2px solid transparent; background: none; cursor: pointer; opacity: 0.6; transition: opacity 0.15s, border-color 0.15s; }
+.thumbs button:hover { opacity: 1; }
+.thumbs button.on { opacity: 1; border-color: var(--y); }
 
-/* ---------- comparison ---------- */
-.compare { border-radius: 22px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: rgba(9, 23, 18, .8); }
-.compare table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
-.compare th, .compare td { padding: 15px 20px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
-.compare tr:last-child td { border-bottom: 0; }
-.compare thead th { background: linear-gradient(180deg, #0f251c, #0b1d16); font-size: 13px; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-.compare thead th.nx { color: var(--accent-2); }
-.compare thead th.nx img { width: 20px; height: 20px; display: inline-block; vertical-align: -5px; margin-right: 7px; }
-.compare td:first-child { color: var(--muted); width: 24%; font-weight: 500; }
-.compare td.nx { background: rgba(46,229,157,.045); color: var(--text); }
-.compare td .y, .compare td .n, .compare td .m { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; margin-right: 8px; vertical-align: -4px; font-size: 12px; font-weight: 700; }
-.y { background: rgba(46,229,157,.18); color: var(--accent); }
-.n { background: rgba(255,99,99,.14); color: #ff8c8c; }
-.m { background: rgba(255,196,0,.14); color: #ffd25e; }
-.honest { margin-top: 22px; display: grid; grid-template-columns: auto 1fr; gap: 16px; padding: 20px 22px; border-radius: var(--radius); border: 1px dashed rgba(255,210,94,.3); background: rgba(255,196,0,.04); }
-.honest .ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: rgba(255,196,0,.13); color: #ffd25e; }
-.honest .ic svg { width: 20px; height: 20px; }
-.honest h4 { margin: 2px 0 6px; font-size: 15px; }
-.honest ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
+/* ---------- bento ---------- */
+.bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+.card { grid-column: span 4; padding: 26px; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform 0.25s var(--ease), border-color 0.25s, box-shadow 0.25s; position: relative; overflow: hidden; }
+.card:hover { transform: translateY(-4px); border-color: rgba(255, 255, 255, 0.24); box-shadow: 0 24px 60px -30px var(--p); }
+.card.wide { grid-column: span 6; }
+.card h3 { font-size: 20px; font-weight: 750; margin: 16px 0 8px; letter-spacing: -0.015em; }
+.card p { color: var(--muted); font-size: 15.5px; }
+.ficon { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; color: #14110a; background: var(--y); box-shadow: 0 10px 26px -10px var(--y); }
+.card:nth-child(3n + 2) .ficon { background: var(--c); box-shadow: 0 10px 26px -10px var(--c); }
+.card:nth-child(3n) .ficon { background: var(--p); color: #fff; box-shadow: 0 10px 26px -10px var(--p); }
+.ficon svg { width: 23px; height: 23px; }
 
-/* ---------- gallery ---------- */
-.gallery { display: grid; grid-template-columns: 1.55fr 1fr; gap: 22px; align-items: start; }
-.shot-main { border-radius: 16px; overflow: hidden; border: 1px solid var(--line-strong); box-shadow: var(--shadow); background: #000; aspect-ratio: 2040 / 1230; position: relative; }
-.shot-main img { width: 100%; height: 100%; object-fit: cover; transition: opacity .35s ease; }
-.themes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.theme {
-  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 13px; cursor: pointer;
-  border: 1px solid var(--line); background: rgba(14,34,26,.6); color: var(--text); font: inherit; font-size: 14px; text-align: left;
-  box-shadow: var(--hi); transition: border-color .2s, transform .2s, background .2s;
-}
-.theme:hover { transform: translateY(-2px); border-color: var(--line-strong); }
-.theme.on { border-color: var(--accent); background: rgba(46,229,157,.08); box-shadow: var(--hi), 0 0 0 3px rgba(46,229,157,.12); }
-.swatch { width: 46px; height: 32px; border-radius: 8px; overflow: hidden; display: grid; grid-template-columns: 7px 10px 1fr; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 3px 8px rgba(0,0,0,.35); }
-.swatch i:nth-child(3) { position: relative; }
-.swatch i:nth-child(3)::before, .swatch i:nth-child(3)::after { content: ""; position: absolute; left: 5px; right: 5px; height: 4px; border-radius: 3px; background: var(--a); top: 8px; }
-.swatch i:nth-child(3)::after { background: var(--b); top: 17px; right: 12px; opacity: .85; }
-.theme small { display: block; color: var(--faint); font-size: 12px; }
-.gal-note { margin-top: 14px; font-size: 13px; color: var(--faint); }
+/* ---------- hosting ---------- */
+.host { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 46px; align-items: center; }
+.steps { display: grid; gap: 14px; counter-reset: s; }
+.step { display: grid; grid-template-columns: 48px 1fr; gap: 16px; padding: 20px; border-radius: 18px; border: 1px solid var(--line); background: var(--panel); counter-increment: s; }
+.step::before { content: counter(s); width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; font: 800 20px var(--display); color: #14110a; background: var(--grad); }
+.step h3 { font-size: 18.5px; margin-bottom: 5px; }
+.step p { color: var(--muted); font-size: 15px; }
+.note { text-align: center; color: var(--faint); font-size: 14px; margin-top: 26px; }
+
+/* ---------- compare ---------- */
+.compare { border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--panel); overflow-x: auto; }
+.compare table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 15.5px; }
+.compare th, .compare td { padding: 16px 20px; text-align: left; border-top: 1px solid var(--line); vertical-align: top; }
+.compare thead th { border-top: 0; font: 750 16px var(--display); color: var(--muted); }
+.compare th.nx, .compare td.nx { background: linear-gradient(180deg, rgba(252, 238, 10, 0.07), rgba(252, 238, 10, 0.03)); }
+.compare th.nx { color: var(--text); }
+.compare th.nx img { display: inline-block; width: 22px; height: 22px; border-radius: 6px; vertical-align: -5px; margin-right: 8px; }
+.compare td:first-child { color: var(--muted); width: 25%; }
+.y, .n, .m { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; margin-right: 9px; font-size: 12px; font-weight: 800; vertical-align: 1px; }
+.y { background: rgba(61, 242, 164, 0.16); color: var(--g); }
+.n { background: rgba(255, 42, 109, 0.16); color: var(--p); }
+.m { background: rgba(252, 238, 10, 0.14); color: var(--y); }
+.honest { display: grid; grid-template-columns: 46px 1fr; gap: 18px; margin-top: 20px; padding: 24px; border-radius: var(--r-lg); border: 1px dashed var(--line-2); background: rgba(255, 255, 255, 0.03); }
+.honest .ic { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; background: rgba(5, 217, 232, 0.14); color: var(--c); }
+.honest h4 { font-size: 18px; margin-bottom: 10px; }
+.honest ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; display: grid; gap: 6px; }
+
+/* ---------- designs ---------- */
+.gallery { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 26px; align-items: start; }
+.themes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.theme { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); color: var(--text); font: 600 14px var(--font); text-align: left; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.theme:hover { border-color: var(--line-2); background: rgba(255, 255, 255, 0.07); }
+.theme.on { border-color: var(--y); background: rgba(252, 238, 10, 0.08); }
+.theme small { display: block; font-weight: 400; font-size: 12px; color: var(--faint); }
+.swatch { width: 38px; height: 28px; border-radius: 8px; overflow: hidden; display: flex; flex: none; position: relative; border: 1px solid rgba(255, 255, 255, 0.14); }
+.swatch i { flex: 1; }
+.swatch::after { content: ""; position: absolute; right: 4px; bottom: 4px; width: 16px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, var(--a), var(--b)); }
+.gal-note { margin-top: 14px; font-size: 13.5px; color: var(--faint); }
 
 /* ---------- languages ---------- */
 .langs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-.lang {
-  display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 13px;
-  background: rgba(14,34,26,.6); border: 1px solid var(--line); box-shadow: var(--hi); font-size: 14.5px;
-  transition: transform .2s, border-color .2s;
-}
-.lang:hover { transform: translateY(-2px) rotateX(6deg); border-color: var(--line-strong); }
-.lang svg { width: 30px; height: 20px; border-radius: 3px; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 3px 8px rgba(0,0,0,.4); }
-.lang small { display: block; color: var(--faint); font-size: 11.5px; }
-
-/* ---------- self-host steps ---------- */
-.steps { grid-template-columns: repeat(3, 1fr); counter-reset: s; }
-.step { padding-top: 26px; }
-.step::before {
-  counter-increment: s; content: counter(s);
-  position: absolute; top: -18px; left: 22px; width: 38px; height: 38px; border-radius: 12px;
-  display: grid; place-items: center; font-weight: 700; color: #032619;
-  background: linear-gradient(160deg, #9af9d5, #2ee59d 50%, #0c9a64);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 8px 18px rgba(46,229,157,.3);
-}
-code, .mono { font-family: "Cascadia Code", "Cascadia Mono", Consolas, ui-monospace, monospace; font-size: .92em; }
-code { background: rgba(143,245,207,.08); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; color: var(--accent-2); }
+.lang { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 13px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); font-weight: 600; font-size: 15px; }
+.lang svg { width: 34px; height: 23px; border-radius: 4px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16); }
+.lang small { display: block; font-weight: 400; font-size: 12px; color: var(--faint); }
 
 /* ---------- download ---------- */
-.dl {
-  display: grid; grid-template-columns: 1.15fr 1fr; gap: 0; border-radius: 26px; overflow: hidden;
-  border: 1px solid var(--line-strong); box-shadow: var(--shadow), 0 0 80px rgba(46,229,157,.08);
-  background: linear-gradient(135deg, rgba(20,52,39,.9), rgba(8,22,17,.95));
-}
-.dl-main { padding: 40px; position: relative; }
-.dl-main h2 { margin-top: 0; }
-.dl-file { margin: 22px 0 18px; display: flex; gap: 16px; align-items: center; padding: 16px; border-radius: 16px; background: rgba(0,0,0,.22); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
-.dl-file img { width: 54px; height: 54px; filter: drop-shadow(0 6px 12px rgba(0,0,0,.4)); }
-.dl-file b { display: block; font-size: 15px; }
-.dl-file small { color: var(--muted); font-size: 13px; }
-.hash { margin-top: 16px; font-size: 12px; color: var(--faint); word-break: break-all; }
-.hash .mono { color: var(--muted); }
-.dl-side { padding: 40px; border-left: 1px solid var(--line); background: rgba(0,0,0,.14); }
-.dl-side h3 { margin: 0 0 12px; font-size: 15px; }
-.req { list-style: none; margin: 0 0 22px; padding: 0; font-size: 14px; color: var(--muted); }
-.req li { padding: 7px 0 7px 26px; position: relative; border-bottom: 1px solid var(--line); }
-.req li:last-child { border-bottom: 0; }
-.req li::before { content: ""; position: absolute; left: 2px; top: 13px; width: 12px; height: 7px; border-left: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg); }
-.alt-dl { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: rgba(14,34,26,.5); font-size: 14px; }
-.alt-dl small { display: block; color: var(--faint); font-size: 12px; }
+.dl { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); border-radius: 28px; overflow: hidden; border: 1px solid rgba(252, 238, 10, 0.3); background: linear-gradient(150deg, rgba(40, 24, 60, 0.9), rgba(12, 10, 24, 0.92)); box-shadow: 0 40px 120px -50px var(--y); position: relative; }
+.dl::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--grad); }
+.dl-main { padding: 44px; display: grid; gap: 20px; align-content: start; }
+.dl-main h2 { font-size: clamp(30px, 3.6vw, 46px); font-weight: 800; letter-spacing: -0.035em; }
+.dl-file { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); }
+.dl-file img { width: 44px; height: 44px; border-radius: 11px; }
+.dl-file b { display: block; font: 600 15px var(--mono); word-break: break-all; }
+.dl-file small { color: var(--muted); }
+.hash { font-size: 12.5px; color: var(--faint); }
+.hash .mono { color: var(--muted); word-break: break-all; }
+.dl-side { padding: 44px; border-left: 1px solid var(--line); background: rgba(0, 0, 0, 0.22); display: grid; gap: 16px; align-content: start; }
+.dl-side h3 { font-size: 19px; }
+.req { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; display: grid; gap: 6px; }
+.alt-dl { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 15px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04); }
+.alt-dl div { flex: 1; min-width: 0; }
+.alt-dl b { display: block; font-size: 15px; }
+.alt-dl small { color: var(--muted); font-size: 13px; }
 
-/* ---------- donate ---------- */
-.donate {
-  display: grid; grid-template-columns: auto 1fr auto; gap: 28px; align-items: center;
-  padding: 34px 38px; border-radius: 24px;
-  background: radial-gradient(600px 200px at 0% 0%, rgba(255,120,170,.13), transparent 70%), linear-gradient(180deg, rgba(20,40,32,.8), rgba(10,24,19,.85));
-  border: 1px solid rgba(255,134,177,.22); box-shadow: var(--shadow);
-}
-.heart3d { width: 84px; height: 84px; display: grid; place-items: center; border-radius: 24px; background: linear-gradient(160deg, #ffa3c4, #f2447f 55%, #b91c55); box-shadow: inset 0 2px 0 rgba(255,255,255,.45), inset 0 -4px 0 rgba(0,0,0,.2), 0 18px 34px rgba(242,68,127,.35); animation: beat 2.4s ease-in-out infinite; }
-.heart3d svg { width: 40px; height: 40px; color: #fff; filter: drop-shadow(0 3px 4px rgba(0,0,0,.25)); }
-@keyframes beat { 0%,100% { transform: scale(1) } 12% { transform: scale(1.07) } 24% { transform: scale(1) } 36% { transform: scale(1.05) } }
-.donate h3 { margin: 0 0 6px; font-size: 21px; }
-.donate p { margin: 0; color: var(--muted); }
-.donate .mail { margin-top: 8px; font-size: 13px; color: var(--faint); }
-.donate .mail button { background: none; border: 0; color: var(--accent-2); cursor: pointer; font: inherit; padding: 0 0 0 6px; }
-
-/* ---------- faq ---------- */
+/* ---------- donate / faq / footer ---------- */
+.donate { display: grid; grid-template-columns: 64px 1fr auto; gap: 22px; align-items: center; padding: 30px; border-radius: var(--r-lg); border: 1px solid rgba(255, 42, 109, 0.3); background: linear-gradient(120deg, rgba(255, 42, 109, 0.14), rgba(255, 255, 255, 0.03)); }
+.heart { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: linear-gradient(135deg, #ff7aa5, var(--p)); color: #fff; box-shadow: 0 16px 40px -14px var(--p); }
+.heart svg { width: 30px; height: 30px; }
+.donate h3 { font-size: 22px; margin-bottom: 6px; }
+.donate p { color: var(--muted); font-size: 15.5px; }
+.mail { margin-top: 8px; font-size: 14px; color: var(--muted); }
+.mail button { margin-left: 8px; padding: 2px 9px; border-radius: 7px; border: 1px solid var(--line-2); background: none; color: var(--text); font: 600 12.5px var(--font); cursor: pointer; }
 .faq { max-width: 860px; margin: 0 auto; display: grid; gap: 10px; }
-details { border-radius: 14px; border: 1px solid var(--line); background: rgba(14,34,26,.55); box-shadow: var(--hi); }
-summary { cursor: pointer; padding: 16px 20px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
-summary::-webkit-details-marker { display: none; }
-summary::after { content: "+"; color: var(--accent); font-size: 20px; line-height: 1; transition: transform .2s; }
-details[open] summary::after { transform: rotate(45deg); }
-details p { margin: 0; padding: 0 20px 18px; color: var(--muted); font-size: 14.5px; }
+.faq details { border-radius: 15px; border: 1px solid var(--line); background: var(--panel); overflow: hidden; }
+.faq details[open] { border-color: var(--line-2); }
+.faq summary { list-style: none; cursor: pointer; padding: 18px 52px 18px 22px; font: 650 16.5px var(--display); position: relative; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; position: absolute; right: 22px; top: 50%; transform: translateY(-50%); font-size: 24px; font-weight: 400; color: var(--y); transition: transform 0.2s; }
+.faq details[open] summary::after { transform: translateY(-50%) rotate(45deg); }
+.faq p { padding: 0 22px 20px; color: var(--muted); font-size: 15.5px; }
+footer { margin-top: 110px; padding: 34px 0 40px; border-top: 1px solid var(--line); font-size: 14px; color: var(--faint); }
+footer .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 26px; }
+footer .links { display: flex; gap: 20px; margin-left: auto; flex-wrap: wrap; }
+footer a { text-decoration: none; }
+footer a:hover { color: var(--text); }
+.toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 20px); padding: 11px 18px; border-radius: 12px; background: #1a1630; border: 1px solid var(--line-2); font-size: 14.5px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 80; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.lightbox { position: fixed; inset: 0; z-index: 90; display: none; place-items: center; padding: 24px; background: rgba(4, 3, 10, 0.9); backdrop-filter: blur(8px); cursor: zoom-out; }
+.lightbox.show { display: grid; }
+.lightbox img { max-width: min(1700px, 100%); max-height: 100%; border-radius: 12px; box-shadow: 0 40px 120px rgba(0, 0, 0, 0.8); }
 
-/* ---------- footer ---------- */
-footer { margin-top: 110px; border-top: 1px solid var(--line); padding: 34px 0 44px; background: rgba(0,0,0,.18); }
-footer .wrap { display: flex; flex-wrap: wrap; gap: 18px 32px; align-items: center; justify-content: space-between; font-size: 13.5px; color: var(--faint); }
-footer .links { display: flex; gap: 18px; flex-wrap: wrap; }
-footer .brand { font-size: 15px; }
-
-.reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
-.reveal.in { opacity: 1; transform: none; }
-.toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); opacity: 0; background: #0f2a20; border: 1px solid var(--line-strong); padding: 10px 16px; border-radius: 12px; font-size: 14px; transition: all .25s; box-shadow: var(--shadow); pointer-events: none; z-index: 100; }
-.toast.show { opacity: 1; transform: translateX(-50%); }
-
-/* ---------- showcase (new in 0.3.0) ---------- */
-.showcase { display: grid; grid-template-columns: 0.9fr 1.3fr; gap: 44px; align-items: center; margin-bottom: 56px; }
-.showcase.rev { grid-template-columns: 1.3fr 0.9fr; }
-.showcase.rev .show-text { order: 2; }
-.show-num { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; font-weight: 700; color: #032619; background: linear-gradient(160deg, #9af9d5, #2ee59d 50%, #0c9a64); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 8px 18px rgba(46,229,157,.3); }
-.show-text h3 { font-size: 24px; letter-spacing: -.4px; margin: 14px 0 10px; }
-.show-text p { color: var(--muted); margin: 0 0 12px; }
-.ticks { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; font-size: 14.5px; }
-.ticks li { position: relative; padding-left: 26px; }
-.ticks li::before { content: ""; position: absolute; left: 2px; top: 7px; width: 12px; height: 7px; border-left: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg); }
-.show-img { border-radius: 16px; overflow: hidden; border: 1px solid var(--line-strong); box-shadow: var(--shadow); background: #07140f; transform: perspective(1600px) rotateY(-5deg) rotateX(2deg); transition: transform .5s cubic-bezier(.2,.7,.2,1); }
-.showcase.rev .show-img { transform: perspective(1600px) rotateY(5deg) rotateX(2deg); }
-.show-img:hover, .showcase.rev .show-img:hover { transform: none; }
-@media (max-width: 1020px) { .showcase, .showcase.rev { grid-template-columns: 1fr; gap: 22px; } .showcase.rev .show-text { order: 0; } .show-img, .showcase.rev .show-img { transform: none; } }
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-  .reveal { opacity: 1; transform: none; }
-}
-@media (max-width: 1020px) {
-  .hero-grid, .gallery, .dl { grid-template-columns: 1fr; }
-  .features { grid-template-columns: repeat(2, 1fr); }
-  .langs { grid-template-columns: repeat(3, 1fr); }
-  .steps { grid-template-columns: 1fr; gap: 34px; }
-  .stats { grid-template-columns: repeat(3, 1fr); }
+/* ---------- responsive ---------- */
+@media (max-width: 1080px) {
+  .panel, .host, .gallery, .dl { grid-template-columns: 1fr; }
+  .panel { padding: 24px; gap: 26px; }
+  .panel-media { order: -1; }
   .dl-side { border-left: 0; border-top: 1px solid var(--line); }
-  .device { transform: rotateX(6deg); }
-  .nav nav a.hide-md { display: none; }
+  .card, .card.wide { grid-column: span 6; }
+  .langs { grid-template-columns: repeat(3, 1fr); }
+  .chip-float { display: none; }
+  .nav .hide-md { display: none; }
 }
-@media (max-width: 640px) {
-  .wrap { padding: 0 16px; }
+@media (max-width: 680px) {
+  body { font-size: 16px; }
+  section { padding-top: 78px; }
+  .hero { padding-top: 46px; }
   .nav nav { display: none; }
-  .nav .cta-mini { margin-left: auto; }
-  .hero { padding-top: 40px; }
-  .features, .themes { grid-template-columns: 1fr; }
-  .langs { grid-template-columns: repeat(2, 1fr); }
+  .nav .btn { margin-left: auto; }
   .stats { grid-template-columns: repeat(2, 1fr); }
-  .stats .stat:last-child { grid-column: span 2; }
-  .floating-card { display: none; }
-  .compare { overflow-x: auto; }
-  .compare table { min-width: 620px; }
-  .donate { grid-template-columns: 1fr; text-align: center; justify-items: center; padding: 28px 22px; }
-  .dl-main, .dl-side { padding: 26px 20px; }
+  .stat { border-left: 0; border-top: 1px solid var(--line); }
+  .stat:nth-child(-n + 2) { border-top: 0; }
+  .stat:nth-child(even) { border-left: 1px solid var(--line); }
+  .stat:last-child { grid-column: span 2; border-left: 0; }
+  .card, .card.wide { grid-column: span 12; }
+  .themes { grid-template-columns: 1fr 1fr; }
+  .langs { grid-template-columns: repeat(2, 1fr); }
+  .dl-main, .dl-side { padding: 26px; }
+  .donate { grid-template-columns: 1fr; text-align: left; }
   .honest { grid-template-columns: 1fr; }
+  .thumbs button { flex-basis: 96px; }
+  .win-bar i { display: none; }
+  .btn { height: 48px; }
+  .hero-actions .btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .backdrop::before, .chip-float { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .win { transform: none; }
 }
 </style>
 </head>
 <body>
+<div class="backdrop" aria-hidden="true"></div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -407,68 +326,210 @@ footer .brand { font-size: 15px; }
     <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14.5h4"/></symbol>
     <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
     <symbol id="i-screen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+    <symbol id="i-remote" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/><circle cx="12" cy="10" r="2.2"/></symbol>
     <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
     <symbol id="i-feather" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 4.8a6 6 0 0 0-8.5 0L5 11.5V19h7.5l6.7-6.7a6 6 0 0 0 1-7.5z"/><path d="M16 8 2 22M17.5 15H9"/></symbol>
     <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 20a6.5 6.5 0 0 0-3-5.5"/></symbol>
-    <symbol id="i-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.5-1.4-1.8-1.4-3.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-3.9-4-7-9-7z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></symbol>
-    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9s-1.3 6.2-3.8 9c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z"/></symbol>
     <symbol id="i-heart" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.7 4.5c2.1 0 3.6 1.2 5.3 3 1.7-1.8 3.2-3 5.3-3 3.7 0 5.8 3.8 4.3 7.2C19.5 16.4 12 21 12 21z"/></symbol>
-    <symbol id="i-heart-o" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.3-9-8.7C1.6 8.1 3.6 4.5 7 4.5c2 0 3.4 1.1 5 2.8 1.6-1.7 3-2.8 5-2.8 3.4 0 5.4 3.6 4 6.8-2 4.4-9 8.7-9 8.7z"/></symbol>
     <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol>
     <symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+    <symbol id="i-scissors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2.5"/><path d="M7 3v18M17 3v18M2 8h5M2 12h20M2 16h5M17 8h5M17 16h5"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
   </defs>
 </svg>
 
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="34" height="34">NexUs</a>
+    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="34" height="34"><span>Nex<b>Us</b></span></a>
     <nav aria-label="Hauptnavigation">
+      <a href="#neu">Neu in 0.10</a>
       <a href="#funktionen">Funktionen</a>
-      <a href="#vergleich">Vergleich mit Discord</a>
-      <a href="#neu" class="hide-md">Neu</a>
+      <a href="#hosten" class="hide-md">Selbst hosten</a>
+      <a href="#vergleich">Vergleich</a>
       <a href="#designs" class="hide-md">Designs</a>
-      <a href="#selbst-hosten" class="hide-md">Selbst hosten</a>
       <a href="#faq" class="hide-md">FAQ</a>
     </nav>
-    <a class="btn small primary cta-mini" href="#download"><svg><use href="#i-download"/></svg>Download</a>
+    <a class="btn small primary" href="#download"><svg><use href="#i-download"/></svg>Download</a>
   </div>
 </header>
 
 <main id="top">
-  <section class="hero" style="padding-top:72px">
-    <div class="wrap hero-grid">
-      <div>
-        <div class="logo3d"><img src="assets/logo.png" alt="NexUs Logo" width="120" height="120"></div>
-        <span class="eyebrow"><span class="dot"></span>Neu in 0.9.1: reparierte Soundboard-Sounds, Fernsteuerung nur bei Vollbild-Freigabe, aufgeräumtes Soundboard · kostenlos · MIT</span>
-        <h1>Deine Community.<br><em>Dein Server.</em></h1>
-        <p class="lead">NexUs ist eine schlanke Alternative zu Discord für Windows: Text, Sprache, Video und Bildschirmübertragung – auf einem Server, der dir gehört. Per Klick direkt in der App gestartet. Keine Cloud, keine Werbung, kein Tracking.</p>
-        <div class="hero-actions">
-          <a class="btn primary" href="download/NexUs_0.9.1_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
-          <a class="btn" href="#vergleich">Warum nicht Discord?</a>
-        </div>
-        <div class="hero-meta">
-          <span><svg><use href="#i-check"/></svg>Installer ca. <b data-size>5,0&nbsp;MB</b></span>
-          <span><svg><use href="#i-check"/></svg>Windows 10 &amp; 11 (x64)</span>
-          <span><svg><use href="#i-check"/></svg>Keine Registrierung bei Dritten</span>
-        </div>
+  <section class="hero">
+    <div class="wrap">
+      <a class="pill" href="#neu"><b>NEU · 0.10</b>Fernsteuerung mit F8, Direktversand ohne Limit, verschlüsselte DMs →</a>
+      <h1>Deine Community. <em>Dein Server.</em></h1>
+      <p class="lead">NexUs ist die schlanke Alternative zu Discord für Windows: Text, Sprache, Video und Bildschirm – auf einem Server, der dir gehört. Per Klick in der App gestartet. Keine Cloud, keine Werbung, kein Tracking.</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="download/NexUs_0.10.0_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
+        <a class="btn" href="#neu">Was ist neu?</a>
       </div>
-      <div class="stage">
-        <div class="device" id="device">
-          <img src="assets/shots/desk-emerald.jpg" alt="NexUs Desktop-App im Design Smaragd mit eigener Titelleiste" width="1770" height="1140">
-        </div>
-        <div class="floating-card fc1"><span class="ic"><svg><use href="#i-mic"/></svg></span><div><b>Sprachverbindung</b><small>Opus · Rauschunterdrückung</small></div></div>
-        <div class="floating-card fc2"><span class="ic"><svg><use href="#i-lock"/></svg></span><div><b>TLS-verschlüsselt</b><small>Zertifikat per Fingerabdruck geprüft</small></div></div>
+      <div class="hero-meta">
+        <span><svg><use href="#i-check"/></svg>Installer nur <b data-size>7,7&nbsp;MB</b></span>
+        <span><svg><use href="#i-check"/></svg>Windows 10 &amp; 11 (x64)</span>
+        <span><svg><use href="#i-check"/></svg>Kostenlos · MIT-Lizenz</span>
+        <span><svg><use href="#i-check"/></svg>Kein Konto bei Dritten</span>
       </div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="win" id="win">
+        <div class="win-bar"><img src="assets/logo.png" alt="" width="16" height="16">NexUs<i><span>—</span><span>▢</span><span>✕</span></i></div>
+        <img class="shot" src="assets/shots/rc-control.jpg" alt="NexUs im Cyberpunk-Design: Ein Teilnehmer steuert den geteilten Bildschirm einer Freundin; oben die Leiste „Du steuerst Lena“ mit der Taste F8" width="2040" height="1230" fetchpriority="high">
+      </div>
+      <div class="chip-float cf1"><span class="ic">F8</span><div><b>Eine Taste wechselt</b><small>dein PC ⇄ ferner Bildschirm</small></div></div>
+      <div class="chip-float cf2"><span class="ic"><svg><use href="#i-lock"/></svg></span><div><b>Ende-zu-Ende</b><small>verschlüsselte Direktnachrichten</small></div></div>
+      <div class="chip-float cf3"><span class="ic"><svg><use href="#i-bolt"/></svg></span><div><b>18,4 GB? Kein Problem.</b><small>Direktversand ohne Upload-Limit</small></div></div>
     </div>
     <div class="wrap">
       <div class="stats reveal">
-        <div class="stat"><b>≈ 7 MB</b><span>Installer</span></div>
+        <div class="stat"><b>≈ <span data-size>7,7</span> MB</b><span>Installer</span></div>
         <div class="stat"><b>14 MB</b><span>RAM des Servers im Leerlauf</span></div>
-        <div class="stat"><b>15</b><span>Sprachen, per Flagge umschaltbar</span></div>
-        <div class="stat"><b>10</b><span>Designs in 3D-Optik</span></div>
-        <div class="stat"><b>0</b><span>Cloud-Dienste, Werbung, Tracker</span></div>
+        <div class="stat"><b>20</b><span>Designs</span></div>
+        <div class="stat"><b>15</b><span>Sprachen</span></div>
+        <div class="stat"><b>0</b><span>Cloud, Werbung, Tracker</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="neu">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="kicker">Neu in Version 0.10</div>
+        <h2>Zusammen am selben Bildschirm – als würdet ihr nebeneinandersitzen</h2>
+        <p>Sechs große Neuerungen. Alles läuft direkt zwischen euren Rechnern; der Server vermittelt nur.</p>
+      </div>
+
+      <div class="spot" id="spot">
+        <div class="spot-tabs reveal" role="tablist" aria-label="Neue Funktionen" hidden>
+          <button role="tab" type="button" data-k="rc"><svg><use href="#i-remote"/></svg>Fernsteuerung</button>
+          <button role="tab" type="button" data-k="ink"><svg><use href="#i-pen"/></svg>Zeichnen &amp; Zeigen</button>
+          <button role="tab" type="button" data-k="xfer"><svg><use href="#i-bolt"/></svg>Direktversand</button>
+          <button role="tab" type="button" data-k="e2e"><svg><use href="#i-lock"/></svg>Verschlüsselte DMs</button>
+          <button role="tab" type="button" data-k="clip"><svg><use href="#i-scissors"/></svg>Sofort-Clip</button>
+          <button role="tab" type="button" data-k="watch"><svg><use href="#i-film"/></svg>Gemeinsam schauen</button>
+        </div>
+
+        <article class="panel reveal" data-k="rc" style="--glow: rgba(252, 238, 10, 0.26)">
+          <div class="panel-text">
+            <div class="panel-num">01 · FERNSTEUERUNG</div>
+            <h3>Hilf am fremden PC – mit einer einzigen Taste</h3>
+            <p>Wer seinen ganzen Bildschirm teilt, kann die Steuerung freigeben. Du übernimmst Maus und Tastatur, als säßest du davor – und springst mit <kbd>F8</kbd> jederzeit zurück an deinen eigenen PC.</p>
+            <ul class="ticks">
+              <li><kbd>F8</kbd> wechselt zwischen deinem PC und dem Stream – auch wenn gerade ein anderes Programm im Vordergrund ist</li>
+              <li>Passwort optional und verdeckt eingegeben – ohne Passwort bestätigt der Gastgeber jede Anfrage selbst</li>
+              <li>Tasten kommen als echte Hardware-Tasten an, die Maus landet pixelgenau auf dem geteilten Monitor</li>
+              <li>Spielmodus mit relativer Maus, Controller-Unterstützung, Menü für Alt+Tab &amp; Co.</li>
+              <li>Der Gastgeber beendet alles sofort – ebenfalls mit&nbsp;<kbd>F8</kbd></li>
+            </ul>
+            <div class="honest-line">Ehrlich: automatisch geprüft auf einem PC inklusive echter Zeigerbewegung – zwischen zwei getrennten Rechnern noch nicht im Testlabor gelaufen.</div>
+          </div>
+          <div class="panel-media">
+            <a class="frame" href="assets/shots/rc-control.jpg"><img src="assets/shots/rc-control.jpg" alt="Fernsteuerung: Leiste „Du steuerst Lena“ mit F8-Taste über dem geteilten Bildschirm" width="2040" height="1230" loading="lazy"></a>
+            <div class="thumbs">
+              <button type="button" class="on" data-src="assets/shots/rc-control.jpg" aria-label="Ansicht: steuern"><img src="assets/shots/rc-control.jpg" alt="" width="2040" height="1230" loading="lazy"></button>
+              <button type="button" data-src="assets/shots/rc-ask.jpg" aria-label="Ansicht: Anfrage bestätigen"><img src="assets/shots/rc-ask.jpg" alt="" width="2040" height="1230" loading="lazy"></button>
+              <button type="button" data-src="assets/shots/rc-menu.jpg" aria-label="Ansicht: Passwort festlegen"><img src="assets/shots/rc-menu.jpg" alt="" width="2040" height="1230" loading="lazy"></button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel reveal" data-k="ink" style="--glow: rgba(255, 42, 109, 0.32)">
+          <div class="panel-text">
+            <div class="panel-num">02 · ZEICHNEN &amp; ZEIGEN</div>
+            <h3>„Klick mal da“ war gestern</h3>
+            <p>Jeder im Anruf kann direkt auf einem Stream einkreisen, unterstreichen und mit dem Laserpointer zeigen. Alle sehen es sofort – und beim Teilenden erscheinen die Markierungen sogar direkt auf dem eigenen Desktop.</p>
+            <ul class="ticks">
+              <li>Stift in sechs Farben, Striche verblassen nach ein paar Sekunden von selbst</li>
+              <li>Laserpointer mit Namensschild – man sieht, wer gerade zeigt</li>
+              <li>Durchsichtiges Overlay auf dem echten Bildschirm des Teilenden, ohne dass es im Stream doppelt auftaucht</li>
+              <li>Wer nicht bemalt werden möchte, schaltet es mit einem Klick ab</li>
+            </ul>
+          </div>
+          <div class="panel-media">
+            <a class="frame" href="assets/shots/ink.jpg"><img src="assets/shots/ink.jpg" alt="Auf einen geteilten Bildschirm gezeichnete Markierungen und ein Laserpointer mit Namen" width="2040" height="1230" loading="lazy"></a>
+          </div>
+        </article>
+
+        <article class="panel reveal" data-k="xfer" style="--glow: rgba(5, 217, 232, 0.3)">
+          <div class="panel-text">
+            <div class="panel-num">03 · DIREKTVERSAND</div>
+            <h3>Dateien ohne Größenlimit</h3>
+            <p>Große Dateien gehen ohne Umweg von Rechner zu Rechner – verschlüsselt, ohne Upload auf den Server und ohne dessen Limit. Egal ob 50 MB oder 50 GB.</p>
+            <ul class="ticks">
+              <li>Wird in Direktnachrichten automatisch angeboten, sobald eine Datei zu groß für den Server ist</li>
+              <li>Der Empfänger nimmt an und wählt den Speicherort – erst dann fließen Daten</li>
+              <li>Fortschritt, Tempo und Restzeit live; jederzeit abbrechbar</li>
+              <li>Der Server speichert nichts davon</li>
+            </ul>
+            <div class="honest-line">Ehrlich: Beide müssen währenddessen online sein. Getestet mit kleineren Dateien samt Prüfsumme – Übertragungen im zweistelligen GB-Bereich sind noch nicht gemessen.</div>
+          </div>
+          <div class="panel-media">
+            <a class="frame" href="assets/shots/dm-e2e.jpg"><img src="assets/shots/dm-e2e.jpg" alt="Direktnachricht mit laufender Direktübertragung einer 18,4 GB großen Datei" width="2040" height="1230" loading="lazy"></a>
+            <div class="thumbs">
+              <button type="button" class="on" data-src="assets/shots/dm-e2e.jpg" aria-label="Ansicht: senden"><img src="assets/shots/dm-e2e.jpg" alt="" width="2040" height="1230" loading="lazy"></button>
+              <button type="button" data-src="assets/shots/transfer-offer.jpg" aria-label="Ansicht: annehmen"><img src="assets/shots/transfer-offer.jpg" alt="" width="2040" height="1230" loading="lazy"></button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel reveal" data-k="e2e" style="--glow: rgba(61, 242, 164, 0.26)">
+          <div class="panel-text">
+            <div class="panel-num">04 · VERSCHLÜSSELTE DMS</div>
+            <h3>Privat heißt: nicht mal der Server liest mit</h3>
+            <p>Ein Klick auf das Schloss, und eure Direktnachrichten sind Ende-zu-Ende verschlüsselt. Der Schlüssel bleibt auf deinem Gerät – der Server sieht nur Zeichensalat.</p>
+            <ul class="ticks">
+              <li>Pro Unterhaltung einschaltbar, die Gegenseite zieht automatisch mit</li>
+              <li>Sicherheitsnummer zum Vergleichen, Warnung bei Schlüsselwechsel</li>
+              <li>Schlüsselsicherung mit Kennwort für ein neues Gerät</li>
+              <li>Moderne Standards: ECDH P-256 und AES-256-GCM</li>
+            </ul>
+            <div class="honest-line">Ehrlich: Anhänge, Umfragen und Metadaten sind nicht verschlüsselt, die Schlüssel sind langlebig (keine „Forward Secrecy“) und die Kryptografie wurde nicht extern geprüft.</div>
+          </div>
+          <div class="panel-media">
+            <a class="frame" href="assets/shots/e2e-dialog.jpg"><img src="assets/shots/e2e-dialog.jpg" alt="Dialog Ende-zu-Ende-Verschlüsselung mit Sicherheitsnummer und Schlüsselsicherung" width="2040" height="1230" loading="lazy"></a>
+            <div class="thumbs">
+              <button type="button" class="on" data-src="assets/shots/e2e-dialog.jpg" aria-label="Ansicht: Einstellungen"><img src="assets/shots/e2e-dialog.jpg" alt="" width="2040" height="1230" loading="lazy"></button>
+              <button type="button" data-src="assets/shots/dm-e2e.jpg" aria-label="Ansicht: Chat"><img src="assets/shots/dm-e2e.jpg" alt="" width="2040" height="1230" loading="lazy"></button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel reveal" data-k="clip" style="--glow: rgba(252, 238, 10, 0.24)">
+          <div class="panel-text">
+            <div class="panel-num">05 · SOFORT-CLIP</div>
+            <h3>Der Moment ist schon vorbei? Egal.</h3>
+            <p><kbd>F9</kbd> drücken – und die letzten Sekunden des Streams liegen als Video vor dir: speichern oder direkt in den Chat stellen.</p>
+            <ul class="ticks">
+              <li>15 bis 120 Sekunden rückwirkend, mit Stream-Ton und auf Wunsch den Stimmen</li>
+              <li>Funktioniert für deinen eigenen und für fremde Streams</li>
+              <li>Der Puffer läuft nur auf deinem Gerät – nichts verlässt den PC, bis du es willst</li>
+              <li>Fair: Die anderen sehen einen Hinweis, wenn ein Clip mit Stimmen entsteht</li>
+            </ul>
+          </div>
+          <div class="panel-media">
+            <a class="frame" href="assets/shots/clip.jpg"><img src="assets/shots/clip.jpg" alt="Dialog „Dein Clip“ mit Videovorschau, Speichern und Teilen im Chat" width="2040" height="1230" loading="lazy"></a>
+          </div>
+        </article>
+
+        <article class="panel reveal" data-k="watch" style="--glow: rgba(180, 107, 255, 0.32)">
+          <div class="panel-text">
+            <div class="panel-num">06 · GEMEINSAM SCHAUEN</div>
+            <h3>Filmabend ohne Ruckeln</h3>
+            <p>YouTube-Link einfügen, und alle im Sprachkanal schauen synchron – jeder spielt das Video selbst ab, in voller Qualität. Pause und Spulen gelten für alle.</p>
+            <ul class="ticks">
+              <li>Wer später dazukommt, steigt an der richtigen Stelle ein</li>
+              <li>Auch direkte Video-Adressen (https://…) funktionieren</li>
+              <li>Eigene Videodatei? Wird als Stream für alle abgespielt – niemand sonst braucht die Datei</li>
+            </ul>
+            <div class="honest-line">Ehrlich: Eine lokale Datei wird wie eine Bildschirmübertragung gesendet, also neu komprimiert. Bei YouTube sieht der Anbieter die IP-Adresse jedes Zuschauers.</div>
+          </div>
+          <div class="panel-media">
+            <a class="frame" href="assets/shots/watch-menu.jpg"><img src="assets/shots/watch-menu.jpg" alt="Menü „Gemeinsam schauen“ mit erkanntem YouTube-Link" width="2040" height="1230" loading="lazy"></a>
+          </div>
+        </article>
       </div>
     </div>
   </section>
@@ -480,60 +541,35 @@ footer .brand { font-size: 15px; }
         <h2>Alles, was eine Gruppe braucht – nichts, was sie ausspioniert</h2>
         <p>Für Freundeskreise, Gaming-Clans, Vereine und kleine Teams, die ihre Gespräche selbst in der Hand behalten wollen.</p>
       </div>
-      <div class="grid features">
-        <div class="card reveal"><div class="ficon"><svg><use href="#i-chat"/></svg></div><h3>Text-Chat mit Komfort</h3><p>Sprachnachrichten mit Wellenform, Kanäle und Kategorien, Antworten, Reaktionen, Umfragen, Weiterleiten, angeheftete Nachrichten, Markdown, Spoiler, Dateien, Slow-Mode und Volltextsuche.</p></div>
-        <div class="card reveal"><div class="ficon"><svg><use href="#i-mic"/></svg></div><h3>Sprache &amp; Video</h3><p>Sprachkanäle und Direktanrufe mit Opus, automatischer Eingabeempfindlichkeit, Rauschunterdrückung, Reaktionen und Hand heben im Anruf, Push-to-talk – auch global im Hintergrund.</p></div>
-        <div class="card reveal"><div class="ficon"><svg><use href="#i-screen"/></svg></div><h3>Bildschirm teilen</h3><p>Vor dem Start Auflösung (720p bis 4K) und Bildrate (5–60 FPS) wählen, optional mit Systemton – ohne Abo-Grenze.</p></div>
-        <div class="card reveal"><div class="ficon"><svg><use href="#i-server"/></svg></div><h3>Eigene Server per Klick</h3><p>Der Server steckt in der App – auch mehrere gleichzeitig, jeder auf eigenen Ports und mit eigenem dauerhaften Einladungslink.</p></div>
-        <div class="card reveal"><div class="ficon"><svg><use href="#i-shield"/></svg></div><h3>Sicher ab Werk</h3><p>TLS-Verschlüsselung, Zertifikatsprüfung per Fingerabdruck, Argon2-Passwörter, Rate-Limits, Audit-Log und Einladungs-Registrierung.</p></div>
-        <div class="card reveal"><div class="ficon"><svg><use href="#i-users"/></svg></div><h3>Rollen &amp; Moderation</h3><p>Rechte pro Rolle und Kanal, Auszeit, Kicken, Bann, im Sprachkanal stummschalten, verschieben oder trennen – alles per Rechtsklick auf die Person.</p></div>
-        <div class="card reveal"><div class="ficon"><svg><use href="#i-feather"/></svg></div><h3>Federleicht</h3><p>Rust und Tauri statt Electron: ≈ 7 MB Installer (inkl. Soundboard-Aufnahmen), Start in unter einer Sekunde, der Server braucht im Leerlauf rund 14 MB RAM.</p></div>
-        <div class="card reveal"><div class="ficon"><svg><use href="#i-bolt"/></svg></div><h3>Durchdacht im Alltag</h3><p>Soundboard mit 36 Sounds, Fernsteuerung mit Passwort, Bildschirm + Kamera gleichzeitig, Profil-Banner, 19 Designs (5 animiert) mit eigener Akzentfarbe, „Für später“ als Selbst-DM, private Notizen, Schnellwechsler (Strg+K), Freunde &amp; Direktanrufe, Autostart und Tray.</p></div>
+      <div class="bento">
+        <div class="card wide reveal"><div class="ficon"><svg><use href="#i-chat"/></svg></div><h3>Text-Chat mit Komfort</h3><p>Kanäle und Kategorien, Antworten, Reaktionen, Umfragen, Weiterleiten, angeheftete Nachrichten, Markdown, Spoiler, Dateien, Sprachnachrichten mit Wellenform, Slow-Mode und Volltextsuche.</p></div>
+        <div class="card wide reveal"><div class="ficon"><svg><use href="#i-mic"/></svg></div><h3>Sprache &amp; Video</h3><p>Sprachkanäle und Direktanrufe mit Opus, automatischer Eingabeempfindlichkeit und Rauschunterdrückung. Reaktionen und Hand heben im Anruf, Push-to-talk – auch global im Hintergrund.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-screen"/></svg></div><h3>Bildschirm teilen</h3><p>Auflösung (720p bis 4K) und Bildrate (5–60 FPS) vor dem Start wählen, mit Systemton, Kamera als Bild-im-Bild – ohne Abo-Grenze.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-server"/></svg></div><h3>Eigene Server per Klick</h3><p>Der Server steckt in der App – auch mehrere gleichzeitig. Sie starten automatisch mit dem Programm, jeder mit eigenem dauerhaften Einladungslink.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-shield"/></svg></div><h3>Sicher ab Werk</h3><p>TLS-Verschlüsselung, Zertifikatsprüfung per Fingerabdruck, Argon2-Passwörter, Rate-Limits, Audit-Log und Registrierung nur mit Einladung.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-users"/></svg></div><h3>Rollen &amp; Moderation</h3><p>Rechte pro Rolle und Kanal, Auszeit, Kicken, Bann, im Sprachkanal stummschalten, verschieben oder trennen – per Rechtsklick auf die Person.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-feather"/></svg></div><h3>Federleicht</h3><p>Rust und Tauri statt Electron: winziger Installer, Start in unter einer Sekunde, der Server braucht im Leerlauf rund 14 MB RAM.</p></div>
+        <div class="card reveal"><div class="ficon"><svg><use href="#i-music"/></svg></div><h3>Durchdacht im Alltag</h3><p>Soundboard mit 36 Sounds, Profil-Banner, private Notizen, „Für später“, Schnellwechsler (Strg+K), Freunde &amp; Direktanrufe, Autostart und Tray.</p></div>
       </div>
     </div>
   </section>
 
-  <section id="neu">
+  <section id="hosten">
     <div class="wrap">
       <div class="sec-head reveal">
-        <div class="kicker">Neu in 0.4.0 &amp; 0.3.0</div>
-        <h2>Ein neuer Look – und Hosten so einfach wie Chatten</h2>
-        <p>Farbverläufe durch die ganze App, eine Titelleiste im selben Design, dezente Sounds und ein neues Logo. Dazu die Hosting-Zentrale: Name eingeben, „Erstellen &amp; starten“, Link kopieren – fertig.</p>
+        <div class="kicker">Selbst hosten</div>
+        <h2>In drei Schritten zum eigenen Server</h2>
+        <p>Kein Terminal, keine Konfigurationsdateien – es sei denn, du willst.</p>
       </div>
-      <div class="showcase rev reveal">
-        <div class="show-text">
-          <span class="show-num">✦</span>
-          <h3>Designs mit Tiefe und Farbverlauf</h3>
-          <p>Alle 19 Designs legen einen satten Verlauf hinter die ganze Oberfläche – fünf davon sind lebendig animiert (Matrix, Synthwave, Lava, Hologramm, Prisma). Seitenleiste, Chat und Mitgliederliste schweben halbtransparent darüber, Fenster und Menüs bekommen einen Glas-Effekt. Selbst die Titelleiste ist Teil des Designs.</p>
-          <ul class="ticks"><li>Eigene Titelleiste statt grauer Windows-Leiste</li><li>Dezente, freundliche Sounds beim Beitreten, Verlassen und Wechseln</li><li>Neues Logo: das mechanische N</li></ul>
+      <div class="host">
+        <div class="steps">
+          <div class="step reveal"><div><h3>Server erstellen</h3><p>NexUs installieren, die Server-Schaltfläche unten links anklicken, Namen eingeben, „Erstellen &amp; starten“. Ports, Verschlüsselung und Autostart sind voreingestellt.</p></div></div>
+          <div class="step reveal"><div><h3>Besitzer werden</h3><p>Passwort für dein Inhaberkonto festlegen. Bei „Freunde einladen“ gibt NexUs die Windows-Firewall frei und erstellt einen Internet-Link – auch ohne öffentliche IP und ohne Router-Einstellungen.</p></div></div>
+          <div class="step reveal"><div><h3>Link teilen</h3><p>Den dauerhaften Einladungslink kopieren und verschicken. Ab jetzt startet dein Server von selbst, sobald du NexUs öffnest – abschaltbar in den Einstellungen.</p></div></div>
         </div>
-        <div class="show-img"><img src="assets/shots/desk-sunset.jpg" alt="NexUs im Design Sonnenuntergang mit Farbverlauf" width="1770" height="1140" loading="lazy"></div>
+        <a class="frame reveal" href="assets/shots/host-two.jpg"><img src="assets/shots/host-two.jpg" alt="Hosting-Zentrale mit zwei eigenen Servern und Einladungslink" width="1770" height="1140" loading="lazy"></a>
       </div>
-      <div class="showcase reveal">
-        <div class="show-text">
-          <span class="show-num">1</span>
-          <h3>Mehrere Server, null Konfiguration</h3>
-          <p>Jeder Server bekommt automatisch freie Ports, einen eigenen Datenordner, TLS-Verschlüsselung und Registrierung nur mit Einladung. Er startet mit NexUs und läuft im Hintergrund weiter.</p>
-          <ul class="ticks"><li>Prominenter, dauerhafter Einladungslink je Server</li><li>„Nur dieser PC“ oder „Freunde einladen“ per Klick</li><li>Starten, stoppen, umbenennen, entfernen an einem Ort</li></ul>
-        </div>
-        <div class="show-img"><img src="assets/shots/host-two.jpg" alt="NexUs Hosting-Zentrale mit zwei Servern und Einladungslink" width="1770" height="1140" loading="lazy"></div>
-      </div>
-      <div class="showcase rev reveal">
-        <div class="show-text">
-          <span class="show-num">2</span>
-          <h3>Bildschirm in deiner Qualität</h3>
-          <p>Bevor die Übertragung startet, wählst du in einem kompakten Menü Schnellwahl, Auflösung, Bildrate, „Optimiert für Text oder Bewegung“ und Bitrate. NexUs zeigt dir, wie viel Upload du bei deiner Zuschauerzahl brauchst – und du kannst alles live nachjustieren.</p>
-        </div>
-        <div class="show-img"><img src="assets/shots/screen-menu.jpg" alt="Menü für die Bildschirmübertragung mit Auflösung und Bildrate" width="2040" height="1290" loading="lazy"></div>
-      </div>
-      <div class="showcase reveal">
-        <div class="show-text">
-          <span class="show-num">3</span>
-          <h3>Serverbilder ohne Verzerrung</h3>
-          <p>Server- und Profilbilder schneidest du vor dem Hochladen quadratisch zu: Ausschnitt verschieben, zoomen, Vorschau prüfen. Gespeichert wird ein sauberes 512×512-Bild.</p>
-        </div>
-        <div class="show-img"><img src="assets/shots/crop.jpg" alt="Dialog zum quadratischen Zuschneiden eines Serverbilds" width="2040" height="1290" loading="lazy"></div>
-      </div>
+      <p class="note reveal">Profis nutzen den Headless-Server <code>nexustalk-server</code> mit <code>server.toml</code> – ideal für einen dauerhaft laufenden Rechner oder vServer.</p>
     </div>
   </section>
 
@@ -552,8 +588,10 @@ footer .brand { font-size: 15px; }
             <tr><td>Konto</td><td class="nx"><span class="y">✓</span>Pro Server, ohne E-Mail oder Telefonnummer</td><td><span class="m">!</span>Zentrales Konto, teils Telefon-Verifizierung</td></tr>
             <tr><td>Werbung &amp; Upselling</td><td class="nx"><span class="y">✓</span>Keine – keine Abo-Stufen</td><td><span class="m">!</span>Nitro-Abo, Shop und Hinweise in der App</td></tr>
             <tr><td>Tracking / Telemetrie</td><td class="nx"><span class="y">✓</span>Keine – die App sendet nichts nach Hause</td><td><span class="n">✕</span>Umfangreiche Nutzungsanalysen</td></tr>
+            <tr><td>Dateien senden</td><td class="nx"><span class="y">✓</span>Direkt von PC zu PC, ohne Größenlimit</td><td><span class="m">!</span>Upload-Limit, größere Dateien nur mit Nitro</td></tr>
+            <tr><td>Verschlüsselte Textnachrichten</td><td class="nx"><span class="y">✓</span>Ende-zu-Ende für Direktnachrichten einschaltbar</td><td><span class="n">✕</span>Texte nicht Ende-zu-Ende verschlüsselt</td></tr>
+            <tr><td>Fernsteuerung</td><td class="nx"><span class="y">✓</span>Eingebaut, mit Passwort oder Bestätigung</td><td><span class="n">✕</span>Nicht vorhanden</td></tr>
             <tr><td>Bildschirmübertragung</td><td class="nx"><span class="y">✓</span>Bis 1440p / 60 FPS für alle</td><td><span class="m">!</span>Höhere Qualität nur mit Nitro</td></tr>
-            <tr><td>Größe &amp; Ressourcen</td><td class="nx"><span class="y">✓</span>≈ 7 MB Installer (Rust + WebView2)</td><td><span class="m">!</span>Electron-App, deutlich größer</td></tr>
             <tr><td>Funktioniert ohne Internet</td><td class="nx"><span class="y">✓</span>Ja – im LAN, auf LAN-Partys, im Verein</td><td><span class="n">✕</span>Nein, immer über Discords Server</td></tr>
             <tr><td>Regeln &amp; Moderation</td><td class="nx"><span class="y">✓</span>Du bestimmst – niemand sperrt deinen Server</td><td><span class="m">!</span>Nutzungsbedingungen der Plattform gelten</td></tr>
             <tr><td>Quelloffen</td><td class="nx"><span class="y">✓</span>MIT-Lizenz, nachprüfbar</td><td><span class="n">✕</span>Proprietär</td></tr>
@@ -568,6 +606,7 @@ footer .brand { font-size: 15px; }
             <li>Kein riesiges Ökosystem: keine Bots, keine Server-Suche, keine Mobil-App (bisher nur Windows-Client).</li>
             <li>Sprachkanäle verbinden Teilnehmer direkt (Mesh) – ideal bis etwa 8 Personen mit Video; sehr große Kanäle sind nicht das Ziel.</li>
             <li>Einladungen über das Internet laufen ohne Router-Einstellungen über einen kostenlosen öffentlichen Tunnel (bore.pub) – ein Dienst eines Dritten ohne Verfügbarkeitsgarantie. Wer das nicht möchte, gibt Ports frei oder mietet einen Server.</li>
+            <li>Die Neuerungen aus 0.10 sind frisch: gründlich automatisch getestet, aber noch ohne Langzeiterfahrung vieler Nutzer.</li>
           </ul>
         </div>
       </div>
@@ -578,14 +617,14 @@ footer .brand { font-size: 15px; }
     <div class="wrap">
       <div class="sec-head reveal">
         <div class="kicker">Designs</div>
-        <h2>19 Designs, eine Handschrift</h2>
-        <p>Farbverläufe, Tiefe und Licht: Jedes Design hat einen eigenen Verlauf hinter der ganzen App, eigene Farben, Schatten und Glanzkanten – vom grünen Standard „Smaragd“ bis zum OLED-tiefen „Obsidian“.</p>
+        <h2>20 Designs – von ruhig bis Cyberpunk</h2>
+        <p>Sechs neue, erwachsene Designs wie Graphit, Fjord und Mono, dazu Klassiker wie Smaragd und Cyberpunk. Farbe markiert, was wichtig ist – der Rest hält sich zurück.</p>
       </div>
       <div class="gallery reveal">
-        <div class="shot-main"><img id="shot" src="assets/shots/matrix-de-chat.jpg" alt="NexUs Vorschau" width="2040" height="1230" loading="lazy"></div>
+        <a class="frame" id="shot-link" href="assets/shots/cyber-de-chat.jpg"><img id="shot" src="assets/shots/cyber-de-chat.jpg" alt="NexUs Vorschau im gewählten Design" width="2040" height="1230" loading="lazy"></a>
         <div>
           <div class="themes" id="themes"></div>
-          <p class="gal-note">Tipp: In den Einstellungen kann NexUs automatisch zwischen Hell und Dunkel wechseln – passend zu Windows.</p>
+          <p class="gal-note">Dazu eine eigene Akzentfarbe für jedes Design – und auf Wunsch wechselt NexUs automatisch zwischen Hell und Dunkel, passend zu Windows.</p>
         </div>
       </div>
     </div>
@@ -596,25 +635,9 @@ footer .brand { font-size: 15px; }
       <div class="sec-head reveal">
         <div class="kicker">Sprachen</div>
         <h2>Spricht 15 Sprachen</h2>
-        <p>Ein Klick auf die kleine Landesflagge unten rechts in der Fußzeile – sofort umgestellt, inklusive Rechts-nach-links für Arabisch.</p>
+        <p>Ein Klick auf die kleine Landesflagge unten rechts – sofort umgestellt, inklusive Rechts-nach-links für Arabisch.</p>
       </div>
       <div class="langs reveal" id="langs"></div>
-    </div>
-  </section>
-
-  <section id="selbst-hosten">
-    <div class="wrap">
-      <div class="sec-head reveal">
-        <div class="kicker">Selbst hosten</div>
-        <h2>In drei Schritten zum eigenen Server</h2>
-        <p>Kein Terminal, keine Konfigurationsdateien – es sei denn, du willst.</p>
-      </div>
-      <div class="grid steps">
-        <div class="card step reveal"><h3>Server erstellen</h3><p>NexUs installieren, die grüne Server-Schaltfläche unten links anklicken, Namen eingeben und „Erstellen &amp; starten“ – Ports, Verschlüsselung und Autostart sind voreingestellt.</p></div>
-        <div class="card step reveal"><h3>Besitzer werden</h3><p>Passwort für dein Inhaberkonto festlegen – der Name ist schon ausgefüllt. Bei „Freunde einladen“ gibt NexUs die Windows-Firewall mit einem Klick frei und erstellt automatisch einen Internet-Link – auch ohne öffentliche IP und ohne Router-Einstellungen.</p></div>
-        <div class="card step reveal"><h3>Link teilen</h3><p>Den dauerhaften Einladungslink mit einem Klick kopieren und verschicken. Er enthält Adresse und Zertifikats-Fingerabdruck – so verbinden sich alle sicher.</p></div>
-      </div>
-      <p class="reveal" style="text-align:center;color:var(--faint);font-size:13.5px;margin-top:22px">Profis nutzen den Headless-Server <code>nexustalk-server</code> mit <code>server.toml</code> – ideal für einen dauerhaft laufenden Rechner oder vServer.</p>
     </div>
   </section>
 
@@ -622,15 +645,15 @@ footer .brand { font-size: 15px; }
     <div class="wrap">
       <div class="dl reveal">
         <div class="dl-main">
-          <div class="kicker" style="font-size:12.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);font-weight:600">Download</div>
-          <h2>NexUs 0.9.1 für Windows</h2>
-          <p style="color:var(--muted);margin:0">Ein Installer für alles: Client und eingebauter Server. Kostenlos, ohne Werbung, ohne Konto bei Dritten.</p>
+          <div class="kicker" style="margin:0">Download</div>
+          <h2>NexUs 0.10.0 für Windows</h2>
+          <p style="color:var(--muted)">Ein Installer für alles: Client und eingebauter Server. Kostenlos, ohne Werbung, ohne Konto bei Dritten.</p>
           <div class="dl-file">
-            <img src="assets/logo.png" alt="">
-            <div style="flex:1"><b>NexUs_0.9.1_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>7,6 MB</span></small></div>
+            <img src="assets/logo.png" alt="" width="44" height="44">
+            <div style="flex:1;min-width:0"><b>NexUs_0.10.0_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>7,7</span> MB</small></div>
           </div>
-          <a class="btn primary" href="download/NexUs_0.9.1_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
-          <div class="hash">SHA-256: <span class="mono" id="sha-client">4d5afa733d49cdb913586760dbb6290a1e8ec63e97b3606c0ad8241b75f0dcb8</span></div>
+          <a class="btn primary" href="download/NexUs_0.10.0_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
+          <div class="hash">SHA-256: <span class="mono" id="sha-client">acd0cb9cfad2fb023ea71f9dcaf641e7c9baa8619023bf71e0d9883329d93a38</span></div>
         </div>
         <div class="dl-side">
           <h3>Systemvoraussetzungen</h3>
@@ -641,11 +664,11 @@ footer .brand { font-size: 15px; }
             <li>Für einen eigenen Server: freie Ports TCP 7878, UDP 3478 (+ Relay-Bereich)</li>
           </ul>
           <div class="alt-dl">
-            <div><b>Headless-Server für Windows</b><small>nexustalk-server.exe · <span id="srv-size">7,3 MB</span> · ohne Oberfläche</small></div>
+            <div><b>Headless-Server für Windows</b><small>nexustalk-server.exe · <span id="srv-size">7,3</span> MB · ohne Oberfläche</small></div>
             <a class="btn small" href="download/nexustalk-server.exe" download><svg><use href="#i-download"/></svg>Server</a>
           </div>
-          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">e2471b96e327d2651c58e97c8ff1aa4926d4eb50d3c7b6b6115d1e240dd2eb22</span></p>
-          <p class="hash" style="margin-top:10px">Hinweis: Der Installer ist (noch) nicht code-signiert. Windows SmartScreen kann deshalb warnen – „Weitere Informationen“ → „Trotzdem ausführen“. Prüfe im Zweifel die Prüfsumme.</p>
+          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">9136d4eecca3bc9a860617193c0e2effd5a19599b79473c2d32e43b0929fe1dd</span></p>
+          <p class="hash">Hinweis: Der Installer ist (noch) nicht code-signiert. Windows SmartScreen kann deshalb warnen – „Weitere Informationen“ → „Trotzdem ausführen“. Prüfe im Zweifel die Prüfsumme. Ein Update installierst du einfach über die vorhandene Version; Server, Konten und Einstellungen bleiben erhalten.</p>
         </div>
       </div>
     </div>
@@ -654,13 +677,13 @@ footer .brand { font-size: 15px; }
   <section id="spenden">
     <div class="wrap">
       <div class="donate reveal">
-        <div class="heart3d"><svg><use href="#i-heart"/></svg></div>
+        <div class="heart"><svg><use href="#i-heart"/></svg></div>
         <div>
           <h3>NexUs unterstützen</h3>
           <p>NexUs ist kostenlos und werbefrei – und soll es bleiben. Wenn dir die App gefällt, freue ich mich über eine kleine Spende per PayPal.</p>
           <div class="mail">PayPal: <span class="mono">r4pi@gmx.de</span><button type="button" id="copy-mail">kopieren</button></div>
         </div>
-        <a class="btn heart" href="https://www.paypal.com/donate/?business=r4pi%40gmx.de&amp;item_name=NexUs&amp;currency_code=EUR" target="_blank" rel="noopener"><svg><use href="#i-heart-o"/></svg>Spenden</a>
+        <a class="btn pink" href="https://www.paypal.com/donate/?business=r4pi%40gmx.de&amp;item_name=NexUs&amp;currency_code=EUR" target="_blank" rel="noopener"><svg><use href="#i-heart"/></svg>Spenden</a>
       </div>
     </div>
   </section>
@@ -674,11 +697,14 @@ footer .brand { font-size: 15px; }
       <div class="faq reveal">
         <details><summary>Ist NexUs wirklich kostenlos?</summary><p>Ja. Keine Abos, keine Premium-Stufen, keine Werbung. Der Quellcode steht unter der MIT-Lizenz. Freiwillige Spenden helfen bei der Weiterentwicklung.</p></details>
         <details><summary>Brauche ich einen eigenen Server?</summary><p>Nein – du kannst dich auch mit dem Server eines Freundes verbinden. Wer selbst hosten möchte, startet den Server direkt in der App; ein separater Rechner ist nicht nötig.</p></details>
+        <details><summary>Starten meine Server automatisch?</summary><p>Ja. Seit Version 0.10 starten alle eigenen Server zusammen mit NexUs – mit den letzten Einstellungen und ohne Rückfrage. Wer das nicht möchte, schaltet es unter Einstellungen › App ab und startet einen Server dann mit einem Klick selbst.</p></details>
+        <details><summary>Wie sicher ist die Fernsteuerung?</summary><p>Sie funktioniert nur, solange du deinen ganzen Bildschirm teilst und sie ausdrücklich eingeschaltet hast. Entweder verlangst du ein Passwort (fünf Fehlversuche sperren fünf Minuten) oder du bestätigst jede Anfrage einzeln. Während jemand steuert, siehst du einen deutlichen Hinweis und beendest alles sofort mit F8. Trotzdem gilt: Wer steuert, kann deinen PC bedienen – gib die Steuerung nur an Menschen, denen du vertraust.</p></details>
+        <details><summary>Was bedeutet „Ende-zu-Ende-verschlüsselt“ bei NexUs genau?</summary><p>Für eingeschaltete Direktnachrichten wird der Text auf deinem Gerät verschlüsselt und erst beim Empfänger wieder entschlüsselt; der Server speichert nur das Chiffrat. Nicht verschlüsselt sind Anhänge, Umfragen, Reaktionen und Metadaten (wer wann mit wem schreibt). Kanalnachrichten sind per TLS auf dem Weg geschützt, liegen auf dem Server aber lesbar. Die Schlüssel sind langlebig, und die Umsetzung wurde nicht von Externen geprüft.</p></details>
+        <details><summary>Wie groß dürfen Dateien sein?</summary><p>Für Uploads in Kanäle gilt das Limit des jeweiligen Servers (vom Betreiber einstellbar). In Direktnachrichten gibt es zusätzlich den Direktversand: Die Datei geht ohne Größenlimit direkt von deinem Rechner zum Empfänger, solange ihr beide online seid.</p></details>
         <details><summary>Kann ich mehrere Server hosten?</summary><p>Ja. In der Hosting-Zentrale legst du über „Neuer Server“ beliebig viele Server an. Jeder läuft auf eigenen Ports (7878, 7879, …), hat einen eigenen Datenordner und einen eigenen Einladungslink.</p></details>
+        <details><summary>Warum kann sich niemand verbinden?</summary><p>Fast immer ist es die Windows-Firewall auf dem Server-PC. Öffne in NexUs „Server hosten“: Der Verbindungs-Check zeigt, was fehlt, und „Firewall freigeben“ erledigt es mit einer Windows-Bestätigung. Zusätzlich muss der Server laufen und auf „Freunde einladen“ stehen. Freunde außerhalb deines WLANs brauchen den <b>Internet-Link</b> (beginnt mit <code>nexustalk://bore.pub:</code>), nicht den Heimnetz-Link.</p></details>
+        <details><summary>Können sich Freunde über das Internet verbinden?</summary><p>Ja – ohne Router-Einstellungen. Bei „Freunde einladen“ baut NexUs automatisch einen verschlüsselten Tunnel über das kostenlose öffentliche Relay bore.pub auf und zeigt einen Internet-Link, der für alle funktioniert. Das klappt auch bei Anschlüssen ohne eigene öffentliche IPv4 wie Starlink oder DS-Lite. Das Relay ist ein Dienst eines Dritten ohne Verfügbarkeitsgarantie; der Tunnel lässt sich im Verbindungs-Check abschalten.</p></details>
         <details><summary>Hieß NexUs früher anders?</summary><p>Ja – bis Version 0.7 hieß die App <b>NexusTalk</b>. Der neue Installer ersetzt die alte Version automatisch; Server, Konten und Einstellungen bleiben erhalten.</p></details>
-        <details><summary>Warum kann sich niemand verbinden?</summary><p>Fast immer ist es die Windows-Firewall auf dem Server-PC. Öffne in NexUs „Server hosten“: Der Verbindungs-Check zeigt, was fehlt, und „Firewall freigeben“ erledigt es mit einer Windows-Bestätigung. Zusätzlich muss der Server laufen und auf „Freunde einladen“ stehen. Freunde außerhalb deines WLANs brauchen den <b>Internet-Link</b> (beginnt mit <code>nexustalk://bore.pub:</code>), nicht den Heimnetz-Link. Wer sich verbinden will und keine Antwort bekommt, sieht dazu direkt einen Hinweis in der App.</p></details>
-        <details><summary>Können sich Freunde über das Internet verbinden?</summary><p>Ja – ohne Router-Einstellungen. Bei „Freunde einladen“ baut NexUs automatisch einen verschlüsselten Tunnel über das kostenlose öffentliche Relay bore.pub auf und zeigt einen Internet-Link, der für alle funktioniert. Das klappt auch bei Anschlüssen ohne eigene öffentliche IPv4 wie Starlink oder DS-Lite. Die Verbindung bleibt Ende-zu-Ende per TLS verschlüsselt, das Relay leitet nur weiter. Sprache und Video laufen möglichst direkt zwischen den Teilnehmern; klappt das nicht, springt ein eingebauter Medien-Relay ein, der ebenfalls durch den Tunnel erreichbar ist. Das Relay ist ein Dienst eines Dritten ohne Verfügbarkeitsgarantie; der Tunnel lässt sich im Verbindungs-Check abschalten.</p></details>
-        <details><summary>Wie sicher ist das?</summary><p>Verbindungen sind per TLS verschlüsselt; selbstsignierte Zertifikate werden beim ersten Verbinden per Fingerabdruck bestätigt und danach bei jeder Verbindung geprüft. Passwörter werden mit Argon2 gespeichert und verlassen nie den gewählten Server.</p></details>
         <details><summary>Gibt es NexUs für Mac, Linux oder Handy?</summary><p>Der Client ist derzeit für Windows (x64) gebaut. Der Headless-Server läuft auch unter Linux (aus dem Quellcode). Weitere Plattformen sind möglich, aber noch nicht verfügbar.</p></details>
         <details><summary>Wie viele Personen passen in einen Sprachkanal?</summary><p>Teilnehmer werden direkt miteinander verbunden. Mit Video sind etwa 8 Personen pro Kanal empfehlenswert, nur mit Sprache auch mehr – abhängig von Bandbreite und Rechner.</p></details>
       </div>
@@ -688,7 +714,7 @@ footer .brand { font-size: 15px; }
 
 <footer>
   <div class="wrap">
-    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="28" height="28" style="width:28px;height:28px">NexUs</a>
+    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="28" height="28" style="width:28px;height:28px"><span>Nex<b>Us</b></span></a>
     <div>© 2026 Christian Schiessl · Alle Rechte vorbehalten · MIT-Lizenz</div>
     <div class="links">
       <a href="https://cjs86.netlify.app" target="_blank" rel="noopener">cjs86.netlify.app</a>
@@ -699,48 +725,108 @@ footer .brand { font-size: 15px; }
 </footer>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="lightbox" id="lightbox" role="dialog" aria-label="Vergrößerte Ansicht"><img alt=""></div>
 
 <script>
 (() => {
-  // --- 3D tilt of the hero device ---
-  const dev = document.getElementById("device");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (dev && !reduce && matchMedia("(min-width: 1021px)").matches) {
-    const stage = dev.parentElement;
-    stage.addEventListener("mousemove", (e) => {
-      const r = stage.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width - 0.5;
-      const y = (e.clientY - r.top) / r.height - 0.5;
-      dev.style.transform = `rotateY(${-14 + x * 12}deg) rotateX(${7 - y * 10}deg) rotateZ(1deg)`;
-    });
-    stage.addEventListener("mouseleave", () => { dev.style.transform = ""; });
+
+  // --- hero window: tilted at first, lies flat as you scroll towards it ---
+  const win = document.getElementById("win");
+  if (win && !reduce) {
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const r = win.getBoundingClientRect();
+      const p = Math.max(0, Math.min(1, 1 - (r.top - innerHeight * 0.18) / (innerHeight * 0.62)));
+      win.style.setProperty("--tilt", (14 * (1 - p)).toFixed(2) + "deg");
+      win.style.setProperty("--zoom", (0.94 + 0.06 * p).toFixed(3));
+    };
+    addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    addEventListener("resize", update);
+    update();
   }
 
-  // --- theme gallery ---
+  // --- spotlight tabs (without script all six panels are simply listed) ---
+  const spot = document.getElementById("spot");
+  const tablist = spot.querySelector(".spot-tabs");
+  const tabs = [...tablist.querySelectorAll("button")];
+  const panels = [...spot.querySelectorAll(".panel")];
+  const select = (k, focus) => {
+    tabs.forEach((t) => {
+      const on = t.dataset.k === k;
+      t.setAttribute("aria-selected", on);
+      t.tabIndex = on ? 0 : -1;
+      if (on && focus) t.focus();
+      if (on) t.scrollIntoView({ block: "nearest", inline: "center", behavior: reduce ? "auto" : "smooth" });
+    });
+    panels.forEach((p) => p.classList.toggle("on", p.dataset.k === k));
+  };
+  tablist.hidden = false;
+  spot.classList.add("tabs-on");
+  panels.forEach((p) => { p.classList.add("in"); p.setAttribute("role", "tabpanel"); });
+  tabs.forEach((t, i) => {
+    t.addEventListener("click", () => select(t.dataset.k));
+    t.addEventListener("keydown", (e) => {
+      const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!d) return;
+      e.preventDefault();
+      select(tabs[(i + d + tabs.length) % tabs.length].dataset.k, true);
+    });
+  });
+  tabs.forEach((t) => { t.setAttribute("aria-selected", "false"); t.tabIndex = -1; });
+  tabs[0].setAttribute("aria-selected", "true");
+  tabs[0].tabIndex = 0;
+  panels[0].classList.add("on");
+
+  // small pictures under a panel swap the large one
+  document.querySelectorAll(".thumbs").forEach((box) => {
+    const frame = box.parentElement.querySelector(".frame");
+    const img = frame.querySelector("img");
+    box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+      box.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+      img.src = b.dataset.src;
+      frame.href = b.dataset.src;
+    }));
+  });
+
+  // --- lightbox ---
+  const lb = document.getElementById("lightbox");
+  document.querySelectorAll("a.frame").forEach((a) => a.addEventListener("click", (e) => {
+    e.preventDefault();
+    lb.querySelector("img").src = a.href;
+    lb.classList.add("show");
+  }));
+  lb.addEventListener("click", () => lb.classList.remove("show"));
+  addEventListener("keydown", (e) => e.key === "Escape" && lb.classList.remove("show"));
+
+  // --- design gallery ---
   const THEMES = [
-    ["emerald", "Smaragd", "Standard, dunkel", ["#07140f", "#0b1a15", "#0f221b", "#2ee59d", "#8ff5cf"], "emerald-de-chat.jpg"],
-    ["jade", "Jade", "hell", ["#d8ece2", "#eaf6f0", "#fbfefc", "#0e9f68", "#34d399"], "jade-de-chat.jpg"],
-    ["midnight", "Mitternacht", "dunkel", ["#070b18", "#0b1122", "#0f172c", "#6b97ff", "#a9c2ff"], "midnight-de-chat.jpg"],
-    ["aurora", "Aurora", "dunkel", ["#0b0a1a", "#110f24", "#15132c", "#a78bfa", "#2dd4bf"], "aurora-de-chat.jpg"],
-    ["obsidian", "Obsidian", "OLED-schwarz", ["#000000", "#070707", "#0b0b0b", "#b6f23d", "#dcff8f"], "obsidian-de-chat.jpg"],
-    ["sakura", "Sakura", "hell", ["#f6dfe8", "#fcf0f5", "#fffbfd", "#e0558a", "#f78fb3"], "sakura-de-chat.jpg"],
-    ["arctic", "Arktis", "hell", ["#dce8f2", "#edf4fa", "#fbfdff", "#1683e0", "#00b8d4"], "arctic-de-chat.jpg"],
-    ["sunset", "Sonnenuntergang", "dunkel", ["#130b0d", "#1a0f13", "#201418", "#ff7a45", "#ff4d8d"], "sunset-de-chat.jpg"],
-    ["neon", "Neon", "dunkel", ["#05050c", "#090914", "#0d0d1b", "#00e5ff", "#ff2bd6"], "neon-de-chat.jpg"],
-    ["cyber", "Cyberpunk", "dunkel", ["#07060f", "#0b0918", "#100d20", "#fcee0a", "#ff2a6d"], "cyber-de-chat.jpg"],
-    ["ocean", "Tiefsee", "dunkel", ["#031520", "#04192a", "#062033", "#38bdf8", "#2dd4bf"], "ocean-de-chat.jpg"],
-    ["nebula", "Galaxie", "dunkel", ["#07040f", "#0a0618", "#100a22", "#c084fc", "#f472b6"], "nebula-de-chat.jpg"],
-    ["gold", "Royal Gold", "dunkel", ["#0a0806", "#0f0c08", "#16110b", "#e8b54a", "#f5d68a"], "gold-de-chat.jpg"],
-    ["matrix", "Matrix", "animiert", ["#000600", "#001400", "#001c00", "#39ff14", "#7cffb2"], "matrix-de-chat.jpg"],
-    ["synthwave", "Synthwave", "animiert", ["#140a24", "#1b0d33", "#241152", "#ff2e97", "#00e5ff"], "synthwave-de-chat.jpg"],
-    ["lava", "Lava", "animiert", ["#0c0400", "#1a0702", "#2a0d04", "#ff6a3d", "#ffd23f"], "lava-de-chat.jpg"],
-    ["holo", "Hologramm", "animiert", ["#0a0b12", "#101222", "#161a2e", "#b388ff", "#80ffea"], "holo-de-chat.jpg"],
-    ["prism", "Prisma", "animiert", ["#060f14", "#08182a", "#0c2233", "#6ad7ff", "#c08bff"], "prism-de-chat.jpg"],
-    ["sandstone", "Sandstein", "hell", ["#e6dccc", "#f4ede2", "#fdfaf5", "#c0623b", "#d99b4a"], "sandstone-de-chat.jpg"],
+    ["cyber", "Cyberpunk", "dunkel", ["#07060f", "#0b0918", "#100d20", "#fcee0a", "#ff2a6d"]],
+    ["emerald", "Smaragd", "Standard", ["#07140f", "#0b1a15", "#0f221b", "#2ee59d", "#8ff5cf"]],
+    ["graphite", "Graphit", "neu", ["#101114", "#15161a", "#1a1b20", "#7c8cff", "#aab4ff"]],
+    ["fjord", "Fjord", "neu", ["#1c222c", "#222a36", "#2a3340", "#88c0d0", "#a3d9c9"]],
+    ["mono", "Mono", "neu", ["#0b0b0c", "#111112", "#171718", "#f2f2f3", "#c9c9ce"]],
+    ["mocha", "Mokka", "neu", ["#17120f", "#1e1713", "#261d17", "#d9a066", "#edc79b"]],
+    ["bordeaux", "Bordeaux", "neu", ["#160d11", "#1e1017", "#27131d", "#e58a9b", "#f2c4a8"]],
+    ["paper", "Papier", "neu · hell", ["#e4e7ec", "#f0f2f5", "#fbfbfc", "#3b5bdb", "#5c7cfa"]],
+    ["midnight", "Mitternacht", "dunkel", ["#070b18", "#0b1122", "#0f172c", "#6b97ff", "#a9c2ff"]],
+    ["aurora", "Aurora", "dunkel", ["#0b0a1a", "#110f24", "#15132c", "#a78bfa", "#2dd4bf"]],
+    ["obsidian", "Obsidian", "OLED-schwarz", ["#000000", "#070707", "#0b0b0b", "#b6f23d", "#dcff8f"]],
+    ["ocean", "Tiefsee", "dunkel", ["#031520", "#04192a", "#062033", "#38bdf8", "#2dd4bf"]],
+    ["nebula", "Galaxie", "dunkel", ["#07040f", "#0a0618", "#100a22", "#c084fc", "#f472b6"]],
+    ["gold", "Royal Gold", "dunkel", ["#0a0806", "#0f0c08", "#16110b", "#e8b54a", "#f5d68a"]],
+    ["sunset", "Sonnenuntergang", "dunkel", ["#130b0d", "#1a0f13", "#201418", "#ff7a45", "#ff4d8d"]],
+    ["synthwave", "Synthwave", "animiert", ["#140a24", "#1b0d33", "#241152", "#ff2e97", "#00e5ff"]],
+    ["jade", "Jade", "hell", ["#d8ece2", "#eaf6f0", "#fbfefc", "#0e9f68", "#34d399"]],
+    ["arctic", "Arktis", "hell", ["#dce8f2", "#edf4fa", "#fbfdff", "#1683e0", "#00b8d4"]],
+    ["sakura", "Sakura", "hell", ["#f6dfe8", "#fcf0f5", "#fffbfd", "#e0558a", "#f78fb3"]],
+    ["sandstone", "Sandstein", "hell", ["#e6dccc", "#f4ede2", "#fdfaf5", "#c0623b", "#d99b4a"]],
   ];
   const themesEl = document.getElementById("themes");
   const shot = document.getElementById("shot");
-  THEMES.forEach(([id, name, kind, sw, img], i) => {
+  const shotLink = document.getElementById("shot-link");
+  THEMES.forEach(([id, name, kind, sw], i) => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "theme" + (i === 0 ? " on" : "");
@@ -748,14 +834,11 @@ footer .brand { font-size: 15px; }
     b.addEventListener("click", () => {
       themesEl.querySelectorAll(".theme").forEach((t) => t.classList.remove("on"));
       b.classList.add("on");
-      if (img) {
-        shot.style.opacity = "0.25";
-        const pre = new Image();
-        pre.onload = () => { shot.src = pre.src; shot.style.opacity = "1"; };
-        pre.src = "assets/shots/" + img;
-      } else {
-        toast(`„${name}“ – probier es direkt in der App aus.`);
-      }
+      const src = `assets/shots/${id}-de-chat.jpg`;
+      shot.style.opacity = "0.3";
+      const pre = new Image();
+      pre.onload = () => { shot.src = src; shotLink.href = src; shot.style.opacity = "1"; };
+      pre.src = src;
     });
     themesEl.appendChild(b);
   });
@@ -801,7 +884,7 @@ footer .brand { font-size: 15px; }
 
   // --- reveal on scroll ---
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
-  document.querySelectorAll(".reveal").forEach((el, i) => { el.style.transitionDelay = (i % 4) * 60 + "ms"; io.observe(el); });
+  document.querySelectorAll(".reveal:not(.in)").forEach((el, i) => { el.style.transitionDelay = (i % 4) * 60 + "ms"; io.observe(el); });
 
   // --- toast + copy ---
   const t = document.getElementById("toast");

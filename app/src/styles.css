@@ -1541,6 +1541,8 @@ body.resizing, body.resizing * { cursor: col-resize !important; user-select: non
 .xfer-panel { flex: none; max-height: 38%; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--bg-0) 40%, var(--bg-1)); }
 .xfer-head { display: flex; align-items: center; gap: 6px; padding: 2px 4px 4px; font-size: var(--fs-xs); font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-3); }
 .xfer-head svg { color: var(--accent); }
+.xfer-head { white-space: nowrap; }
+.xfer-head .link-btn { text-transform: none; letter-spacing: 0; font-weight: 500; }
 .xfer-card { display: flex; align-items: center; gap: 9px; padding: 8px 6px 8px 8px; border-radius: var(--r); background: var(--bg-3); border: 1px solid var(--line); }
 .xfer-card.offered { border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); background: var(--accent-soft); }
 .xfer-card.failed .xfer-sub { color: var(--danger); }

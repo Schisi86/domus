@@ -97,5 +97,7 @@ await l.rpc("user.update", { status_text: "Coffee first" }).catch(() => {});
 l.close();
 m.close();
 o.close();
+// All three sessions, for scripts that drive several users (tests/e2e/promo.mjs).
+console.log(`TOKENS ${JSON.stringify({ christian: owner.token, Lena: lena.token, max: max.token })}`);
 console.log(`READY ${ADDR} ${owner.token}`);
 setInterval(() => {}, 1 << 30);
