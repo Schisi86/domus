@@ -35,7 +35,7 @@ export interface Settings {
   autoGainControl: boolean;
   pushToTalk: boolean;
   pttKey: string;
-  /** Push-to-talk also works while NexUs is in the background (desktop app). */
+  /** Push-to-talk also works while Domus is in the background (desktop app). */
   globalPtt: boolean;
   globalPttKey: string;
   notifications: boolean;

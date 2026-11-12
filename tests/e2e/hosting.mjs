@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const EXE = process.env.NEXUS_EXE || join(ROOT, "target", "debug", "nexustalk.exe");
+const EXE = process.env.NEXUS_EXE || join(ROOT, "target", "debug", "Domus.exe");
 const CDP = 9224;
 const SHOTS = process.env.SHOTS_DIR || null;
 const results = [];
@@ -65,11 +65,11 @@ try {
   const page = await waitFor(() => browser.contexts()[0]?.pages().find((p) => p.url().includes("tauri.localhost")));
   page.on("pageerror", (e) => console.log("pageerror", e.message));
   await page.waitForSelector(".rail");
-  await page.evaluate(async () => {
-    // Fixed language for stable selectors.
+  await page.evaluate(async (theme) => {
+    // Fixed language for stable selectors; SHOT_THEME picks the design for screenshots.
     const { invoke } = window.__TAURI_INTERNALS__;
-    await invoke("config_save", { config: { servers: [], settings: { language: "de", notifications: false }, host_autostart: false, minimize_to_tray: true } });
-  });
+    await invoke("config_save", { config: { servers: [], settings: { language: "de", notifications: false, ...(theme ? { theme } : {}) }, host_autostart: false, minimize_to_tray: true } });
+  }, process.env.SHOT_THEME ?? null);
   await page.reload();
   await page.waitForSelector(".rail");
 
@@ -93,7 +93,7 @@ try {
     await page.locator(".owner-card .btn.primary").click();
     const link = await waitFor(async () => {
       const t = await page.locator(".invite-link").textContent({ timeout: 500 });
-      return t && t.startsWith("nexustalk://") ? t : null;
+      return t && t.startsWith("domus://") ? t : null;
     }, 30000);
     return { user, link };
   }
@@ -121,7 +121,7 @@ try {
   await page.locator(".host-modal .pane-nav button", { hasText: "Testserver A" }).click();
   const again = await waitFor(async () => {
     const t = await page.locator(".invite-link").textContent({ timeout: 500 });
-    return t?.startsWith("nexustalk://") ? t : null;
+    return t?.startsWith("domus://") ? t : null;
   });
   check("invite link stays the same when reopened", again === a.link);
   await shot(page, "host-two.png");
@@ -156,7 +156,7 @@ try {
       const t = await page.locator(".invite-link").first().textContent({ timeout: 500 });
       return t?.includes("bore.pub") ? t : null;
     });
-    check("invite card shows the internet link first", !!netLink && netLink.startsWith(`nexustalk://${relayAddr}/`) && netLink.includes("#fp="), netLink ?? "");
+    check("invite card shows the internet link first", !!netLink && netLink.startsWith(`domus://${relayAddr}/`) && netLink.includes("#fp="), netLink ?? "");
     check("home network link stays available", (await page.locator(".invite-link.sub").count()) === 1);
     check("reach check shows the tunnel", (await page.locator(".reach-row.ok", { hasText: relayAddr ?? "?" }).count()) === 1);
     await shot(page, "host-internet.png");

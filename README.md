@@ -1,15 +1,16 @@
-# NexUs
+# Domus
 
-*Vormals NexusTalk.* Einstellungen, Server und Chats liegen weiterhin in `%APPDATA%\NexusTalk`.
+*Vormals NexUs (0.8–0.10) und NexusTalk (bis 0.7).* Einstellungen, Server und Chats liegen weiterhin in `%APPDATA%\NexusTalk`; ein Update übernimmt alles.
 
 Schlanke, selbst hostbare Kommunikationssoftware für Text, Sprache, Video und Bildschirmübertragung – Windows-Desktop-App mit integriertem Servermodus und eigenständigem Headless-Server. Keine Cloud, keine externe Registrierung, kein zentraler Anbieter.
 
-© 2026 Christian Schiessl · [cjs86.netlify.app](https://cjs86.netlify.app) · Projektseite & Download: [nexustalk-app.netlify.app](https://nexustalk-app.netlify.app) · [Spenden per PayPal](https://www.paypal.com/donate/?business=r4pi%40gmx.de&item_name=NexUs&currency_code=EUR) (r4pi@gmx.de)
+© 2026 Christian Schiessl · [cjs86.netlify.app](https://cjs86.netlify.app) · Projektseite & Download: [domus-talk.netlify.app](https://domus-talk.netlify.app) · [Spenden per PayPal](https://www.paypal.com/donate/?business=r4pi%40gmx.de&item_name=Domus&currency_code=EUR) (r4pi@gmx.de)
 
 ## Funktionsumfang (Kurzfassung)
 
 * **Server hosten:** eigene Schaltfläche unten links, Windows-Firewall-Freigabe per Klick, Internet-Link per verschlüsseltem Tunnel – auch ohne öffentliche IP (Starlink, DS-Lite) und ohne Router-Einstellungen –, zusätzlich Router-Weiterleitung per UPnP und Verbindungs-Check, mehrere Server gleichzeitig auf eigenen Ports (automatisch gewählt), alles voreingestellt (TLS, Einladungspflicht, Autostart), dauerhafter Einladungslink je Server, Erreichbarkeit „Nur dieser PC“ / „Freunde einladen“ per Klick.
 * **Server & Kanäle:** Kategorien, Text- und Sprachkanäle, Rollen (Inhaber, Administrator, Moderator, Mitglied, Gast – anpassbar) mit Kanal-Overrides, Einladungen, Freischaltung, Sperren, Audit-Protokoll, Serverprotokoll, Ressourcenanzeige, Backups/Wiederherstellung, Slow-Mode je Textkanal, Personenlimit je Sprachkanal.
+* **1.0.0:** Neuer Name **Domus** (lateinisch „Zuhause“) und neues Logo – ein Haus mit Kopfhörern – in App, Installer, Verknüpfung und Websites. Der Installer ersetzt NexUs bzw. NexusTalk automatisch und übernimmt Daten und Autostart. Einladungslinks beginnen mit `domus://`, alte `nexustalk://`-Links funktionieren weiter. Headless-Server heißt jetzt `domus-server`.
 * **0.10.0:** Eigene Server starten automatisch mit der App (abschaltbar, sonst Ein-Klick-Start). Fernsteuerung mit Umschalt-Taste F8, optionalem verdecktem Passwort und richtiger Tasten-/Monitor-Zuordnung. Auf den Stream zeichnen und Laserpointer, Direktversand von Dateien ohne Größenlimit, Sofort-Clip (F9), Gemeinsam schauen, Ende-zu-Ende-verschlüsselte Direktnachrichten. 6 neue ruhige Designs, 5 grelle entfernt (20 gesamt).
 * **0.9.1:** Soundboard-Sounds Applaus/Grillen/Gong repariert (sauber neu kodiert), Soundboard ohne Scrollbalken, Fernsteuerung nur bei Vollbild-Freigabe, Vollbild vorausgewählt mit Systemton an.
 * **0.9.0:** 36 Soundboard-Sounds (überlappend, Mute, Lautstärke), Bildschirm + Kamera gleichzeitig (Kamera als Overlay), Fernsteuerung mit Passwort (Maus/Tastatur/Controller, Desktop), „Für später“ als Selbst-DM „Notizen“, 5 neue animierte Designs (Matrix, Synthwave, Lava, Hologramm, Prisma).
@@ -28,7 +29,7 @@ Den genauen, geprüften Stand (inkl. offener Punkte) beschreibt **[docs/STATUS.m
 
 * **Benutzer:** Installer ausführen → „Server hinzufügen“ → Adresse oder Einladungslink eingeben.
 * **Eigener Server:** grüne Server-Schaltfläche unten links → Namen vergeben → „Erstellen & starten“ → Passwort für das Inhaberkonto → Einladungslink kopieren. Weitere Server über „Neuer Server“.
-* **Dedizierter Server:** `nexustalk-server --data <ordner>` (Windows/Linux), siehe [docs/INSTALL.md](docs/INSTALL.md).
+* **Dedizierter Server:** `domus-server --data <ordner>` (Windows/Linux), siehe [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Dokumentation
 
@@ -50,7 +51,7 @@ crates/nexus-net      Client-Netzwerk mit TLS-Pinning
 app/src-tauri         Desktop-Shell (Tauri 2, Rust)
 app/src               Oberfläche (Preact + Signals, TypeScript)
 tests/e2e             WebRTC-Ende-zu-Ende-Tests, Desktop-Test, Screenshots (Playwright, echte UI)
-website               Projektseite (nexustalk-app.netlify.app)
+website               Projektseite (domus-talk.netlify.app)
 tests/bench           Ressourcen-Benchmarks (Server, Medien)
 scripts               Desktop-Benchmark (PowerShell)
 docs                  Dokumentation

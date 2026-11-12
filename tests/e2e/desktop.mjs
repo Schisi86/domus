@@ -1,7 +1,7 @@
 // Drives the real desktop app (WebView2) through the DevTools protocol.
 //
 //   set WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9223
-//   target\release\nexustalk.exe
+//   target\release\Domus.exe
 //   node tests/e2e/desktop.mjs
 //
 // Checks the embedded server mode end to end: start server, create owner via

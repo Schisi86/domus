@@ -20,7 +20,7 @@ CPU-Angaben: „% eines Kerns“ (100 % = ein voll ausgelasteter Kern) bzw. „%
 | NSIS-Installer `NexusTalk_0.4.1_x64-setup.exe` | **5,0 MB** (0.1.0: 4,5 MB) |
 | MSI `NexusTalk_0.4.1_x64_de-DE.msi` | 7,0 MB |
 | Installationsordner (App inkl. eingebettetem Server) | **15,6 MB** |
-| Headless-Server `nexustalk-server.exe` | 7,0 MB |
+| Headless-Server `domus-server.exe` | 7,0 MB |
 | Weboberfläche (JS gzip / CSS gzip) | 56 KB / 6 KB |
 
 WebView2 ist Bestandteil von Windows 10/11 und wird nicht mitgeliefert.

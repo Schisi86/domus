@@ -3,30 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NexUs – selbst hostbare Discord-Alternative für Windows</title>
-<meta name="description" content="NexUs: schlanke, selbst hostbare Kommunikationsplattform für Windows. Text, Sprache, Video, Bildschirm teilen, Fernsteuerung, Direktversand ohne Dateilimit und verschlüsselte Direktnachrichten – auf deinem eigenen Server. Keine Cloud, keine Werbung. Von Christian Schiessl.">
+<title>Domus – selbst hostbare Discord-Alternative für Windows</title>
+<meta name="description" content="Domus: schlanke, selbst hostbare Kommunikationsplattform für Windows. Text, Sprache, Video, Bildschirm teilen, Fernsteuerung, Direktversand ohne Dateilimit und verschlüsselte Direktnachrichten – auf deinem eigenen Server. Keine Cloud, keine Werbung. Von Christian Schiessl.">
 <meta name="author" content="Christian Schiessl">
-<meta name="theme-color" content="#07060f">
+<meta name="theme-color" content="#1a0f33">
 <link rel="icon" type="image/png" href="favicon.png">
-<link rel="canonical" href="https://nexustalk-app.netlify.app/">
+<link rel="canonical" href="https://domus-talk.netlify.app/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="NexUs – Deine Community. Dein Server.">
+<meta property="og:title" content="Domus – Deine Community. Dein Server.">
 <meta property="og:description" content="Selbst hostbare Alternative zu Discord: Text, Sprache, Video, Bildschirm, Fernsteuerung und Direktversand – ohne Cloud, ohne Werbung, ohne Tracking.">
-<meta property="og:image" content="https://nexustalk-app.netlify.app/assets/shots/rc-control.jpg">
-<meta property="og:url" content="https://nexustalk-app.netlify.app/">
+<meta property="og:image" content="https://domus-talk.netlify.app/assets/shots/rc-control.jpg">
+<meta property="og:url" content="https://domus-talk.netlify.app/">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "NexUs",
+  "name": "Domus",
   "operatingSystem": "Windows 10, Windows 11 (x64)",
   "applicationCategory": "CommunicationApplication",
-  "softwareVersion": "0.10.0",
+  "softwareVersion": "1.0.0",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-  "downloadUrl": "https://nexustalk-app.netlify.app/download/NexUs_0.10.0_x64-setup.exe",
-  "image": "https://nexustalk-app.netlify.app/assets/logo.png",
-  "screenshot": "https://nexustalk-app.netlify.app/assets/shots/rc-control.jpg",
+  "downloadUrl": "https://domus-talk.netlify.app/download/Domus_1.0.0_x64-setup.exe",
+  "image": "https://domus-talk.netlify.app/assets/logo.png",
+  "screenshot": "https://domus-talk.netlify.app/assets/shots/rc-control.jpg",
   "license": "https://opensource.org/licenses/MIT",
   "author": { "@type": "Person", "name": "Christian Schiessl", "url": "https://cjs86.netlify.app" }
 }
@@ -96,7 +96,12 @@ code { font-family: var(--mono); font-size: 0.88em; padding: 2px 6px; border-rad
 .btn.pink { background: linear-gradient(135deg, #ff5c8f, var(--p)); border-color: transparent; color: #fff; box-shadow: 0 10px 30px -10px var(--p); }
 
 /* ---------- hero ---------- */
-.hero { padding: 76px 0 30px; text-align: center; position: relative; }
+.hero { padding: 64px 0 30px; text-align: center; position: relative; }
+.hero-logo { width: 128px; height: 128px; margin: 0 auto 26px; position: relative; animation: float-logo 6s ease-in-out infinite; }
+.hero-logo::before { content: ""; position: absolute; inset: 12%; border-radius: 30%; background: linear-gradient(135deg, #ffc24a, #ff4f7b 50%, #6d36f5); filter: blur(34px); opacity: 0.75; z-index: -1; }
+.hero-logo img { width: 128px; height: 128px; }
+@keyframes float-logo { 50% { transform: translateY(-8px) rotate(-2deg); } }
+@media (max-width: 680px) { .hero-logo, .hero-logo img { width: 96px; height: 96px; } }
 .pill { display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px 7px 8px; border-radius: 999px; font-size: 13.5px; color: var(--muted); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line-2); text-decoration: none; transition: border-color 0.15s, color 0.15s; }
 .pill:hover { border-color: var(--y); color: var(--text); }
 .pill b { flex: none; white-space: nowrap; padding: 2px 9px; border-radius: 999px; background: var(--y); color: #14110a; font-size: 12px; letter-spacing: 0.03em; }
@@ -309,7 +314,7 @@ footer a:hover { color: var(--text); }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .backdrop::before, .chip-float { animation: none; }
+  .backdrop::before, .chip-float, .hero-logo { animation: none; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .win { transform: none; }
 }
@@ -344,9 +349,9 @@ footer a:hover { color: var(--text); }
 
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="34" height="34"><span>Nex<b>Us</b></span></a>
+    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="34" height="34"><span>Dom<b>us</b></span></a>
     <nav aria-label="Hauptnavigation">
-      <a href="#neu">Neu in 0.10</a>
+      <a href="#neu">Highlights</a>
       <a href="#funktionen">Funktionen</a>
       <a href="#hosten" class="hide-md">Selbst hosten</a>
       <a href="#vergleich">Vergleich</a>
@@ -360,15 +365,16 @@ footer a:hover { color: var(--text); }
 <main id="top">
   <section class="hero">
     <div class="wrap">
-      <a class="pill" href="#neu"><b>NEU · 0.10</b>Fernsteuerung mit F8, Direktversand ohne Limit, verschlüsselte DMs →</a>
+      <div class="hero-logo"><img src="assets/logo.png" alt="Domus-Logo: ein Haus mit Kopfhörern" width="128" height="128"></div>
+      <a class="pill" href="#neu"><b>NEU · 1.0</b>Aus NexUs wird Domus – neues Logo, gleiches Zuhause →</a>
       <h1>Deine Community. <em>Dein Server.</em></h1>
-      <p class="lead">NexUs ist die schlanke Alternative zu Discord für Windows: Text, Sprache, Video und Bildschirm – auf einem Server, der dir gehört. Per Klick in der App gestartet. Keine Cloud, keine Werbung, kein Tracking.</p>
+      <p class="lead"><b>Domus</b> – lateinisch „Zuhause“ – ist die schlanke Alternative zu Discord für Windows: Text, Sprache, Video und Bildschirm – auf einem Server, der dir gehört. Per Klick in der App gestartet. Keine Cloud, keine Werbung, kein Tracking.</p>
       <div class="hero-actions">
-        <a class="btn primary" href="download/NexUs_0.10.0_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
+        <a class="btn primary" href="download/Domus_1.0.0_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
         <a class="btn" href="#neu">Was ist neu?</a>
       </div>
       <div class="hero-meta">
-        <span><svg><use href="#i-check"/></svg>Installer nur <b data-size>7,7&nbsp;MB</b></span>
+        <span><svg><use href="#i-check"/></svg>Installer nur <b data-size>7,6&nbsp;MB</b></span>
         <span><svg><use href="#i-check"/></svg>Windows 10 &amp; 11 (x64)</span>
         <span><svg><use href="#i-check"/></svg>Kostenlos · MIT-Lizenz</span>
         <span><svg><use href="#i-check"/></svg>Kein Konto bei Dritten</span>
@@ -376,8 +382,8 @@ footer a:hover { color: var(--text); }
     </div>
     <div class="stage" id="stage">
       <div class="win" id="win">
-        <div class="win-bar"><img src="assets/logo.png" alt="" width="16" height="16">NexUs<i><span>—</span><span>▢</span><span>✕</span></i></div>
-        <img class="shot" src="assets/shots/rc-control.jpg" alt="NexUs im Cyberpunk-Design: Ein Teilnehmer steuert den geteilten Bildschirm einer Freundin; oben die Leiste „Du steuerst Lena“ mit der Taste F8" width="2040" height="1230" fetchpriority="high">
+        <div class="win-bar"><img src="assets/logo.png" alt="" width="16" height="16">Domus<i><span>—</span><span>▢</span><span>✕</span></i></div>
+        <img class="shot" src="assets/shots/rc-control.jpg" alt="Domus im Cyberpunk-Design: Ein Teilnehmer steuert den geteilten Bildschirm einer Freundin; oben die Leiste „Du steuerst Lena“ mit der Taste F8" width="2040" height="1230" fetchpriority="high">
       </div>
       <div class="chip-float cf1"><span class="ic">F8</span><div><b>Eine Taste wechselt</b><small>dein PC ⇄ ferner Bildschirm</small></div></div>
       <div class="chip-float cf2"><span class="ic"><svg><use href="#i-lock"/></svg></span><div><b>Ende-zu-Ende</b><small>verschlüsselte Direktnachrichten</small></div></div>
@@ -385,7 +391,7 @@ footer a:hover { color: var(--text); }
     </div>
     <div class="wrap">
       <div class="stats reveal">
-        <div class="stat"><b>≈ <span data-size>7,7</span> MB</b><span>Installer</span></div>
+        <div class="stat"><b>≈ <span data-size>7,6</span> MB</b><span>Installer</span></div>
         <div class="stat"><b>14 MB</b><span>RAM des Servers im Leerlauf</span></div>
         <div class="stat"><b>20</b><span>Designs</span></div>
         <div class="stat"><b>15</b><span>Sprachen</span></div>
@@ -397,9 +403,9 @@ footer a:hover { color: var(--text); }
   <section id="neu">
     <div class="wrap">
       <div class="sec-head reveal">
-        <div class="kicker">Neu in Version 0.10</div>
+        <div class="kicker">Highlights von Domus 1.0</div>
         <h2>Zusammen am selben Bildschirm – als würdet ihr nebeneinandersitzen</h2>
-        <p>Sechs große Neuerungen. Alles läuft direkt zwischen euren Rechnern; der Server vermittelt nur.</p>
+        <p>Sechs Funktionen, die es so bei Discord nicht gibt. Alles läuft direkt zwischen euren Rechnern; der Server vermittelt nur.</p>
       </div>
 
       <div class="spot" id="spot">
@@ -563,13 +569,13 @@ footer a:hover { color: var(--text); }
       </div>
       <div class="host">
         <div class="steps">
-          <div class="step reveal"><div><h3>Server erstellen</h3><p>NexUs installieren, die Server-Schaltfläche unten links anklicken, Namen eingeben, „Erstellen &amp; starten“. Ports, Verschlüsselung und Autostart sind voreingestellt.</p></div></div>
-          <div class="step reveal"><div><h3>Besitzer werden</h3><p>Passwort für dein Inhaberkonto festlegen. Bei „Freunde einladen“ gibt NexUs die Windows-Firewall frei und erstellt einen Internet-Link – auch ohne öffentliche IP und ohne Router-Einstellungen.</p></div></div>
-          <div class="step reveal"><div><h3>Link teilen</h3><p>Den dauerhaften Einladungslink kopieren und verschicken. Ab jetzt startet dein Server von selbst, sobald du NexUs öffnest – abschaltbar in den Einstellungen.</p></div></div>
+          <div class="step reveal"><div><h3>Server erstellen</h3><p>Domus installieren, die Server-Schaltfläche unten links anklicken, Namen eingeben, „Erstellen &amp; starten“. Ports, Verschlüsselung und Autostart sind voreingestellt.</p></div></div>
+          <div class="step reveal"><div><h3>Besitzer werden</h3><p>Passwort für dein Inhaberkonto festlegen. Bei „Freunde einladen“ gibt Domus die Windows-Firewall frei und erstellt einen Internet-Link – auch ohne öffentliche IP und ohne Router-Einstellungen.</p></div></div>
+          <div class="step reveal"><div><h3>Link teilen</h3><p>Den dauerhaften Einladungslink kopieren und verschicken. Ab jetzt startet dein Server von selbst, sobald du Domus öffnest – abschaltbar in den Einstellungen.</p></div></div>
         </div>
-        <a class="frame reveal" href="assets/shots/host-two.jpg"><img src="assets/shots/host-two.jpg" alt="Hosting-Zentrale mit zwei eigenen Servern und Einladungslink" width="1770" height="1140" loading="lazy"></a>
+        <a class="frame reveal" href="assets/shots/host-two.jpg"><img src="assets/shots/host-two.jpg" alt="Domus-Hosting-Zentrale mit zwei eigenen Servern und domus://-Einladungslink" width="1770" height="1140" loading="lazy"></a>
       </div>
-      <p class="note reveal">Profis nutzen den Headless-Server <code>nexustalk-server</code> mit <code>server.toml</code> – ideal für einen dauerhaft laufenden Rechner oder vServer.</p>
+      <p class="note reveal">Profis nutzen den Headless-Server <code>domus-server</code> mit <code>server.toml</code> – ideal für einen dauerhaft laufenden Rechner oder vServer.</p>
     </div>
   </section>
 
@@ -577,12 +583,12 @@ footer a:hover { color: var(--text); }
     <div class="wrap">
       <div class="sec-head reveal">
         <div class="kicker">Vergleich</div>
-        <h2>NexUs oder Discord?</h2>
-        <p>Discord ist ein großartiger Dienst – aber ein Dienst. Bei NexUs gehört die Plattform dir.</p>
+        <h2>Domus oder Discord?</h2>
+        <p>Discord ist ein großartiger Dienst – aber ein Dienst. Bei Domus gehört die Plattform dir.</p>
       </div>
       <div class="compare reveal">
         <table>
-          <thead><tr><th></th><th class="nx"><img src="assets/logo.png" alt="">NexUs</th><th>Discord</th></tr></thead>
+          <thead><tr><th></th><th class="nx"><img src="assets/logo.png" alt="">Domus</th><th>Discord</th></tr></thead>
           <tbody>
             <tr><td>Wo liegen deine Daten?</td><td class="nx"><span class="y">✓</span>Auf deinem PC oder deinem Server</td><td><span class="n">✕</span>In der Cloud eines US-Unternehmens</td></tr>
             <tr><td>Konto</td><td class="nx"><span class="y">✓</span>Pro Server, ohne E-Mail oder Telefonnummer</td><td><span class="m">!</span>Zentrales Konto, teils Telefon-Verifizierung</td></tr>
@@ -606,7 +612,7 @@ footer a:hover { color: var(--text); }
             <li>Kein riesiges Ökosystem: keine Bots, keine Server-Suche, keine Mobil-App (bisher nur Windows-Client).</li>
             <li>Sprachkanäle verbinden Teilnehmer direkt (Mesh) – ideal bis etwa 8 Personen mit Video; sehr große Kanäle sind nicht das Ziel.</li>
             <li>Einladungen über das Internet laufen ohne Router-Einstellungen über einen kostenlosen öffentlichen Tunnel (bore.pub) – ein Dienst eines Dritten ohne Verfügbarkeitsgarantie. Wer das nicht möchte, gibt Ports frei oder mietet einen Server.</li>
-            <li>Die Neuerungen aus 0.10 sind frisch: gründlich automatisch getestet, aber noch ohne Langzeiterfahrung vieler Nutzer.</li>
+            <li>Fernsteuerung, Direktversand, Verschlüsselung und Co. sind frisch: gründlich automatisch getestet, aber noch ohne Langzeiterfahrung vieler Nutzer.</li>
           </ul>
         </div>
       </div>
@@ -621,10 +627,10 @@ footer a:hover { color: var(--text); }
         <p>Sechs neue, erwachsene Designs wie Graphit, Fjord und Mono, dazu Klassiker wie Smaragd und Cyberpunk. Farbe markiert, was wichtig ist – der Rest hält sich zurück.</p>
       </div>
       <div class="gallery reveal">
-        <a class="frame" id="shot-link" href="assets/shots/cyber-de-chat.jpg"><img id="shot" src="assets/shots/cyber-de-chat.jpg" alt="NexUs Vorschau im gewählten Design" width="2040" height="1230" loading="lazy"></a>
+        <a class="frame" id="shot-link" href="assets/shots/cyber-de-chat.jpg"><img id="shot" src="assets/shots/cyber-de-chat.jpg" alt="Domus Vorschau im gewählten Design" width="2040" height="1230" loading="lazy"></a>
         <div>
           <div class="themes" id="themes"></div>
-          <p class="gal-note">Dazu eine eigene Akzentfarbe für jedes Design – und auf Wunsch wechselt NexUs automatisch zwischen Hell und Dunkel, passend zu Windows.</p>
+          <p class="gal-note">Dazu eine eigene Akzentfarbe für jedes Design – und auf Wunsch wechselt Domus automatisch zwischen Hell und Dunkel, passend zu Windows.</p>
         </div>
       </div>
     </div>
@@ -646,14 +652,14 @@ footer a:hover { color: var(--text); }
       <div class="dl reveal">
         <div class="dl-main">
           <div class="kicker" style="margin:0">Download</div>
-          <h2>NexUs 0.10.0 für Windows</h2>
+          <h2>Domus 1.0 für Windows</h2>
           <p style="color:var(--muted)">Ein Installer für alles: Client und eingebauter Server. Kostenlos, ohne Werbung, ohne Konto bei Dritten.</p>
           <div class="dl-file">
             <img src="assets/logo.png" alt="" width="44" height="44">
-            <div style="flex:1;min-width:0"><b>NexUs_0.10.0_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>7,7</span> MB</small></div>
+            <div style="flex:1;min-width:0"><b>Domus_1.0.0_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>7,6</span> MB</small></div>
           </div>
-          <a class="btn primary" href="download/NexUs_0.10.0_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
-          <div class="hash">SHA-256: <span class="mono" id="sha-client">acd0cb9cfad2fb023ea71f9dcaf641e7c9baa8619023bf71e0d9883329d93a38</span></div>
+          <a class="btn primary" href="download/Domus_1.0.0_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
+          <div class="hash">SHA-256: <span class="mono" id="sha-client">f6ede233bf2d3fb7471c134d1d60cc8936e10dddef531cbeaa4cec0d5a7df0da</span></div>
         </div>
         <div class="dl-side">
           <h3>Systemvoraussetzungen</h3>
@@ -664,10 +670,10 @@ footer a:hover { color: var(--text); }
             <li>Für einen eigenen Server: freie Ports TCP 7878, UDP 3478 (+ Relay-Bereich)</li>
           </ul>
           <div class="alt-dl">
-            <div><b>Headless-Server für Windows</b><small>nexustalk-server.exe · <span id="srv-size">7,3</span> MB · ohne Oberfläche</small></div>
-            <a class="btn small" href="download/nexustalk-server.exe" download><svg><use href="#i-download"/></svg>Server</a>
+            <div><b>Headless-Server für Windows</b><small>domus-server.exe · <span id="srv-size">7,3</span> MB · ohne Oberfläche</small></div>
+            <a class="btn small" href="download/domus-server.exe" download><svg><use href="#i-download"/></svg>Server</a>
           </div>
-          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">9136d4eecca3bc9a860617193c0e2effd5a19599b79473c2d32e43b0929fe1dd</span></p>
+          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">eb81fda37099cae2a6f6c034798d2ec17ced94473b34dac7d7ad0ba000bb9fdc</span></p>
           <p class="hash">Hinweis: Der Installer ist (noch) nicht code-signiert. Windows SmartScreen kann deshalb warnen – „Weitere Informationen“ → „Trotzdem ausführen“. Prüfe im Zweifel die Prüfsumme. Ein Update installierst du einfach über die vorhandene Version; Server, Konten und Einstellungen bleiben erhalten.</p>
         </div>
       </div>
@@ -679,11 +685,11 @@ footer a:hover { color: var(--text); }
       <div class="donate reveal">
         <div class="heart"><svg><use href="#i-heart"/></svg></div>
         <div>
-          <h3>NexUs unterstützen</h3>
-          <p>NexUs ist kostenlos und werbefrei – und soll es bleiben. Wenn dir die App gefällt, freue ich mich über eine kleine Spende per PayPal.</p>
+          <h3>Domus unterstützen</h3>
+          <p>Domus ist kostenlos und werbefrei – und soll es bleiben. Wenn dir die App gefällt, freue ich mich über eine kleine Spende per PayPal.</p>
           <div class="mail">PayPal: <span class="mono">r4pi@gmx.de</span><button type="button" id="copy-mail">kopieren</button></div>
         </div>
-        <a class="btn pink" href="https://www.paypal.com/donate/?business=r4pi%40gmx.de&amp;item_name=NexUs&amp;currency_code=EUR" target="_blank" rel="noopener"><svg><use href="#i-heart"/></svg>Spenden</a>
+        <a class="btn pink" href="https://www.paypal.com/donate/?business=r4pi%40gmx.de&amp;item_name=Domus&amp;currency_code=EUR" target="_blank" rel="noopener"><svg><use href="#i-heart"/></svg>Spenden</a>
       </div>
     </div>
   </section>
@@ -695,17 +701,17 @@ footer a:hover { color: var(--text); }
         <h2>Häufige Fragen</h2>
       </div>
       <div class="faq reveal">
-        <details><summary>Ist NexUs wirklich kostenlos?</summary><p>Ja. Keine Abos, keine Premium-Stufen, keine Werbung. Der Quellcode steht unter der MIT-Lizenz. Freiwillige Spenden helfen bei der Weiterentwicklung.</p></details>
+        <details><summary>Ist Domus wirklich kostenlos?</summary><p>Ja. Keine Abos, keine Premium-Stufen, keine Werbung. Der Quellcode steht unter der MIT-Lizenz. Freiwillige Spenden helfen bei der Weiterentwicklung.</p></details>
         <details><summary>Brauche ich einen eigenen Server?</summary><p>Nein – du kannst dich auch mit dem Server eines Freundes verbinden. Wer selbst hosten möchte, startet den Server direkt in der App; ein separater Rechner ist nicht nötig.</p></details>
-        <details><summary>Starten meine Server automatisch?</summary><p>Ja. Seit Version 0.10 starten alle eigenen Server zusammen mit NexUs – mit den letzten Einstellungen und ohne Rückfrage. Wer das nicht möchte, schaltet es unter Einstellungen › App ab und startet einen Server dann mit einem Klick selbst.</p></details>
+        <details><summary>Starten meine Server automatisch?</summary><p>Ja. Alle eigenen Server starten zusammen mit Domus – mit den letzten Einstellungen und ohne Rückfrage. Wer das nicht möchte, schaltet es unter Einstellungen › App ab und startet einen Server dann mit einem Klick selbst.</p></details>
         <details><summary>Wie sicher ist die Fernsteuerung?</summary><p>Sie funktioniert nur, solange du deinen ganzen Bildschirm teilst und sie ausdrücklich eingeschaltet hast. Entweder verlangst du ein Passwort (fünf Fehlversuche sperren fünf Minuten) oder du bestätigst jede Anfrage einzeln. Während jemand steuert, siehst du einen deutlichen Hinweis und beendest alles sofort mit F8. Trotzdem gilt: Wer steuert, kann deinen PC bedienen – gib die Steuerung nur an Menschen, denen du vertraust.</p></details>
-        <details><summary>Was bedeutet „Ende-zu-Ende-verschlüsselt“ bei NexUs genau?</summary><p>Für eingeschaltete Direktnachrichten wird der Text auf deinem Gerät verschlüsselt und erst beim Empfänger wieder entschlüsselt; der Server speichert nur das Chiffrat. Nicht verschlüsselt sind Anhänge, Umfragen, Reaktionen und Metadaten (wer wann mit wem schreibt). Kanalnachrichten sind per TLS auf dem Weg geschützt, liegen auf dem Server aber lesbar. Die Schlüssel sind langlebig, und die Umsetzung wurde nicht von Externen geprüft.</p></details>
+        <details><summary>Was bedeutet „Ende-zu-Ende-verschlüsselt“ bei Domus genau?</summary><p>Für eingeschaltete Direktnachrichten wird der Text auf deinem Gerät verschlüsselt und erst beim Empfänger wieder entschlüsselt; der Server speichert nur das Chiffrat. Nicht verschlüsselt sind Anhänge, Umfragen, Reaktionen und Metadaten (wer wann mit wem schreibt). Kanalnachrichten sind per TLS auf dem Weg geschützt, liegen auf dem Server aber lesbar. Die Schlüssel sind langlebig, und die Umsetzung wurde nicht von Externen geprüft.</p></details>
         <details><summary>Wie groß dürfen Dateien sein?</summary><p>Für Uploads in Kanäle gilt das Limit des jeweiligen Servers (vom Betreiber einstellbar). In Direktnachrichten gibt es zusätzlich den Direktversand: Die Datei geht ohne Größenlimit direkt von deinem Rechner zum Empfänger, solange ihr beide online seid.</p></details>
         <details><summary>Kann ich mehrere Server hosten?</summary><p>Ja. In der Hosting-Zentrale legst du über „Neuer Server“ beliebig viele Server an. Jeder läuft auf eigenen Ports (7878, 7879, …), hat einen eigenen Datenordner und einen eigenen Einladungslink.</p></details>
-        <details><summary>Warum kann sich niemand verbinden?</summary><p>Fast immer ist es die Windows-Firewall auf dem Server-PC. Öffne in NexUs „Server hosten“: Der Verbindungs-Check zeigt, was fehlt, und „Firewall freigeben“ erledigt es mit einer Windows-Bestätigung. Zusätzlich muss der Server laufen und auf „Freunde einladen“ stehen. Freunde außerhalb deines WLANs brauchen den <b>Internet-Link</b> (beginnt mit <code>nexustalk://bore.pub:</code>), nicht den Heimnetz-Link.</p></details>
-        <details><summary>Können sich Freunde über das Internet verbinden?</summary><p>Ja – ohne Router-Einstellungen. Bei „Freunde einladen“ baut NexUs automatisch einen verschlüsselten Tunnel über das kostenlose öffentliche Relay bore.pub auf und zeigt einen Internet-Link, der für alle funktioniert. Das klappt auch bei Anschlüssen ohne eigene öffentliche IPv4 wie Starlink oder DS-Lite. Das Relay ist ein Dienst eines Dritten ohne Verfügbarkeitsgarantie; der Tunnel lässt sich im Verbindungs-Check abschalten.</p></details>
-        <details><summary>Hieß NexUs früher anders?</summary><p>Ja – bis Version 0.7 hieß die App <b>NexusTalk</b>. Der neue Installer ersetzt die alte Version automatisch; Server, Konten und Einstellungen bleiben erhalten.</p></details>
-        <details><summary>Gibt es NexUs für Mac, Linux oder Handy?</summary><p>Der Client ist derzeit für Windows (x64) gebaut. Der Headless-Server läuft auch unter Linux (aus dem Quellcode). Weitere Plattformen sind möglich, aber noch nicht verfügbar.</p></details>
+        <details><summary>Warum kann sich niemand verbinden?</summary><p>Fast immer ist es die Windows-Firewall auf dem Server-PC. Öffne in Domus „Server hosten“: Der Verbindungs-Check zeigt, was fehlt, und „Firewall freigeben“ erledigt es mit einer Windows-Bestätigung. Zusätzlich muss der Server laufen und auf „Freunde einladen“ stehen. Freunde außerhalb deines WLANs brauchen den <b>Internet-Link</b> (beginnt mit <code>nexustalk://bore.pub:</code>), nicht den Heimnetz-Link.</p></details>
+        <details><summary>Können sich Freunde über das Internet verbinden?</summary><p>Ja – ohne Router-Einstellungen. Bei „Freunde einladen“ baut Domus automatisch einen verschlüsselten Tunnel über das kostenlose öffentliche Relay bore.pub auf und zeigt einen Internet-Link, der für alle funktioniert. Das klappt auch bei Anschlüssen ohne eigene öffentliche IPv4 wie Starlink oder DS-Lite. Das Relay ist ein Dienst eines Dritten ohne Verfügbarkeitsgarantie; der Tunnel lässt sich im Verbindungs-Check abschalten.</p></details>
+        <details><summary>Hieß Domus früher anders?</summary><p>Ja – von Version 0.8 bis 0.10 hieß die App <b>NexUs</b>, davor <b>NexusTalk</b>. Der Domus-Installer ersetzt die alte Version automatisch: Server, Konten, Chats, Einstellungen und auch „Mit Windows starten“ bleiben erhalten. Einladungslinks beginnen jetzt mit <code>domus://</code>; alte <code>nexustalk://</code>-Links funktionieren weiter. Wer noch NexUs nutzt, sollte aktualisieren, denn ältere Versionen können die neuen <code>domus://</code>-Links nicht öffnen.</p></details>
+        <details><summary>Gibt es Domus für Mac, Linux oder Handy?</summary><p>Der Client ist derzeit für Windows (x64) gebaut. Der Headless-Server läuft auch unter Linux (aus dem Quellcode). Weitere Plattformen sind möglich, aber noch nicht verfügbar.</p></details>
         <details><summary>Wie viele Personen passen in einen Sprachkanal?</summary><p>Teilnehmer werden direkt miteinander verbunden. Mit Video sind etwa 8 Personen pro Kanal empfehlenswert, nur mit Sprache auch mehr – abhängig von Bandbreite und Rechner.</p></details>
       </div>
     </div>
@@ -714,7 +720,7 @@ footer a:hover { color: var(--text); }
 
 <footer>
   <div class="wrap">
-    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="28" height="28" style="width:28px;height:28px"><span>Nex<b>Us</b></span></a>
+    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="28" height="28" style="width:28px;height:28px"><span>Dom<b>us</b></span></a>
     <div>© 2026 Christian Schiessl · Alle Rechte vorbehalten · MIT-Lizenz</div>
     <div class="links">
       <a href="https://cjs86.netlify.app" target="_blank" rel="noopener">cjs86.netlify.app</a>

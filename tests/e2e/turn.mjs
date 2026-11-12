@@ -28,7 +28,7 @@ writeFileSync(
   join(dataDir, "server.toml"),
   `port = ${PORT}\n[tls]\nenabled = false\n[media]\nturn_enabled = true\nudp_port = ${UDP}\nrelay_ip = "127.0.0.1"\nrelay_port_min = 49700\nrelay_port_max = 49750\n`,
 );
-const exe = join(ROOT, "target", "debug", process.platform === "win32" ? "nexustalk-server.exe" : "nexustalk-server");
+const exe = join(ROOT, "target", "debug", process.platform === "win32" ? "domus-server.exe" : "domus-server");
 const server = spawn(exe, ["--data", dataDir], { stdio: "ignore" });
 let browser;
 

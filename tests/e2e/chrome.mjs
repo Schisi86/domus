@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const EXE = process.env.NEXUS_EXE || join(ROOT, "target", "debug", "nexustalk.exe");
+const EXE = process.env.NEXUS_EXE || join(ROOT, "target", "debug", "Domus.exe");
 const [address, token] = process.argv.slice(2);
 const CDP = 9225;
 const SHOTS = process.env.SHOTS_DIR || null;

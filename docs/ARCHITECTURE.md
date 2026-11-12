@@ -1,4 +1,4 @@
-# NexUs – Architektur
+# Domus – Architektur
 
 ## 1. Ziele und Randbedingungen
 
@@ -34,7 +34,7 @@
 └────────────────────────────────────────────┴──────────────────────────────────────────┘
             │ WSS/HTTPS (Signalisierung, Text, Dateien)          ▲  SRTP/DTLS (Medien, P2P)
             ▼                                                     │
-┌──────────── nexus-server (Bibliothek; Headless: nexustalk-server.exe) ───────────────┐
+┌──────────── nexus-server (Bibliothek; Headless: domus-server.exe) ───────────────┐
 │ http.rs   Registrierung/Anmeldung, Datei-Up/Download, Avatare, Icon, WS-Upgrade      │
 │ ws.rs     Verbindungsschleife, Auth, Rate-Limits, Op-Dispatch → ops_*.rs             │
 │ hub.rs    Live-Verbindungen, Event-Fan-out, Präsenz                                  │
@@ -48,7 +48,7 @@ Crates im Workspace:
 
 | Crate | Zweck |
 |---|---|
-| `crates/nexus-server` | Serverbibliothek + Headless-Binary `nexustalk-server` |
+| `crates/nexus-server` | Serverbibliothek + Headless-Binary `domus-server` |
 | `crates/nexus-net` | Client-Netzwerk (reqwest + tokio-tungstenite, rustls, Pinning) – genutzt von App und Integrationstests |
 | `app/src-tauri` | Desktop-Shell `nexustalk` (bettet `nexus-server` und `nexus-net` ein) |
 | `app/src` | Weboberfläche |

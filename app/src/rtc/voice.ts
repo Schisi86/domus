@@ -714,7 +714,7 @@ export class VoiceSession {
     if (this.controlling.value === null) return;
     this.controlActive.value = on;
     if (on && isTauri) {
-      // Pressed while another program had the focus: bring NexUs to the front.
+      // Pressed while another program had the focus: bring Domus to the front.
       void import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
         const w = getCurrentWindow();
         void w.show().then(() => w.setFocus()).catch(() => {});
@@ -1036,7 +1036,7 @@ export class VoiceSession {
     try {
       stream = await navigator.mediaDevices.getDisplayMedia({
         video: { displaySurface: surface, frameRate: { ideal: prof.fps, max: prof.fps }, width: { max: prof.width }, height: { max: prof.height } } as MediaTrackConstraints,
-        // restrictOwnAudio: keep NexUs' own output (the others' voices) out of
+        // restrictOwnAudio: keep Domus' own output (the others' voices) out of
         // the shared system audio, so nobody hears themselves echoed back.
         audio: st.screenAudio ? SYSTEM_AUDIO : false,
         systemAudio: st.screenAudio ? "include" : "exclude",

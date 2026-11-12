@@ -1,6 +1,6 @@
 [package]
 name = "nexus-server"
-description = "NexusTalk server: accounts, channels, messages, signaling"
+description = "Domus server: accounts, channels, messages, signaling"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,7 +9,7 @@ license.workspace = true
 path = "src/lib.rs"
 
 [[bin]]
-name = "nexustalk-server"
+name = "domus-server"
 path = "src/main.rs"
 
 [dependencies]

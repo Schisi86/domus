@@ -1,4 +1,4 @@
-// About NexUs: author, homepage, license and donation.
+// About Domus: author, homepage, license and donation.
 
 import { useEffect, useState } from "preact/hooks";
 import { closeModal, toast } from "../../state/app";
@@ -46,9 +46,9 @@ export function AboutDialog() {
       <div class="about-hero">
         <LogoMark />
         <div>
-          <h2 style={{ margin: 0, fontSize: "var(--fs-2xl)" }} class="wordmark">Nex<b>Us</b></h2>
+          <h2 style={{ margin: 0, fontSize: "var(--fs-2xl)" }} class="wordmark">Dom<b>us</b></h2>
           <div class="muted">{t("about.tagline")}</div>
-          <div class="faint small">{t("about.version", { version: version ?? "0.10.0" })}</div>
+          <div class="faint small">{t("about.version", { version: version ?? "1.0.0" })}</div>
         </div>
       </div>
       <dl class="kv card">

@@ -49,7 +49,8 @@ export function normalizeAddress(input: string): { tls: boolean; base: string; h
   else if (s.startsWith("http://")) {
     tls = false;
     s = s.slice(7);
-  } else if (s.startsWith("nexustalk://")) s = s.slice(12);
+  } else if (s.startsWith("domus://")) s = s.slice(8);
+  else if (s.startsWith("nexustalk://")) s = s.slice(12);
   const hostport = s.split("/")[0];
   if (!hostport || /\s/.test(hostport)) return null;
   let withPort: string;
@@ -61,16 +62,16 @@ export function normalizeAddress(input: string): { tls: boolean; base: string; h
   return { tls, base: `${tls ? "https" : "http"}://${withPort}`, host };
 }
 
-/** Parses invite links of the form `nexustalk://host:port/CODE#fp=FINGERPRINT`. */
+/** Parses invite links of the form `domus://host:port/CODE#fp=FINGERPRINT` (also the `nexustalk://` links of NexUs/NexusTalk). */
 export function parseInvite(input: string): { address: string; code: string; fingerprint: string | null } | null {
-  const m = input.trim().match(/^nexustalk:\/\/([^/\s]+)\/([A-Za-z0-9]{4,32})(?:#fp=([0-9A-Fa-f:]{20,}))?$/);
+  const m = input.trim().match(/^(?:domus|nexustalk):\/\/([^/\s]+)\/([A-Za-z0-9]{4,32})(?:#fp=([0-9A-Fa-f:]{20,}))?$/);
   if (!m) return null;
   return { address: m[1], code: m[2].toUpperCase(), fingerprint: m[3] ? m[3].replace(/:/g, "").toUpperCase() : null };
 }
 
 export function inviteLink(host: string, port: number, code: string, fingerprint: string | null) {
   const h = host.includes(":") && !host.startsWith("[") ? `[${host}]` : host;
-  return `nexustalk://${h}:${port}/${code}${fingerprint ? `#fp=${fingerprint}` : ""}`;
+  return `domus://${h}:${port}/${code}${fingerprint ? `#fp=${fingerprint}` : ""}`;
 }
 
 // ---------------------------------------------------------------- Tauri

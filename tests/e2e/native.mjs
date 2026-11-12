@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const EXE = process.env.NEXUS_EXE || join(ROOT, "target", "debug", "nexustalk.exe");
+const EXE = process.env.NEXUS_EXE || join(ROOT, "target", "debug", "Domus.exe");
 const CDP = 9226;
 const results = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

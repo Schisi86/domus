@@ -1,4 +1,4 @@
-# Funktionsstand (Version 0.10.0)
+# Funktionsstand (Version 1.0.0)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -78,6 +78,16 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Fehlerprotokolle (Client + Server, rotierend) | ✅ |
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
+
+### Domus 1.0 – neuer Name, neues Logo (neu in 1.0.0)
+| Funktion | Stand |
+|---|---|
+| **Umbenennung in Domus** in Oberfläche (alle 15 Sprachen), Titelleiste, Fenster- und Infobereich-Titel, Installer (Name, Grafiken, Kurzbeschreibung), Programmdatei `Domus.exe`, Desktop-Verknüpfung, Firewall-Regel „Domus Server“, Headless-Server `domus-server`, Projektseite und cjs86 | ✅ Typprüfung, alle Testreihen mit den neuen Namen |
+| **Logo:** Haus mit Kopfhörern auf warmem Verlauf (Amber → Koralle → Violett); als Icon 16–256 px (.ico), Installer-Seitenbild und -Kopfgrafik, Favicon | ✅ in allen Größen gesichtet |
+| **Update von NexUs/NexusTalk:** Installer beendet die alte App, entfernt die alte Installation still und übernimmt „Mit Windows starten“. Daten bleiben in `%APPDATA%\NexusTalk`, App-Kennung unverändert (`org.nexustalk.desktop`), damit nichts verloren geht | 🟡 Logik geprüft und Installer gebaut; **das Update über eine echte NexUs-Installation wurde nicht ausprobiert**, um die laufende Installation auf dem Entwicklungs-PC nicht anzufassen |
+| **Einladungslinks** `domus://…`; `nexustalk://…` wird weiter angenommen | ✅ Rust- und Browser-Tests. Hinweis: NexUs 0.10 und älter kann `domus://`-Links nicht öffnen – dort hilft das Update |
+| **Neue Programmdatei:** Windows-Firewall-Freigabe gilt pro Programm; nach dem Update meldet Domus deshalb ggf. „Firewall blockiert“ und gibt sich mit einem Klick (Administrator-Bestätigung) wieder frei. Internet-Links über den Tunnel sind davon nicht betroffen | 🟡 erwartetes Verhalten, nicht auf einem zweiten PC geprüft |
+| Unverändert intern: Crate-Namen (`nexus-server`, `nexus-net`), Datenordner, Speicher-Schlüssel im Browser-Build, TURN-Realm | – |
 
 ### Zusammenarbeit, Verschlüsselung, Autostart, Designs (neu in 0.10.0)
 | Funktion | Stand |

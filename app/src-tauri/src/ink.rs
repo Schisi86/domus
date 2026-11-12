@@ -26,7 +26,7 @@ pub async fn ink_overlay(app: AppHandle, show: bool) -> Result<bool, String> {
         return Ok(true);
     }
     let w = WebviewWindowBuilder::new(&app, LABEL, WebviewUrl::App("ink.html".into()))
-        .title("NexUs – Markierungen")
+        .title("Domus – Markierungen")
         .transparent(true)
         .decorations(false)
         .shadow(false)

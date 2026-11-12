@@ -362,7 +362,7 @@ export function EmptyState(props: { title: string; children?: ComponentChildren;
 export function LogoMark({ size }: { size?: number }) {
   return (
     <div class="logo-mark" style={size ? { width: `${size}px`, height: `${size}px` } : undefined}>
-      <img src="/logo.png" alt="NexUs" draggable={false} />
+      <img src="/logo.png" alt="Domus" draggable={false} />
     </div>
   );
 }

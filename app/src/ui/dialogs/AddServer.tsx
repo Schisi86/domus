@@ -27,7 +27,7 @@ function connectHelp(address: string, e: unknown): string | null {
 }
 
 export function deviceName() {
-  return isTauri ? "NexUs Desktop (Windows)" : `Browser (${navigator.userAgent.includes("Edg") ? "Edge" : "Web"})`;
+  return isTauri ? "Domus Desktop (Windows)" : `Browser (${navigator.userAgent.includes("Edg") ? "Edge" : "Web"})`;
 }
 
 export function AddServerDialog({ reauth, prefill }: { reauth?: ServerStore; prefill?: { address: string; invite?: string; fingerprint?: string | null } }) {

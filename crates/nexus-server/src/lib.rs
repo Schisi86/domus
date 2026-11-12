@@ -1,7 +1,7 @@
-//! NexusTalk server library.
+//! Domus server library (crate name kept from NexusTalk).
 //!
 //! The same code runs inside the desktop app ("Servermodus") and as the
-//! headless `nexustalk-server` binary. [`start`] binds the listeners and
+//! headless `domus-server` binary. [`start`] binds the listeners and
 //! returns a [`RunningServer`] handle that can be shut down or restarted.
 //!
 //! Layout:
@@ -366,7 +366,7 @@ pub async fn start(cfg: Config, data_dir: &Path) -> Result<RunningServer, StartE
         addr = %local_addr,
         tls = state.fingerprint.is_some(),
         fingerprint = state.fingerprint.as_deref().unwrap_or("-"),
-        "NexusTalk-Server {VERSION} gestartet"
+        "Domus-Server {VERSION} gestartet"
     );
     if state.cfg.is_exposed() {
         tracing::warn!("Server ist im Netzwerk erreichbar ({}). Registrierung: {:?}", state.cfg.bind, state.settings().registration_mode);

@@ -1,6 +1,6 @@
 [package]
 name = "nexustalk"
-description = "NexusTalk – schlanke, selbst hostbare Kommunikationssoftware"
+description = "Domus – selbst hostbare Kommunikationssoftware (früher NexUs/NexusTalk)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

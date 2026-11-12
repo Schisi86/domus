@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-10T23:09:26.869Z",
+  "date": "2026-11-12T04:06:33.872Z",
   "results": [
     {
       "name": "call: data channel open between both",
@@ -44,7 +44,7 @@
     {
       "name": "remote: mouse move + click arrive, centred",
       "ok": true,
-      "detail": "[{\"t\":\"m\",\"x\":0.5,\"y\":0.5},{\"t\":\"m\",\"x\":0.5,\"y\":0.5},{\"t\":\"b\",\"b\":0,\"d\":true},{\"t\":\"b\",\"b\":0,\"d\":false}]"
+      "detail": "[{\"t\":\"m\",\"x\":0.5,\"y\":0.4738172625496569},{\"t\":\"m\",\"x\":0.5,\"y\":0.4738172625496569},{\"t\":\"b\",\"b\":0,\"d\":true},{\"t\":\"b\",\"b\":0,\"d\":false}]"
     },
     {
       "name": "remote: F8 pauses control, keys stay local",
@@ -94,7 +94,7 @@
     {
       "name": "ink: laser pointer with name arrives",
       "ok": true,
-      "detail": "{\"x\":0.71,\"y\":0.61,\"at\":1794352140090,\"color\":\"#34d27b\",\"name\":\"bob\"}"
+      "detail": "{\"x\":0.71,\"y\":0.61,\"at\":1794456372382,\"color\":\"#34d27b\",\"name\":\"bob\"}"
     },
     {
       "name": "ink: sharer can switch annotations off",
@@ -104,7 +104,7 @@
     {
       "name": "clip: buffer runs for the watched stream and yields a video",
       "ok": true,
-      "detail": "{\"size\":391333,\"type\":\"video/mp4\",\"seconds\":14,\"name\":\"NexUs-Clip_2026-11-11_00-09-04.mp4\"}"
+      "detail": "{\"size\":384349,\"type\":\"video/mp4\",\"seconds\":14,\"name\":\"Domus-Clip_2026-11-12_05-06-16.mp4\"}"
     },
     {
       "name": "clip: the others are told",
@@ -124,7 +124,7 @@
     {
       "name": "watch: video started for everyone",
       "ok": true,
-      "detail": "{\"id\":\"6eb151fb-f174-4beb-a946-9c2f98779ee5\",\"by\":1,\"kind\":\"yt\",\"src\":\"aqz-KE-bpKQ\",\"title\":\"\",\"playing\":true,\"pos\":65,\"n\":1}"
+      "detail": "{\"id\":\"ebc42a9c-f743-4bfd-8fb9-c9e8851d88af\",\"by\":1,\"kind\":\"yt\",\"src\":\"aqz-KE-bpKQ\",\"title\":\"\",\"playing\":true,\"pos\":65,\"n\":1}"
     },
     {
       "name": "watch: player tile shown on both sides",
@@ -199,7 +199,7 @@
     {
       "name": "e2e: the server only stores ciphertext",
       "ok": true,
-      "detail": "nxe1.2c30177c0087dccb.7969ab60798d7a8c.-Pltc_QsfQrZ1J6v.rLp-"
+      "detail": "nxe1.a47f3d1e5a129c77.73aa0bdc6f6d7e9f.pTiiAQ1pLr44BrYb.PER6"
     },
     {
       "name": "e2e: bob reads the message, lock shown",

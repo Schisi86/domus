@@ -1,42 +1,68 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <!-- NexUs: one continuous stroke forms the N – two points connected, the
-       meeting point glows. A vivid emerald → cyan → indigo squircle. -->
+  <!-- Domus: a house wearing headphones – home and voice in one sign.
+       Warm sunset squircle (amber → coral → violet), white house, ink-dark
+       headphones with glowing ear pads. -->
   <defs>
-    <linearGradient id="bg" x1="0.08" y1="0.02" x2="0.95" y2="1">
-      <stop offset="0" stop-color="#34f5b0"/>
-      <stop offset="0.45" stop-color="#10b5c8"/>
-      <stop offset="1" stop-color="#5b4cf0"/>
+    <linearGradient id="bg" x1="0.05" y1="0" x2="0.95" y2="1">
+      <stop offset="0" stop-color="#ffc24a"/>
+      <stop offset="0.48" stop-color="#ff4f7b"/>
+      <stop offset="1" stop-color="#6d36f5"/>
     </linearGradient>
-    <radialGradient id="shine" cx="30%" cy="12%" r="75%">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
-      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.06"/>
+    <radialGradient id="shine" cx="28%" cy="10%" r="78%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.40"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.05"/>
       <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="depth" cx="70%" cy="100%" r="80%">
-      <stop offset="0" stop-color="#1e1065" stop-opacity="0.45"/>
-      <stop offset="1" stop-color="#1e1065" stop-opacity="0"/>
+    <radialGradient id="depth" cx="78%" cy="100%" r="80%">
+      <stop offset="0" stop-color="#22105e" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#22105e" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#e3f6ff"/>
+      <stop offset="1" stop-color="#ffeef4"/>
     </linearGradient>
+    <linearGradient id="phone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a1c52"/>
+      <stop offset="1" stop-color="#140c2e"/>
+    </linearGradient>
+    <linearGradient id="pad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5ff2ff"/>
+      <stop offset="1" stop-color="#2fb4ff"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffdd7a"/>
+      <stop offset="1" stop-color="#ff9a3c"/>
+    </radialGradient>
     <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="22" stdDeviation="26" flood-color="#14095c" flood-opacity="0.38"/>
-    </filter>
-    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
-      <feGaussianBlur stdDeviation="18"/>
+      <feDropShadow dx="0" dy="20" stdDeviation="22" flood-color="#2a0b4f" flood-opacity="0.42"/>
     </filter>
     <clipPath id="sq"><rect x="40" y="40" width="944" height="944" rx="236"/></clipPath>
   </defs>
+
   <g clip-path="url(#sq)">
     <rect x="40" y="40" width="944" height="944" fill="url(#bg)"/>
     <rect x="40" y="40" width="944" height="944" fill="url(#depth)"/>
     <rect x="40" y="40" width="944" height="944" fill="url(#shine)"/>
   </g>
   <rect x="44" y="44" width="936" height="936" rx="232" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="6"/>
+
   <g filter="url(#shadow)">
-    <path d="M318 712 V312 L706 712 V312" fill="none" stroke="url(#ink)" stroke-width="128" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- headband, arching over the roof -->
+    <path d="M232 600 V548 A280 318 0 0 1 792 548 V600" fill="none" stroke="url(#phone)" stroke-width="58" stroke-linecap="round"/>
+
+    <!-- the house -->
+    <path d="M512 300 L736 500 V752 H288 V500 Z" fill="url(#wall)" stroke="url(#wall)" stroke-width="60" stroke-linejoin="round"/>
+    <!-- door -->
+    <path d="M462 784 V668 a50 50 0 0 1 100 0 V784 Z" fill="#3a1a6e"/>
+    <!-- warm lit window -->
+    <rect x="468" y="492" width="88" height="80" rx="18" fill="url(#glow)"/>
+    <path d="M512 492 V572 M468 532 H556" stroke="#ffffff" stroke-width="10" opacity="0.85"/>
+
+    <!-- ear cups, clasping the walls -->
+    <rect x="176" y="530" width="118" height="236" rx="54" fill="url(#phone)"/>
+    <rect x="730" y="530" width="118" height="236" rx="54" fill="url(#phone)"/>
+    <!-- glowing pads where the cups touch the house -->
+    <rect x="262" y="566" width="36" height="164" rx="18" fill="url(#pad)"/>
+    <rect x="726" y="566" width="36" height="164" rx="18" fill="url(#pad)"/>
   </g>
-  <circle cx="706" cy="312" r="58" fill="#c9fff0" filter="url(#glow)" opacity="0.9"/>
-  <circle cx="706" cy="312" r="40" fill="#ffffff"/>
 </svg>

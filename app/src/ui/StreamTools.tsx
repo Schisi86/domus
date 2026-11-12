@@ -290,7 +290,7 @@ export function useClipHotkey() {
           if (cancelled) await gs.unregister(key).catch(() => {});
           else unregister = () => void gs.unregister(key).catch(() => {});
         })
-        // Key taken by another program: it still works while NexUs has the focus.
+        // Key taken by another program: it still works while Domus has the focus.
         .catch(() => window.addEventListener("keydown", onKey));
     } else window.addEventListener("keydown", onKey);
     return () => {

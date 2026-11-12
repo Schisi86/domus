@@ -62,7 +62,7 @@ pub async fn authed(st: &AppState, headers: &HeaderMap) -> ApiResult<User> {
 }
 
 async fn root() -> &'static str {
-    "NexusTalk-Server laeuft. Verbinde dich mit der NexusTalk-App.\n"
+    "Domus-Server laeuft. Verbinde dich mit der Domus-App.\n"
 }
 
 async fn info(State(st): State<Arc<AppState>>) -> Json<Value> {

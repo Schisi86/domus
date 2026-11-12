@@ -27,36 +27,36 @@
 
 ## Headless-Server (ohne Oberfläche, Windows oder Linux)
 
-Benötigt nur `nexustalk-server(.exe)` – keine WebView2, keine weiteren Abhängigkeiten.
+Benötigt nur `domus-server(.exe)` – keine WebView2, keine weiteren Abhängigkeiten.
 
 ```bash
-nexustalk-server init --data /var/lib/nexustalk     # schreibt server.toml
+domus-server init --data /var/lib/domus     # schreibt server.toml
 # server.toml anpassen: bind = "0.0.0.0", public_host = "chat.example.org"
-nexustalk-server --data /var/lib/nexustalk
+domus-server --data /var/lib/domus
 ```
 
 Beim ersten Start erscheint im Log ein **Einrichtungscode** (auch in `setup-code.txt`). Mit diesem Code registriert sich der Inhaber in der App (Server hinzufügen → Registrieren → Code eintragen).
 
 Weitere Befehle:
 ```bash
-nexustalk-server backup  --data DIR            # Sicherung nach DIR/backups (auch im laufenden Betrieb)
-nexustalk-server restore DATEI --data DIR      # Wiederherstellung beim nächsten Start
+domus-server backup  --data DIR            # Sicherung nach DIR/backups (auch im laufenden Betrieb)
+domus-server restore DATEI --data DIR      # Wiederherstellung beim nächsten Start
 ```
 
 ### Linux (systemd)
 ```ini
-# /etc/systemd/system/nexustalk.service
+# /etc/systemd/system/domus.service
 [Unit]
 Description=NexUs Server
 After=network-online.target
 
 [Service]
 User=nexustalk
-ExecStart=/usr/local/bin/nexustalk-server --data /var/lib/nexustalk
+ExecStart=/usr/local/bin/domus-server --data /var/lib/domus
 Restart=on-failure
 NoNewPrivileges=true
 ProtectSystem=strict
-ReadWritePaths=/var/lib/nexustalk
+ReadWritePaths=/var/lib/domus
 
 [Install]
 WantedBy=multi-user.target
@@ -64,7 +64,7 @@ WantedBy=multi-user.target
 `systemctl enable --now nexustalk`. SIGTERM fährt den Server sauber herunter.
 
 ### Windows-Dienst / Autostart
-Am einfachsten über die Aufgabenplanung: Trigger „Beim Systemstart“, Aktion `nexustalk-server.exe --data C:\NexusTalkData`, „Unabhängig von der Benutzeranmeldung ausführen“.
+Am einfachsten über die Aufgabenplanung: Trigger „Beim Systemstart“, Aktion `domus-server.exe --data C:\DomusData`, „Unabhängig von der Benutzeranmeldung ausführen“.
 
 ## Welche Komponenten werden benötigt?
 
@@ -72,13 +72,13 @@ Am einfachsten über die Aufgabenplanung: Trigger „Beim Systemstart“, Aktion
 |---|---|
 | Nur Client | Desktop-App (enthält den Server, startet ihn aber nicht) + WebView2-Runtime |
 | Server auf dem eigenen PC mit Oberfläche | Desktop-App (Servermodus) |
-| Dedizierter Server | `nexustalk-server` (≈ 7 MB, keine Abhängigkeiten) |
+| Dedizierter Server | `domus-server` (≈ 7 MB, keine Abhängigkeiten) |
 | Restriktive Netze | zusätzlich TURN (integriert aktivierbar oder externer coturn) |
 
 ## Aktualisierungskonzept
 
 * **Versionierung:** SemVer; Serverprotokoll-Version (`protocol`) in `/api/v1/info` und im `ready`-Paket. Clients zeigen inkompatible Server an, sobald sich die Protokollversion ändert.
-* **Datenbank:** Migrationen laufen beim Start automatisch und vorwärts (`PRAGMA user_version`). Vor einem Update wird eine Sicherung empfohlen (`backup.create` / `nexustalk-server backup`). Eine neuere Datenbank wird von einer älteren Programmversion nicht geöffnet (klare Fehlermeldung statt Datenverlust).
+* **Datenbank:** Migrationen laufen beim Start automatisch und vorwärts (`PRAGMA user_version`). Vor einem Update wird eine Sicherung empfohlen (`backup.create` / `domus-server backup`). Eine neuere Datenbank wird von einer älteren Programmversion nicht geöffnet (klare Fehlermeldung statt Datenverlust).
 * **Desktop-App:** Neue Installer-Version einfach über die alte installieren; Daten in `%APPDATA%` bleiben erhalten. Ein automatischer Updater (Tauri-Updater mit signierten Paketen und selbst gehosteter Update-URL, kein zwingender zentraler Dienst) ist vorbereitet, aber **noch nicht aktiviert** – dafür sind ein Signaturschlüssel und ein Veröffentlichungsort nötig.
 * **Headless-Server:** Binary ersetzen, neu starten.
 
@@ -90,7 +90,7 @@ Voraussetzungen: Rust (stable, MSVC), Node.js ≥ 20, Visual Studio Build Tools 
 cd app
 npm install
 npx tauri build                        # → target/release/bundle/{nsis,msi}/
-cargo build --release -p nexus-server  # → target/release/nexustalk-server.exe
+cargo build --release -p nexus-server  # → target/release/domus-server.exe
 ```
 
 Entwicklung: `npx tauri dev` (App) bzw. `npm run dev` + `cargo run -p nexus-server -- --data dev-data` (Browser-UI gegen Testserver ohne TLS).

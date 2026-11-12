@@ -16,7 +16,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const dataDir = mkdtempSync(join(tmpdir(), "nx-seed-"));
 writeFileSync(join(dataDir, "server.toml"), `port = ${PORT}\n[tls]\nenabled = false\n[media]\nstun_enabled = false\n`);
-const exe = join(ROOT, "target", "debug", process.platform === "win32" ? "nexustalk-server.exe" : "nexustalk-server");
+const exe = join(ROOT, "target", "debug", process.platform === "win32" ? "domus-server.exe" : "domus-server");
 const server = spawn(exe, ["--data", dataDir], { stdio: "ignore" });
 const stop = () => {
   server.kill();

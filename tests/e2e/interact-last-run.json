@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T03:59:03.220Z",
+  "date": "2026-11-12T04:05:21.325Z",
   "results": [
     {
       "name": "poll: member sees the new poll",
@@ -34,7 +34,7 @@
     {
       "name": "voice message: playable with duration",
       "ok": true,
-      "detail": "0:01"
+      "detail": "0:02"
     },
     {
       "name": "profile: banner gradient and bio shown",

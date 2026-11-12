@@ -62,7 +62,7 @@ function client(token) {
 
 // ------------------------------------------------------------- server
 
-const exe = join(ROOT, "target", "release", "nexustalk-server.exe");
+const exe = join(ROOT, "target", "release", "domus-server.exe");
 if (!existsSync(exe)) {
   console.error("Release server missing: cargo build --release -p nexus-server");
   process.exit(1);

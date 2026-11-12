@@ -204,7 +204,7 @@ export class ClipBuffer {
       const d = new Date();
       const pad = (n: number) => String(n).padStart(2, "0");
       const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
-      return { blob, seconds, uid, name: `NexUs-Clip_${stamp}.${blob.type.includes("mp4") ? "mp4" : "webm"}` };
+      return { blob, seconds, uid, name: `Domus-Clip_${stamp}.${blob.type.includes("mp4") ? "mp4" : "webm"}` };
     } catch (e) {
       log("warn", `clip failed: ${e}`);
       return null;

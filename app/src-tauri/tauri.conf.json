@@ -1,7 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "NexUs",
-  "version": "0.10.0",
+  "productName": "Domus",
+  "mainBinaryName": "Domus",
+  "version": "1.0.0",
   "identifier": "org.nexustalk.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -25,8 +26,8 @@
     "publisher": "Christian Schiessl",
     "copyright": "© 2026 Christian Schiessl",
     "category": "SocialNetworking",
-    "shortDescription": "NexUs – schlanke, selbst hostbare Kommunikationssoftware von Christian Schiessl",
-    "longDescription": "NexUs (vormals NexusTalk): Text, Sprache, Video und Bildschirmübertragung mit eigenem Server – ohne Cloud-Zwang. © 2026 Christian Schiessl · https://cjs86.netlify.app",
+    "shortDescription": "Domus – dein eigener Server für Text, Sprache und Video. Von Christian Schiessl",
+    "longDescription": "Domus (vormals NexUs und NexusTalk): Text, Sprache, Video und Bildschirmübertragung mit eigenem Server – ohne Cloud-Zwang. © 2026 Christian Schiessl · https://cjs86.netlify.app",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -54,6 +55,6 @@
         "language": "de-DE"
       }
     },
-    "homepage": "https://nexustalk-app.netlify.app"
+    "homepage": "https://domus-talk.netlify.app"
   }
 }

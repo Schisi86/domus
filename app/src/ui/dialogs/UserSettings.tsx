@@ -576,7 +576,7 @@ function About() {
       <div class="about-hero">
         <LogoMark />
         <div>
-          <h2 style={{ fontSize: "var(--fs-2xl)" }} class="wordmark">Nex<b>Us</b></h2>
+          <h2 style={{ fontSize: "var(--fs-2xl)" }} class="wordmark">Dom<b>us</b></h2>
           <div class="muted">{t("about.tagline")}</div>
         </div>
       </div>

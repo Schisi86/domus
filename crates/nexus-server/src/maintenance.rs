@@ -146,7 +146,7 @@ pub fn list_backups(st: &AppState) -> ApiResult<Vec<BackupInfo>> {
     Ok(v)
 }
 
-/// Checks that a file is a NexusTalk database this version can open.
+/// Checks that a file is a Domus (or NexusTalk/NexUs) database this version can open.
 pub fn verify_backup(path: &Path) -> Result<(), String> {
     let c = rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
         .map_err(|e| format!("Datei kann nicht geöffnet werden: {e}"))?;

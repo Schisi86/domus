@@ -1,10 +1,10 @@
-//! Headless NexusTalk server.
+//! Headless Domus server.
 //!
 //! ```text
-//! nexustalk-server [--data <dir>]            run the server
-//! nexustalk-server init [--data <dir>]       write a default server.toml
-//! nexustalk-server backup [--data <dir>]     create a backup (server may be running)
-//! nexustalk-server restore <file> [--data]   stage a backup; applied on next start
+//! domus-server [--data <dir>]            run the server
+//! domus-server init [--data <dir>]       write a default server.toml
+//! domus-server backup [--data <dir>]     create a backup (server may be running)
+//! domus-server restore <file> [--data]   stage a backup; applied on next start
 //! ```
 
 use std::path::PathBuf;
@@ -14,10 +14,10 @@ use nexus_server::config::Config;
 
 fn usage() {
     eprintln!(
-        "NexusTalk-Server {}\n\n\
-         Aufruf:\n  nexustalk-server [--data <verzeichnis>]\n  nexustalk-server init [--data <verzeichnis>]\n  \
-         nexustalk-server backup [--data <verzeichnis>]\n  nexustalk-server restore <datei> [--data <verzeichnis>]\n\n\
-         Standard-Datenverzeichnis: ./nexustalk-data (oder Umgebungsvariable NEXUSTALK_DATA)",
+        "Domus-Server {}\n\n\
+         Aufruf:\n  domus-server [--data <verzeichnis>]\n  domus-server init [--data <verzeichnis>]\n  \
+         domus-server backup [--data <verzeichnis>]\n  domus-server restore <datei> [--data <verzeichnis>]\n\n\
+         Standard-Datenverzeichnis: ./domus-data (oder Umgebungsvariable DOMUS_DATA; ein vorhandener Ordner ./nexustalk-data wird weiter benutzt)",
         nexus_server::VERSION
     );
 }
@@ -31,7 +31,11 @@ struct Args {
 fn parse_args() -> Result<Args, String> {
     let mut it = std::env::args().skip(1);
     let mut cmd = "run".to_string();
-    let mut data = std::env::var_os("NEXUSTALK_DATA").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("nexustalk-data"));
+    // DOMUS_DATA (or the old NEXUSTALK_DATA); a folder from NexusTalk/NexUs is kept.
+    let mut data = std::env::var_os("DOMUS_DATA")
+        .or_else(|| std::env::var_os("NEXUSTALK_DATA"))
+        .map(PathBuf::from)
+        .unwrap_or_else(|| if PathBuf::from("nexustalk-data").exists() { PathBuf::from("nexustalk-data") } else { PathBuf::from("domus-data") });
     let mut file = None;
     while let Some(a) = it.next() {
         match a.as_str() {
@@ -153,7 +157,7 @@ async fn run(data: PathBuf, cfg_path: PathBuf) -> ExitCode {
             let _ = cfg.save(&cfg_path);
         }
         if _log_guard.is_none() {
-            _log_guard = nexus_server::logbuf::init(Some(&data.join("logs")), "nexustalk-server", &cfg.log.level, cfg.log.max_files, true);
+            _log_guard = nexus_server::logbuf::init(Some(&data.join("logs")), "domus-server", &cfg.log.level, cfg.log.max_files, true);
         }
         let server = match nexus_server::start(cfg, &data).await {
             Ok(s) => s,

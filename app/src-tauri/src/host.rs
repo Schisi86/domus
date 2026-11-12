@@ -1,4 +1,4 @@
-//! "Servermodus": runs one or more NexusTalk servers inside the desktop app.
+//! "Servermodus": runs one or more Domus servers inside the desktop app.
 //!
 //! Every hosted server has its own data folder, configuration and ports. A
 //! small registry (`hosts.json`) lists them. Per server, a supervisor task

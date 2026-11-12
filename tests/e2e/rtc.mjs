@@ -51,7 +51,7 @@ async function waitFor(fn, timeout = 20000, step = 250) {
 
 const dataDir = mkdtempSync(join(tmpdir(), "nx-e2e-"));
 writeFileSync(join(dataDir, "server.toml"), `port = ${PORT}\n[tls]\nenabled = false\n[media]\nstun_enabled = true\nudp_port = ${UDP}\n`);
-const exe = join(ROOT, "target", "debug", process.platform === "win32" ? "nexustalk-server.exe" : "nexustalk-server");
+const exe = join(ROOT, "target", "debug", process.platform === "win32" ? "domus-server.exe" : "domus-server");
 let server;
 function startServer() {
   server = spawn(exe, ["--data", dataDir], { stdio: ["ignore", "pipe", "pipe"] });

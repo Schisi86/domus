@@ -183,7 +183,7 @@ pub struct ServerSettings {
 impl Default for ServerSettings {
     fn default() -> Self {
         Self {
-            name: "NexusTalk-Server".into(),
+            name: "Domus-Server".into(),
             description: String::new(),
             registration_mode: RegistrationMode::Invite,
             uploads_enabled: true,

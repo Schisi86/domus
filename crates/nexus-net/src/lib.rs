@@ -1,4 +1,4 @@
-//! Client-side networking for NexusTalk: HTTP requests and WebSocket
+//! Client-side networking for Domus: HTTP requests and WebSocket
 //! connections over TLS with certificate pinning.
 //!
 //! Self-hosted servers usually run with a self-signed certificate. Instead of
@@ -122,7 +122,7 @@ pub fn parse_address(input: &str) -> Result<(bool, String), NetError> {
         (true, r)
     } else if let Some(r) = s.strip_prefix("http://") {
         (false, r)
-    } else if let Some(r) = s.strip_prefix("nexustalk://") {
+    } else if let Some(r) = s.strip_prefix("domus://").or_else(|| s.strip_prefix("nexustalk://")) {
         (true, r)
     } else {
         (true, s)
@@ -346,6 +346,7 @@ mod tests {
         assert_eq!(parse_address("192.168.1.5:9000").unwrap(), (true, "https://192.168.1.5:9000".into()));
         assert_eq!(parse_address("http://localhost:7878/").unwrap(), (false, "http://localhost:7878".into()));
         assert_eq!(parse_address("nexustalk://host:1/ABC").unwrap(), (true, "https://host:1".into()));
+        assert_eq!(parse_address("domus://host:1/ABC").unwrap(), (true, "https://host:1".into()));
         assert_eq!(parse_address("::1").unwrap(), (true, "https://[::1]:7878".into()));
         assert_eq!(parse_address("[::1]:80").unwrap(), (true, "https://[::1]:80".into()));
         assert!(parse_address("").is_err());
