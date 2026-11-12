@@ -1,7 +1,7 @@
 // Root layout: server rail | floating shell (sidebar, main content, member list).
 
 import { useEffect } from "preact/hooks";
-import { activeChannelId, activeServer, activeServerId, contextMenu, dialog, homeDm, modal, openChannel, openModal, selectChannel, settings, toast } from "../state/app";
+import { activeChannelId, activeServer, activeServerId, contextMenu, dialog, homeDm, membersSheet, mobileNav, modal, narrow, openChannel, servers, openModal, selectChannel, settings, toast } from "../state/app";
 import { ContextMenu, EmptyState, Icon, Lightbox, Resizer, Toasts } from "./components";
 import { hostFor, startHost, startingHosts } from "../state/hosting";
 import { Rail } from "./Rail";
@@ -13,7 +13,7 @@ import { FriendsView } from "./Home";
 import { voice } from "../rtc/voice";
 import { lang, t } from "../i18n";
 import { applyTheme } from "../themes";
-import { isTauri, tauriInvoke } from "../platform";
+import { isMobile, isTauri, tauriInvoke } from "../platform";
 import { QuickSwitcher, ShortcutsDialog } from "./QuickSwitcher";
 import { Footer, TitleBar } from "./Chrome";
 import { ControlRequestPrompt } from "./remotecontrol";
@@ -105,7 +105,15 @@ function Main() {
   return (
     <div class="main-body">
       <ChatView key={`${server.id}:${open.channelId}`} server={server} channelId={open.channelId} />
-      {settings.value.showMembers && (
+      {narrow.value && membersSheet.value && (
+        <div class="sheet-overlay" onClick={(e) => e.target === e.currentTarget && (membersSheet.value = false)}>
+          <div class="sheet">
+            <div class="sheet-grip" aria-hidden="true" />
+            <MemberList server={server} channelId={open.channelId} />
+          </div>
+        </div>
+      )}
+      {!narrow.value && settings.value.showMembers && (
         <>
           <Resizer setting="membersWidth" edge="left" label={t("layout.resizeMembers")} />
           <MemberList server={server} channelId={open.channelId} />
@@ -123,7 +131,7 @@ export function App() {
   void lang.value;
   return (
     <div
-      class="app"
+      class={`app${narrow.value ? " narrow" : ""}${narrow.value && mobileNav.value && servers.value.length ? " nav-open" : ""}${isMobile ? " touch" : ""}`}
       onContextMenu={(e) => {
         // Native context menu only inside editable/selectable text.
         const tg = e.target as HTMLElement;

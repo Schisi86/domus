@@ -1,7 +1,8 @@
 // Middle column: channels of the active server (or DMs on the home screen),
 // the active voice connection and the user panel with audio controls.
 
-import { activeChannelId, activeServer, activeServerId, homeDm, isMuted, openDm, openModal, selectChannel, servers, settings, showMenu, toast, updateSettings } from "../state/app";
+import { draftKey, draftKeys } from "../state/drafts";
+import { activeChannelId, activeServer, activeServerId, homeDm, isMuted, openDm, openModal, selectChannel, servers, settings, showMenu, toast, updateSettings, showContent, narrow, type MenuItem } from "../state/app";
 import type { ServerStore } from "../state/server";
 import type { Channel } from "../types";
 import { has, P } from "../types";
@@ -12,7 +13,8 @@ import { ServerSettingsDialog } from "./dialogs/ServerSettings";
 import { InviteDialog } from "./dialogs/Invite";
 import { AddServerDialog } from "./dialogs/AddServer";
 import { UserSettingsDialog } from "./dialogs/UserSettings";
-import { errorText, presenceText, t } from "../i18n";
+import { errorText, fmtTime, presenceText, t } from "../i18n";
+import { TransferDialog } from "./dialogs/Transfer";
 import { ScreenShareControl } from "./ScreenShare";
 import { memberMenu } from "./Members";
 import { SOUNDBOARD, playBoard } from "../sound";
@@ -142,6 +144,7 @@ function ChannelRow({ server, channel }: { server: ServerStore; channel: Channel
         )}
         {channel.kind === "text" && (channel.slowmode ?? 0) > 0 && <Icon.Clock size={13} title={t("chanDlg.slowmode")} />}
         {muted && <Icon.BellOff size={14} />}
+        {(!active || narrow.value) && channel.kind === "text" && draftKeys.value.has(draftKey(server.id, channel.id)) && <Icon.Edit size={13} title={t("chat.draft")} />}
         {mentions > 0 && <span class="mention-count">{mentions}</span>}
         {canManage && (
           <span class="chan-actions">
@@ -242,7 +245,7 @@ function HomeSidebar() {
         <span class="title">{t("home.dms")}</span>
       </div>
       <div class="sidebar-scroll">
-        <button class={`chan${!cur ? " active" : ""}`} onClick={() => (homeDm.value = null)}>
+        <button class={`chan${!cur ? " active" : ""}`} onClick={() => { homeDm.value = null; showContent(); }}>
           <Icon.Mail />
           <span class="name">{t("home.friends")}</span>
         </button>
@@ -367,6 +370,27 @@ function VoicePanel() {
   );
 }
 
+/** Until when "pause notifications" lasts: hours from now, or tomorrow 8:00. */
+export function pauseUntil(kind: "1h" | "8h" | "morning"): number {
+  if (kind === "1h") return Date.now() + 3_600_000;
+  if (kind === "8h") return Date.now() + 8 * 3_600_000;
+  const d = new Date();
+  d.setDate(d.getDate() + (d.getHours() < 8 ? 0 : 1));
+  d.setHours(8, 0, 0, 0);
+  return d.getTime();
+}
+
+export function pauseMenuItems(): MenuItem[] {
+  const paused = settings.value.notifyPauseUntil > Date.now();
+  return [
+    { label: t("pause.title"), heading: true },
+    ...(paused ? [{ label: t("pause.resume"), onClick: () => updateSettings({ notifyPauseUntil: 0 }) }] : []),
+    { label: t("pause.1h"), onClick: () => updateSettings({ notifyPauseUntil: pauseUntil("1h") }) },
+    { label: t("pause.8h"), onClick: () => updateSettings({ notifyPauseUntil: pauseUntil("8h") }) },
+    { label: t("pause.morning"), onClick: () => updateSettings({ notifyPauseUntil: pauseUntil("morning") }) },
+  ];
+}
+
 function UserPanel() {
   const server = activeServer.value ?? servers.value.find((s) => s.me.value) ?? null;
   const me = server?.me.value;
@@ -374,9 +398,18 @@ function UserPanel() {
   const muted = v ? v.muted.value || !v.hasMic.value || v.serverMuted.value : false;
   const deaf = v ? v.deafened.value : false;
   const presence = me?.presence ?? "online";
+  const pausedUntil = settings.value.notifyPauseUntil;
+  const paused = pausedUntil > Date.now();
+  const menu = (e: MouseEvent) =>
+    showMenu(e, [
+      ...pauseMenuItems(),
+      { separator: true, label: "" },
+      { label: t("move.title"), onClick: () => openModal(<TransferDialog />) },
+      { label: t("dev.title"), onClick: () => openModal(<UserSettingsDialog tab="devices" />) },
+    ]);
   return (
     <div class="user-panel">
-      <div class="who" onClick={() => openModal(<UserSettingsDialog />)} title={t("user.profileSettings")}>
+      <div class="who" onClick={() => openModal(<UserSettingsDialog />)} onContextMenu={menu} title={t("user.profileSettings")}>
         {me && server ? (
           <>
             <Avatar server={server} userId={me.id} name={me.display_name || me.username} size={32} presence={presence === "invisible" ? "offline" : presence} speaking={v?.speaking.value.has(me.id)} />
@@ -384,6 +417,20 @@ function UserPanel() {
               <div class="ellipsis" style={{ fontWeight: 600 }}>{me.display_name || me.username}</div>
               <div class="faint xs ellipsis">{me.status_text || presenceText(presence)}</div>
             </div>
+            {paused && (
+              <span
+                class="pause-mark"
+                role="button"
+                title={t("pause.activeUntil", { time: fmtTime(pausedUntil) })}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateSettings({ notifyPauseUntil: 0 });
+                  toast(t("pause.resumed"), undefined, "ok", 2500);
+                }}
+              >
+                <Icon.BellOff size={15} />
+              </span>
+            )}
           </>
         ) : (
           <div class="faint small">{t("user.notSignedIn")}</div>

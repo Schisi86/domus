@@ -4,4 +4,5 @@ nexustalk-data/
 scratch-data/
 tests/e2e/node_modules/
 website/download/*.exe
+website/download/*.apk
 .netlify/

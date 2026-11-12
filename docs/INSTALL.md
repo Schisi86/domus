@@ -2,13 +2,13 @@
 
 ## Desktop-App (Windows 10/11, 64 Bit)
 
-1. `NexusTalk_<version>_x64-setup.exe` (NSIS, empfohlen) oder `NexusTalk_<version>_x64_de-DE.msi` ausführen.
-   * Der NSIS-Installer installiert **ohne Administratorrechte** für den aktuellen Benutzer nach `%LOCALAPPDATA%\NexusTalk`.
+1. `Domus_<version>_x64-setup.exe` (NSIS, empfohlen) oder `Domus_<version>_x64_de-DE.msi` ausführen.
+   * Der NSIS-Installer installiert **ohne Administratorrechte** für den aktuellen Benutzer nach `%LOCALAPPDATA%\Domus` und ersetzt dabei eine vorhandene NexUs-/NexusTalk-Installation.
    * Benötigt die Microsoft-Edge-WebView2-Runtime (unter Windows 11 vorinstalliert; fehlt sie, lädt der Installer sie von Microsoft).
-2. Startmenüeintrag „NexUs“ wird angelegt.
+2. Startmenüeintrag und Desktop-Verknüpfung „Domus“ werden angelegt.
 3. Die Installation aktiviert **keinen** Server. Der Servermodus muss bewusst im Dialog „Eigenen Server betreiben“ (Server-Symbol in der linken Leiste) gestartet werden.
 
-**Deinstallation:** Windows-Einstellungen › Apps › NexUs › Deinstallieren. Benutzerdaten bleiben erhalten und können manuell gelöscht werden:
+**Deinstallation:** Windows-Einstellungen › Apps › Domus › Deinstallieren. Benutzerdaten bleiben erhalten und können manuell gelöscht werden:
 
 | Ordner | Inhalt |
 |---|---|
@@ -17,13 +17,23 @@
 | `%APPDATA%\NexusTalk\server\` | Daten des integrierten Servers (Datenbank, Uploads, Zertifikat, Backups, `server.toml`) |
 | `%LOCALAPPDATA%\org.nexustalk.desktop\` | WebView2-Profil (Cache) |
 
+## Android-App (ab 1.0.1, Android 8 oder neuer)
+
+1. `Domus_<version>_android.apk` von der Projektseite auf das Handy laden und öffnen. Android fragt beim ersten Mal, ob der Browser bzw. Dateimanager Apps installieren darf („Unbekannte Apps installieren“) – für diese Installation erlauben.
+2. Domus öffnen → **„Von anderem Gerät übertragen“**. Am PC: Rechtsklick auf den eigenen Namen unten links › **„Profil übertragen“** (oder Einstellungen › Geräte) → QR-Code mit dem Handy scannen. Alternativ „Server hinzufügen“ mit Adresse oder Einladungslink bzw. Einladungs-QR-Code.
+3. Kamera und Mikrofon fragt Android erst, wenn sie gebraucht werden (QR-Scan, Anruf).
+
+* Das Handy muss den Server erreichen können: im selben WLAN über die LAN-Adresse, von unterwegs über den Internet-Link (Tunnel) des Servers. Server, die nur auf dem PC selbst erreichbar sind („Nur dieser PC“), lassen sich nicht übertragen.
+* Die App ist ein reiner Client: Server hosten, Fernsteuerung und das Teilen des eigenen Handy-Bildschirms gibt es dort nicht.
+* **Update:** neueres APK einfach darüber installieren (gleicher Signaturschlüssel); Server und Einstellungen bleiben erhalten. **Deinstallation** löscht alle Daten der App.
+
 ## Eigener Server in der App
 
 1. Server-Symbol links → Konfiguration prüfen → **Server starten**.
 2. Beim ersten Start: **Inhaberkonto anlegen** (Benutzername/Passwort). Der Server erscheint danach automatisch in der Liste.
 3. Für andere erreichbar machen: „Lokales Netzwerk / Internet“ wählen, Warnung bestätigen, „Öffentliche Adresse“ eintragen, speichern, neu starten. Siehe [NETWORK.md](NETWORK.md).
 4. Personen einladen: Rechtsklick auf den Server → „Personen einladen“ → Link kopieren.
-5. Hintergrundbetrieb: Fenster schließen → NexUs bleibt im Infobereich, der Server läuft weiter. Optional „Server beim Start automatisch starten“ + Einstellungen › App › „Mit Windows starten“.
+5. Hintergrundbetrieb: Fenster schließen → Domus bleibt im Infobereich, der Server läuft weiter. Optional „Server beim Start automatisch starten“ + Einstellungen › App › „Mit Windows starten“.
 
 ## Headless-Server (ohne Oberfläche, Windows oder Linux)
 
@@ -47,7 +57,7 @@ domus-server restore DATEI --data DIR      # Wiederherstellung beim nächsten St
 ```ini
 # /etc/systemd/system/domus.service
 [Unit]
-Description=NexUs Server
+Description=Domus Server
 After=network-online.target
 
 [Service]
@@ -92,5 +102,15 @@ npm install
 npx tauri build                        # → target/release/bundle/{nsis,msi}/
 cargo build --release -p nexus-server  # → target/release/domus-server.exe
 ```
+
+**Android-APK** (zusätzlich: JDK 17, Android SDK mit Plattform 36, Build-Tools 36 und NDK 27; Umgebungsvariablen `JAVA_HOME`, `ANDROID_HOME`, `NDK_HOME`; Rust-Ziele `aarch64-linux-android` und `x86_64-linux-android`):
+
+```bash
+cd app/src-tauri/gen/android
+./gradlew assembleUniversalRelease -PabiList=arm64-v8a,x86_64 -ParchList=arm64,x86_64 -PtargetList=aarch64,x86_64
+# → app/build/outputs/apk/universal/release/app-universal-release.apk
+```
+
+`npx tauri android build --apk` funktioniert ebenso, braucht unter Windows aber den Entwicklermodus (die Tauri-CLI verlinkt die Bibliothek per Symlink); der Gradle-Aufruf oben kopiert sie stattdessen. Signiert wird mit dem Schlüssel aus `%USERPROFILE%\.domus-keys\keystore.properties` (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) – der Schlüssel liegt bewusst nicht im Repository; ohne ihn entsteht ein unsigniertes APK. **Den Schlüssel sichern:** Updates müssen mit demselben Schlüssel signiert sein.
 
 Entwicklung: `npx tauri dev` (App) bzw. `npm run dev` + `cargo run -p nexus-server -- --data dev-data` (Browser-UI gegen Testserver ohne TLS).

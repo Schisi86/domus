@@ -9,6 +9,7 @@ import { P } from "../../types";
 import { errorText, fmtStamp, t } from "../../i18n";
 import { inviteLink, normalizeAddress } from "../../net/transport";
 import { Field, IconButton, Icon, Modal, copyText } from "../components";
+import { QrCode } from "../qr";
 
 export function linkFor(server: ServerStore, code: string, info: InviteLinkInfo | null) {
   const n = normalizeAddress(server.saved.value.address);
@@ -64,10 +65,18 @@ export function InviteDialog({ server }: { server: ServerStore }) {
               <button class="btn primary" onClick={() => { copyText(shown.link); copied(); }}>{t("common.copy")}</button>
             </div>
           </Field>
-          <dl class="kv">
-            <dt>{t("invite.code")}</dt>
-            <dd class="mono selectable">{created.code}</dd>
-          </dl>
+          <div class="row wrap" style={{ gap: "14px", alignItems: "center" }}>
+            {!shown.local && shown.link.startsWith("domus://") && (
+              <div class="qr-wrap small"><QrCode text={shown.link} size={150} label={t("invite.qr")} /></div>
+            )}
+            <div class="col grow" style={{ gap: "6px" }}>
+              <dl class="kv">
+                <dt>{t("invite.code")}</dt>
+                <dd class="mono selectable">{created.code}</dd>
+              </dl>
+              {!shown.local && shown.link.startsWith("domus://") && <div class="faint xs">{t("invite.qrHint")}</div>}
+            </div>
+          </div>
           {shown.local && <div class="notice warn">{t("invite.localWarn", { host: shown.host })}</div>}
         </div>
       )}

@@ -3,6 +3,10 @@
 import type { SavedServer } from "./types";
 
 export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+/** Running on a phone or tablet (the Android app, or a mobile browser). */
+export const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad/i.test(navigator.userAgent);
+/** The Android app (no hosting, tray, global keys or screen sharing there). */
+export const isAndroidApp = isTauri && isMobile;
 
 async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   const core = await import("@tauri-apps/api/core");

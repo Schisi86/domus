@@ -7,26 +7,47 @@
 //! * `host`  – the embedded servers ("Servermodus", several at once)
 //! * `store` – client configuration with DPAPI-encrypted session tokens
 //! * tray icon, single instance, autostart, media permission handling
+//!
+//! On Android the same crate builds the phone app: a client only (no hosting,
+//! tray, global keys, remote control or desktop overlay).
 
+#[cfg(desktop)]
 mod capture_bar;
+#[cfg(desktop)]
 mod host;
-mod net;
-mod reach;
+#[cfg(desktop)]
 mod ink;
 mod local;
+mod net;
+#[cfg(desktop)]
+mod reach;
+#[cfg(desktop)]
 mod remotectl;
 mod store;
+#[cfg(desktop)]
 mod tunnel;
 
 use std::path::PathBuf;
+use std::sync::OnceLock;
 
 use serde::Serialize;
+#[cfg(desktop)]
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+#[cfg(desktop)]
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+#[cfg(desktop)]
 use tauri::webview::{PermissionKind, PermissionResponse};
-use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder, WindowEvent};
+#[cfg(desktop)]
+use tauri::WindowEvent;
+use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
+
+/// Data folder of the phone app (set at start-up from the OS).
+static APP_DIR: OnceLock<PathBuf> = OnceLock::new();
 
 pub fn app_dir() -> PathBuf {
+    if let Some(d) = APP_DIR.get() {
+        return d.clone();
+    }
     let base = std::env::var_os("APPDATA")
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))
@@ -49,8 +70,10 @@ struct Flags {
 }
 
 /// Tray menu entries, kept to relabel them when the UI language changes.
+#[cfg(desktop)]
 struct TrayItems(std::sync::Mutex<Option<(MenuItem<tauri::Wry>, MenuItem<tauri::Wry>)>>);
 
+#[cfg(desktop)]
 #[tauri::command]
 fn set_tray_labels(items: State<'_, TrayItems>, open: String, quit: String) {
     if let Some((o, q)) = items.0.lock().unwrap_or_else(|p| p.into_inner()).as_ref() {
@@ -102,10 +125,12 @@ async fn quit_app(app: AppHandle) {
 }
 
 async fn shutdown_and_exit(app: &AppHandle) {
+    #[cfg(desktop)]
     app.state::<host::HostManager>().stop_all().await;
     app.exit(0);
 }
 
+#[cfg(desktop)]
 fn show_main(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
@@ -114,6 +139,7 @@ fn show_main(app: &AppHandle) {
     }
 }
 
+#[cfg(desktop)]
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, "open", "Domus öffnen", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Beenden", true, None::<&str>)?;
@@ -143,6 +169,73 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
+#[cfg(mobile)]
+#[tauri::mobile_entry_point]
+pub fn run() {
+    let result = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
+        .manage(net::NetState::default())
+        .manage(Flags { background: false })
+        .invoke_handler(tauri::generate_handler![
+            app_info,
+            client_log,
+            open_folder,
+            quit_app,
+            net::net_http,
+            net::net_bytes,
+            net::net_upload,
+            net::net_download,
+            net::ws_open,
+            net::ws_send,
+            net::ws_close,
+            local::secret_get,
+            local::secret_set,
+            local::file_save_begin,
+            local::file_save_chunk,
+            local::file_save_end,
+            store::config_load,
+            store::config_save,
+        ])
+        .setup(|app| {
+            // The private app folder (only Domus can read it).
+            let dir = app.path().app_data_dir()?;
+            let _ = std::fs::create_dir_all(&dir);
+            let _ = APP_DIR.set(dir.clone());
+            init_mobile_log(&dir.join("logs"));
+            tracing::info!(version = env!("CARGO_PKG_VERSION"), "Domus (Android) starting");
+            app.manage(store::ConfigStore { path: dir.join("client.json") });
+            WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into())).build()?;
+            Ok(())
+        })
+        .run(tauri::generate_context!());
+    if let Err(e) = result {
+        tracing::error!(error = %e, "Domus terminated with error");
+    }
+}
+
+/// Daily log files in the app folder (the phone app has no server crate).
+#[cfg(mobile)]
+fn init_mobile_log(dir: &std::path::Path) {
+    use tracing_subscriber::prelude::*;
+    let _ = std::fs::create_dir_all(dir);
+    let Ok(appender) = tracing_appender::rolling::Builder::new()
+        .rotation(tracing_appender::rolling::Rotation::DAILY)
+        .filename_prefix("domus")
+        .filename_suffix("log")
+        .max_log_files(5)
+        .build(dir)
+    else {
+        return;
+    };
+    let _ = tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new("info"))
+        .with(tracing_subscriber::fmt::layer().with_writer(std::sync::Mutex::new(appender)).with_ansi(false))
+        .try_init();
+}
+
+#[cfg(desktop)]
 pub fn run() {
     let background = std::env::args().any(|a| a == "--background");
     let dir = app_dir();

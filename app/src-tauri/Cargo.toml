@@ -7,7 +7,7 @@ license.workspace = true
 
 [lib]
 name = "nexustalk_lib"
-crate-type = ["staticlib", "rlib"]
+crate-type = ["staticlib", "cdylib", "rlib"]
 
 [[bin]]
 name = "nexustalk"
@@ -17,13 +17,10 @@ path = "src/main.rs"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-nexus-server = { path = "../../crates/nexus-server" }
 nexus-net = { path = "../../crates/nexus-net" }
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
-tauri-plugin-autostart = "2"
-tauri-plugin-single-instance = "2"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 tokio = { version = "1.54.1", features = ["rt", "sync", "time", "macros", "fs"] }
@@ -31,14 +28,25 @@ futures-util = "0.3.34"
 tracing = "0.1.44"
 base64 = "0.22"
 tauri-plugin-opener = "2"
+
+# Desktop only: hosting servers, tray, autostart, single instance.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+nexus-server = { path = "../../crates/nexus-server" }
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-global-shortcut = "2"
 igd-next = { version = "0.18", features = ["aio_tokio"] }
 bore-cli = { version = "0.6", default-features = false }
+
+# Android/iOS: the app is a client only; logs go to a file in the app folder.
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+tracing-appender = "0.2.5"
 
 [target."cfg(windows)".dependencies]
 windows-sys = { version = "0.61.2", features = ["Win32_Security_Cryptography", "Win32_Foundation", "Win32_System_Memory", "Win32_UI_Shell", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging", "Win32_System_Registry", "Win32_UI_Input_KeyboardAndMouse", "Win32_Graphics_Gdi"] }
 
-[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-global-shortcut = "2"
 
 [dev-dependencies]
 turn = "0.17.2"

@@ -148,12 +148,17 @@ function ScreenMenu({ v, anchor, onClose }: { v: VoiceSession; anchor: DOMRect; 
   );
 }
 
+/** Screen capture exists (desktop app and desktop browsers, not the Android web view). */
+export const canShareScreen = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === "function";
+
 /**
  * Share button: opens the options menu before starting; while sharing it stops
  * the share, and the small gear next to it reopens the menu to adjust quality.
  */
 export function ScreenShareControl({ v, disabled, variant }: { v: VoiceSession; disabled?: boolean; variant: "round" | "panel" }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  // Phones (Android web view) cannot capture the screen: no button there.
+  if (!canShareScreen) return null;
   const sharing = v.sharingScreen.value;
   const open = (e: MouseEvent) => setAnchor((e.currentTarget as HTMLElement).getBoundingClientRect());
   const title = disabled ? t("common.noPermission") : sharing ? t("voice.stopShare") : t("voice.shareScreenLong");

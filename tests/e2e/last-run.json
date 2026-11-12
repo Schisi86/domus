@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-12T04:07:01.014Z",
+  "date": "2026-11-12T20:09:14.867Z",
   "results": [
     {
       "name": "users registered",
@@ -14,12 +14,12 @@
     {
       "name": "audio: bytes flowing A→B",
       "ok": true,
-      "detail": "424 → 6671 bytes"
+      "detail": "101 → 6851 bytes"
     },
     {
       "name": "audio: bytes flowing B→A",
       "ok": true,
-      "detail": "6980 bytes"
+      "detail": "6537 bytes"
     },
     {
       "name": "audio: active speaker detected",
@@ -29,7 +29,7 @@
     {
       "name": "stats: RTT measured",
       "ok": true,
-      "detail": "{\"state\":\"connected\",\"rtt\":0,\"loss\":0,\"relay\":false,\"quality\":\"good\"}"
+      "detail": "{\"state\":\"connected\",\"rtt\":1,\"loss\":0,\"relay\":false,\"quality\":\"good\"}"
     },
     {
       "name": "mute state propagated",
@@ -84,7 +84,7 @@
     {
       "name": "restart: media kept flowing",
       "ok": true,
-      "detail": "45434 → 78286 bytes, 2 peers"
+      "detail": "28906 → 63600 bytes, 2 peers"
     },
     {
       "name": "leave: others see participant leave",

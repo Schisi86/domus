@@ -1,5 +1,6 @@
 // Home screen: welcome (no servers yet) or friends across all connected servers.
 
+import { NavBack } from "./mobile";
 import { useState } from "preact/hooks";
 import { openModal, servers, startDm, toast } from "../state/app";
 import type { ServerStore } from "../state/server";
@@ -8,6 +9,8 @@ import { errorText, presenceText, t } from "../i18n";
 import { Avatar, EmptyState, IconButton, Icon, LogoMark } from "./components";
 import { AddServerDialog } from "./dialogs/AddServer";
 import { HostDialog } from "./dialogs/Host";
+import { TransferDialog } from "./dialogs/Transfer";
+import { isAndroidApp } from "../platform";
 
 type Tab = "online" | "all" | "pending" | "blocked";
 
@@ -17,9 +20,10 @@ export function FriendsView() {
     return (
       <EmptyState title={t("home.welcome")} icon={<LogoMark size={110} />}>
         <p class="muted">{t("home.welcomeText")}</p>
-        <div class="row">
+        <div class="row wrap center welcome-actions">
           <button class="btn primary lg" onClick={() => openModal(<AddServerDialog />)}><Icon.Plus /> {t("rail.add")}</button>
-          <button class="btn lg" onClick={() => openModal(<HostDialog />)}><Icon.ServerIcon /> {t("home.startOwn")}</button>
+          <button class={`btn lg${isAndroidApp ? " primary" : ""}`} onClick={() => openModal(<TransferDialog mode="receive" />)}><Icon.Qr /> {t("move.fromOther")}</button>
+          {!isAndroidApp && <button class="btn lg" onClick={() => openModal(<HostDialog />)}><Icon.ServerIcon /> {t("home.startOwn")}</button>}
         </div>
       </EmptyState>
     );
@@ -37,6 +41,7 @@ export function FriendsView() {
   return (
     <div class="content">
       <header class="main-head">
+        <NavBack />
         <div class="chan-title"><Icon.Mail /> {t("home.friends")}</div>
         <div class="tabs">
           {(["online", "all", "pending", "blocked"] as Tab[]).map((x) => (

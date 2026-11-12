@@ -21,6 +21,10 @@ node tests/e2e/chrome.mjs <adresse> <token>
 node tests/e2e/collab.mjs
 # 0.10: Server-Autostart und native Helfer in der echten App (Testbuild wie bei hosting.mjs)
 node tests/e2e/native.mjs
+# 1.0.1: Handy-Oberfläche, QR-Profilübertragung (beide Richtungen, simulierte Kamera), Geräte, Entwürfe (UI-Devserver muss laufen)
+node tests/e2e/mobile.mjs
+# Android-APK bauen (Windows ohne Entwicklermodus, siehe docs/INSTALL.md)
+bash scripts/android-build.sh
 # Übersetzungen: alle 15 Sprachen vollständig, gleiche Platzhalter
 python tests/i18n-check.py
 # Echte Zeigerbewegung der Fernsteuerung (bewegt kurz die Maus, daher nur auf Wunsch)
@@ -87,6 +91,15 @@ Echte Weboberfläche, echter Server, 3–4 Clients in Chromium mit virtuellem Mi
 | Serverneustart während des Gesprächs: Signalisierung zurück, Sprachplatz erhalten, **Medien liefen weiter** | ✅ |
 | Verlassen/erneuter Beitritt baut Medien neu auf | ✅ |
 | Gast ohne Bildschirmrecht wird serverseitig abgelehnt (mit Meldung) | ✅ |
+
+### Handy-Oberfläche und Profilübertragung – `tests/e2e/mobile.mjs`: 37/37 bestanden (1.0.1)
+Chromium im Handy-Format (390×844, Android-Kennung, Touch). Der PC zeigt in der echten Oberfläche den QR-Code, der Test fotografiert ihn ab und spielt ihn als simulierte Kamera (`--use-file-for-fake-video-capture`) ins Handy ein; das Handy scannt, löst den Einmal-Code ein und bekommt eine eigene Sitzung. Danach dasselbe rückwärts vom Handy auf einen zweiten, leeren PC. Geprüft werden außerdem: Hinweis „Neues Gerät angemeldet“ am PC, mitgenommenes Design und Schriftgröße, abgelehnte Wiederverwendung des Codes, eine Spalte mit Zurück-Taste und Zurück-Pfeil, Mitgliederliste als Sheet, Menü als Bottom-Sheet, Wischen zum Antworten, „Enter fügt Zeile ein“, Entwürfe samt Markierung, Geräteliste mit Abmelden (alte Sitzung danach ungültig) und Benachrichtigungs-Pause. Dabei gefunden und behoben: Schloss sich ein Menü im selben Moment, in dem sich ein Dialog öffnete, überholten sich zwei Verlaufssprünge und die nächste Zurück-Aktion verließ die App.
+
+### Regression 1.0.1
+Nach dem Umbau (Desktop-/Android-Trennung im Rust-Teil, Handy-Layout) erneut bestanden: Rust 48 Unit- + 22 Integrationstests (Server, inkl. neuem Geräte-Test), 21 App-/Netz-Tests; `collab.mjs` 46/46, `interact.mjs` 34/34, `rtc.mjs` 20/20, `features.mjs` 16/16, `chrome.mjs` 17/17 (zwei Erwartungen enthielten noch den alten Namen „NexUs“ – angepasst), `native.mjs` 17/17 in der echten Desktop-App (im ersten Lauf kam der Strich auf dem Zeichen-Overlay einmal zu spät an, im zweiten Lauf bestanden – Timing, kein Fehlerbild), Typprüfung, alle 15 Sprachen vollständig (1290 Schlüssel). `hosting.mjs` (Internet-Relay) wurde für 1.0.1 nicht erneut ausgeführt; der Hosting-Code ist unverändert.
+
+### Android-App – gebaut, nicht auf einem Gerät gestartet (1.0.1)
+APK (ARM64 + x86_64) mit `scripts/android-build.sh` gebaut und mit `apksigner verify` geprüft. **Nicht** getestet: Start auf einem echten Handy oder im Emulator (der Emulator braucht Hardware-Virtualisierung, die auf dem Entwicklungs-PC im BIOS/UEFI ausgeschaltet ist). Die Android-spezifischen Teile – Kamera- und Mikrofon-Freigabe durch Android, Ränder unter Status- und Navigationsleiste, Tastatur, Zurück-Taste im WebView, Benachrichtigungen – sind deshalb ungeprüft.
 
 ### Zusammenarbeit und Verschlüsselung – `tests/e2e/collab.mjs`: 46/46 bestanden (0.10.0)
 

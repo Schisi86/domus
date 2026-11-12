@@ -7,8 +7,12 @@ import type { ServerStore } from "../../state/server";
 import type { SavedServer, ServerInfo } from "../../types";
 import { errorText, regMode, t } from "../../i18n";
 import { isNetError, normalizeAddress, parseInvite, transport, type NetError } from "../../net/transport";
-import { Field, Modal, Spinner } from "../components";
-import { isTauri } from "../../platform";
+import { Field, Icon, Modal, Spinner } from "../components";
+import { isAndroidApp, isTauri } from "../../platform";
+import { QrScanner } from "../qr";
+import { LINK_PREFIX } from "../../state/link";
+import { TransferDialog } from "./Transfer";
+import { openModal } from "../../state/app";
 
 type Step = "address" | "cert" | "auth";
 
@@ -27,6 +31,12 @@ function connectHelp(address: string, e: unknown): string | null {
 }
 
 export function deviceName() {
+  if (isAndroidApp) {
+    // "Android 15; Pixel 9" → model name from the user agent when available.
+    const m = /Android [\d.]+; ([^;)]+?)(?: Build|\))/.exec(navigator.userAgent);
+    const model = m?.[1]?.trim();
+    return `Domus Android${model && model !== "K" ? ` (${model})` : ""}`;
+  }
   return isTauri ? "Domus Desktop (Windows)" : `Browser (${navigator.userAgent.includes("Edg") ? "Edge" : "Web"})`;
 }
 
@@ -47,6 +57,7 @@ export function AddServerDialog({ reauth, prefill }: { reauth?: ServerStore; pre
   const [error, setError] = useState<string | null>(null);
   const [help, setHelp] = useState<string | null>(null);
   const [pendingNote, setPendingNote] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const probe = async (addr: string, fp: string | null) => {
     setBusy(true);
@@ -163,10 +174,32 @@ export function AddServerDialog({ reauth, prefill }: { reauth?: ServerStore; pre
         }
       >
         <Field label={t("add.addressLabel")} hint={t("add.addressHint")} error={error}>
-          <input class="input" autoFocus value={address} onInput={(e) => setAddress((e.target as HTMLInputElement).value)} onKeyDown={(e) => e.key === "Enter" && void submitAddress()} placeholder={t("add.address")} />
+          <div class="row" style={{ gap: "8px" }}>
+            <input class="input grow" autoFocus={!scanning} value={address} onInput={(e) => setAddress((e.target as HTMLInputElement).value)} onKeyDown={(e) => e.key === "Enter" && void submitAddress()} placeholder={t("add.address")} />
+            <button class={`btn ${scanning ? "primary" : "outline"}`} title={t("add.scan")} onClick={() => setScanning(!scanning)}><Icon.Qr size={18} /></button>
+          </div>
         </Field>
+        {scanning && (
+          <QrScanner
+            accept={(x) => !!parseInvite(x) || x.trim().startsWith(LINK_PREFIX)}
+            onResult={(x) => {
+              setScanning(false);
+              if (x.trim().startsWith(LINK_PREFIX)) return openModal(<TransferDialog mode="receive" initial={x} />);
+              setAddress(x);
+              const inv = parseInvite(x)!;
+              setAddress(inv.address);
+              setInvite(inv.code);
+              setMode("register");
+              setFingerprint(inv.fingerprint);
+              void probe(inv.address, inv.fingerprint);
+            }}
+          />
+        )}
         {help && <div class="notice warn small">{help}</div>}
         <div class="faint xs">{t("add.defaults")}</div>
+        <button class="btn ghost sm" style={{ alignSelf: "flex-start" }} onClick={() => openModal(<TransferDialog mode="receive" />)}>
+          <Icon.Phone size={16} /> {t("add.fromDevice")}
+        </button>
       </Modal>
     );
   }

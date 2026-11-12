@@ -1,0 +1,192 @@
+{
+  "at": "2026-11-12T19:59:37.108Z",
+  "passed": 37,
+  "failed": 0,
+  "results": [
+    {
+      "name": "messages for the phone test",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "PC shows a QR code with a one-time code for its server",
+      "ok": true,
+      "detail": "domus-link:eyJ2IjoxLCJkIjoiQnJvd3NlciAoV"
+    },
+    {
+      "name": "QR code carries the design settings",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "phone camera reads the PC's QR code",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "phone signs in with the code (own session)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "PC is told about the new device",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "PC dialog confirms the transfer",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "server saved with a new token, not the PC's",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "design and text size came along",
+      "ok": true,
+      "detail": "fjord 1.15"
+    },
+    {
+      "name": "a used code is refused",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "both devices are listed on the server",
+      "ok": true,
+      "detail": "Domus Desktop (Windows), Browser (Web)"
+    },
+    {
+      "name": "phone shows a QR code too",
+      "ok": true,
+      "detail": "domus-link:eyJ2IjoxLCJkIjoiQnJvd3NlciAoV"
+    },
+    {
+      "name": "second PC reads the phone's QR code",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "second PC signs in",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "second PC shows the server's channels",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "three devices signed in",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "phone starts on the channel list",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "picking a channel shows only the chat",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "message text uses the chosen size",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "back key returns to the channel list",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "back arrow in the header returns as well",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "member list opens as a sheet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "back key closes the sheet first",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "message menu is a bottom sheet",
+      "ok": true,
+      "detail": "{\"bottom\":-180,\"width\":374}"
+    },
+    {
+      "name": "swiping a message left replies to it",
+      "ok": true,
+      "detail": "Antwort an alice: Zweite Nachricht zum Antworten"
+    },
+    {
+      "name": "Enter adds a line on phones (send button sends)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "draft mark in the channel list",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "draft is still there after switching",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "send button sends the draft",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "draft cleared after sending",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "device list shows all three devices",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "own device is marked",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "signing out the PC leaves two devices",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the PC's session no longer works",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "notifications paused for about an hour",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pause mark next to the own name",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "one tap resumes notifications",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

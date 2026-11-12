@@ -1040,3 +1040,55 @@ async fn e2e_key_directory_and_direct_signaling() {
     assert!(refused, "signal to an offline user must be refused");
     ts.stop().await;
 }
+
+#[tokio::test]
+async fn link_device_with_one_time_code_and_sign_it_out() {
+    let (ts, ep, owner, _member) = setup("link").await;
+    let (mut pc, _) = Client::connect(&ep, &owner).await;
+
+    // A code signs in a new device with its own session, once.
+    let link = pc.req("device.link_create", json!({})).await.unwrap();
+    let code_str = link["code"].as_str().unwrap().to_string();
+    assert_eq!(code_str.len(), 20);
+    assert!(link["expires_at"].as_i64().unwrap() > 0);
+    let (s, phone) = post(&ep, "/api/v1/auth/link", json!({ "code": code_str, "device": "Pixel 9" })).await;
+    assert_eq!(s, 200, "{phone}");
+    assert_eq!(phone["user"]["username"], "owner");
+    let phone_token = phone["token"].as_str().unwrap().to_string();
+    assert_ne!(phone_token, owner, "a new session, not the token of the first device");
+    assert_eq!(pc.event("device.linked").await["device"], "Pixel 9");
+    let (s, e) = post(&ep, "/api/v1/auth/link", json!({ "code": code_str })).await;
+    assert_eq!((s, code(&e["error"])), (401, "INVALID_CREDENTIALS"), "codes work only once");
+    let (s, _) = post(&ep, "/api/v1/auth/link", json!({ "code": "x".repeat(200) })).await;
+    assert_eq!(s, 401, "oversized codes are refused");
+
+    // Both devices appear in the list; the own one is marked.
+    let (mut ph, _) = Client::connect(&ep, &phone_token).await;
+    let list = ph.req("device.list", json!({})).await.unwrap();
+    let devs = list["devices"].as_array().unwrap();
+    assert_eq!(devs.len(), 2, "{list}");
+    let me = devs.iter().find(|d| d["current"] == true).unwrap();
+    assert_eq!(me["device"], "Pixel 9");
+    assert_eq!(me["id"].as_str().unwrap().len(), 16);
+    assert!(!list.to_string().contains(&phone_token), "tokens are never listed");
+    let pc_id = devs.iter().find(|d| d["current"] == false).unwrap()["id"].as_str().unwrap().to_string();
+
+    // The own session cannot be revoked here; another one can, and only it is closed.
+    assert_eq!(code(&ph.req("device.revoke", json!({ "id": me["id"] })).await.unwrap_err()), "VALIDATION");
+    assert_eq!(code(&ph.req("device.revoke", json!({ "id": "0000000000000000" })).await.unwrap_err()), "NOT_FOUND");
+    ph.req("device.revoke", json!({ "id": pc_id })).await.unwrap();
+    let mut closed = false;
+    for _ in 0..10 {
+        if pc.frame(Duration::from_secs(3)).await.is_none() {
+            closed = true;
+            break;
+        }
+    }
+    assert!(closed, "the revoked device is disconnected");
+    assert_eq!(ph.req("device.list", json!({})).await.unwrap()["devices"].as_array().unwrap().len(), 1, "phone stays signed in");
+    let mut ws = ep.connect_ws().await.unwrap();
+    ws.send(WsMessage::Text(json!({ "id": 1, "op": "auth", "d": { "token": owner } }).to_string().into())).await.unwrap();
+    let Some(Ok(WsMessage::Text(t))) = ws.next().await else { panic!("expected error frame") };
+    assert!(t.as_str().contains("UNAUTHORIZED"), "revoked token no longer works");
+    ts.stop().await;
+}

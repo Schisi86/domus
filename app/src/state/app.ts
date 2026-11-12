@@ -3,7 +3,7 @@
 
 import { computed, effect, signal } from "@preact/signals";
 import type { ComponentChild } from "preact";
-import { loadConfig, log, notify, requestAttention, saveConfig, type StoredConfig } from "../platform";
+import { isMobile, loadConfig, log, notify, requestAttention, saveConfig, type StoredConfig } from "../platform";
 import type { Message, SavedServer } from "../types";
 import { ServerStore } from "./server";
 import { detectLang, setLang, t } from "../i18n";
@@ -93,6 +93,18 @@ export interface Settings {
   /** `${serverId}:${userId}` → key id last seen for that person (key-change warning). */
   e2eSeen: Record<string, string>;
   lastChannel: Record<string, number>;
+  /** Text size of chat messages (1 = normal), independent of the UI scale. */
+  msgScale: number;
+  /** Double-click (desktop) or swipe left (touch) on a message replies to it. */
+  dblReply: boolean;
+  /** Enter sends; otherwise Enter adds a line and the send button sends (default on phones). */
+  enterSends: boolean;
+  /** Keep the screen on during calls (phones). */
+  keepAwake: boolean;
+  /** Notifications paused until this time (ms since epoch; 0 = not paused). */
+  notifyPauseUntil: number;
+  /** System-wide key that toggles the microphone during calls ("" = off). */
+  globalMuteKey: string;
 }
 
 
@@ -174,6 +186,12 @@ export const defaultSettings: Settings = {
   e2eDm: {},
   e2eSeen: {},
   lastChannel: {},
+  msgScale: 1,
+  dblReply: true,
+  enterSends: !isMobile,
+  keepAwake: true,
+  notifyPauseUntil: 0,
+  globalMuteKey: "",
 };
 
 export const settings = signal<Settings>(defaultSettings);
@@ -190,13 +208,14 @@ export function applyLayout() {
   const root = document.documentElement;
   root.style.setProperty("--sidebar-w", `${s.sidebarWidth}px`);
   root.style.setProperty("--members-w", `${s.membersWidth}px`);
+  root.style.setProperty("--msg-scale", String(s.msgScale || 1));
 }
 
 export function updateSettings(patch: Partial<Settings>) {
   settings.value = { ...settings.value, ...patch };
   if ("theme" in patch || "followSystemTheme" in patch || "accent" in patch) applyTheme(settings.value.theme, settings.value.followSystemTheme, settings.value.accent);
   if ("language" in patch) void setLang(settings.value.language || detectLang());
-  if ("sidebarWidth" in patch || "membersWidth" in patch) applyLayout();
+  if ("sidebarWidth" in patch || "membersWidth" in patch || "msgScale" in patch) applyLayout();
   schedulePersist();
 }
 
@@ -209,6 +228,21 @@ export const activeChannelId = signal<number | null>(null);
 /** On the home screen: which server's DM is open (DMs are per server). */
 export const homeDm = signal<{ serverId: string; channelId: number } | null>(null);
 export const windowFocused = signal(typeof document !== "undefined" ? document.hasFocus() : true);
+
+// ------------------------------------------------------------- phone layout
+
+const NARROW = "(max-width: 760px)";
+/** Narrow screen (phone): one column at a time instead of the side-by-side panes. */
+export const narrow = signal(typeof window !== "undefined" && window.matchMedia(NARROW).matches);
+if (typeof window !== "undefined") window.matchMedia(NARROW).addEventListener("change", (e) => (narrow.value = e.matches));
+/** Phone: the navigation (servers + channels) is shown instead of the content. */
+export const mobileNav = signal(true);
+/** Phone: the member list is open as a sheet over the chat. */
+export const membersSheet = signal(false);
+/** Shows the content column on a phone (after picking a channel or DM). */
+export function showContent() {
+  if (narrow.value) mobileNav.value = false;
+}
 
 export const activeServer = computed(() => servers.value.find((s) => s.id === activeServerId.value) ?? null);
 
@@ -240,6 +274,7 @@ export function selectServer(id: string | null) {
 export function selectChannel(cid: number) {
   if (activeChannelId.value !== cid) play("switch");
   activeChannelId.value = cid;
+  showContent();
   const sid = activeServerId.value;
   if (sid) updateSettings({ lastChannel: { ...settings.value.lastChannel, [sid]: cid } });
 }
@@ -247,6 +282,7 @@ export function selectChannel(cid: number) {
 export function openDm(server: ServerStore, channelId: number) {
   activeServerId.value = null;
   homeDm.value = { serverId: server.id, channelId };
+  showContent();
 }
 
 export async function startDm(server: ServerStore, userId: number) {
@@ -301,6 +337,10 @@ export function isMuted(serverId: string, channelId?: number) {
 function onServerEvent(store: ServerStore, ev: string, d: any) {
   if (ev === "message.created") maybeNotifyMessage(store, d.message as Message);
   if (ev === "voice.state") maybeNotifyCall(store, d);
+  if (ev === "device.linked") {
+    linkedDevices.value = [...linkedDevices.value, { server: store.id, device: String(d.device ?? ""), at: Date.now() }];
+    toast(t("move.linkedToast"), `${d.device || t("move.unnamed")} · ${store.displayName()}`, "ok", 8000);
+  }
   if (ev === "ready" && d.reconnect) toast(t("toast.reconnected"), store.displayName(), "ok");
   if (ev === "ready" && activeServerId.value === store.id && (activeChannelId.value === null || !store.channel(activeChannelId.value))) {
     selectServer(store.id);
@@ -308,13 +348,19 @@ function onServerEvent(store: ServerStore, ev: string, d: any) {
   voiceHooks.forEach((h) => h(store, ev, d));
 }
 
+/** Devices that were just signed in with a code from this device (QR transfer). */
+export const linkedDevices = signal<{ server: string; device: string; at: number }[]>([]);
+
 /** Voice session subscribes here for signaling events. */
 export const voiceHooks = new Set<(store: ServerStore, ev: string, d: any) => void>();
+
+/** Notifications are paused for a while (bell menu or Settings › Notifications). */
+export const notifyPaused = () => settings.value.notifyPauseUntil > Date.now();
 
 function maybeNotifyMessage(store: ServerStore, m: Message) {
   const s = settings.value;
   const me = store.me.value?.id;
-  if (!s.notifications || !me || m.author_id === me) return;
+  if (!s.notifications || !me || m.author_id === me || notifyPaused()) return;
   const open = openChannel.value;
   const viewing = open?.server === store && open.channelId === m.channel_id && windowFocused.value;
   if (viewing) return;
@@ -335,7 +381,7 @@ function maybeNotifyMessage(store: ServerStore, m: Message) {
 function maybeNotifyCall(store: ServerStore, v: any) {
   const s = settings.value;
   const me = store.me.value?.id;
-  if (!s.notifications || !s.notifyVoiceJoin || v.left || v.user_id === me || store.me.value?.presence === "dnd") return;
+  if (!s.notifications || !s.notifyVoiceJoin || v.left || v.user_id === me || store.me.value?.presence === "dnd" || notifyPaused()) return;
   const dm = store.dm(v.channel_id);
   if (!dm) return;
   // Only the first participant joining a DM call counts as a ring.

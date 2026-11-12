@@ -3,7 +3,7 @@
 import { signal } from "@preact/signals";
 import type { ComponentChildren } from "preact";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
-import { closeModal, lightbox, openDm, openModal, selectChannel, selectServer, settings, showMenu, startDm, toast, updateSettings, windowFocused } from "../state/app";
+import { closeModal, lightbox, narrow, openDm, openModal, selectChannel, selectServer, settings, showMenu, startDm, toast, updateSettings, windowFocused } from "../state/app";
 import type { ServerStore } from "../state/server";
 import type { Attachment, Member, Message, Poll } from "../types";
 import { has, P } from "../types";
@@ -22,6 +22,8 @@ function sendError(e: unknown): string {
   return e instanceof E2eError ? t(`e2e.err.${e.reason}` as "e2e.err.nokey") : errorText(e);
 }
 import { Markdown, wrapSelection } from "./markdown";
+import { getDraft, setDraft } from "../state/drafts";
+import { MembersButton, NavBack } from "./mobile";
 import { EmojiPicker } from "./EmojiPicker";
 import { shortcode, suggestEmoji } from "./shortcodes";
 
@@ -459,6 +461,53 @@ interface ItemProps {
   setEditing: (id: number | null) => void;
 }
 
+/** Swipe a message to the left on a touch screen to reply to it. */
+function useSwipeReply(onReply: () => void) {
+  const st = useRef<{ x: number; y: number; dx: number; el: HTMLElement; locked: boolean } | null>(null);
+  const reset = (el: HTMLElement) => {
+    el.style.transition = "transform .18s ease";
+    el.style.transform = "";
+    el.classList.remove("swiping", "swipe-armed");
+  };
+  return {
+    onTouchStart: (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const t0 = e.touches[0];
+      st.current = { x: t0.clientX, y: t0.clientY, dx: 0, el: e.currentTarget as HTMLElement, locked: false };
+    },
+    onTouchMove: (e: TouchEvent) => {
+      const s = st.current;
+      if (!s) return;
+      const dx = e.touches[0].clientX - s.x;
+      const dy = e.touches[0].clientY - s.y;
+      if (!s.locked) {
+        if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) return void (st.current = null); // scrolling
+        if (dx > -14) return;
+        s.locked = true;
+      }
+      s.dx = Math.max(-96, Math.min(0, dx));
+      s.el.style.transition = "none";
+      s.el.style.transform = `translateX(${s.dx}px)`;
+      s.el.classList.add("swiping");
+      s.el.classList.toggle("swipe-armed", s.dx <= -64);
+    },
+    onTouchEnd: () => {
+      const s = st.current;
+      st.current = null;
+      if (!s?.locked) return;
+      reset(s.el);
+      if (s.dx <= -64) {
+        navigator.vibrate?.(12);
+        onReply();
+      }
+    },
+    onTouchCancel: () => {
+      if (st.current?.locked) reset(st.current.el);
+      st.current = null;
+    },
+  };
+}
+
 function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, onReply, editing, setEditing }: ItemProps) {
   const author: Member | undefined = server.member(msg.author_id);
   const name = server.memberName(msg.author_id);
@@ -527,11 +576,19 @@ function MessageItem({ server, msg, compact, me, canManage, canPin, canReact, on
     }
   };
 
+  const swipe = useSwipeReply(() => !msg.pending && !editing && onReply(msg));
   return (
     <div
       id={`msg-${msg.id}`}
       class={`msg${compact ? "" : " first"}${mentioned ? " mentioned" : ""}${msg.pending ? " pending" : ""}${msg.failed ? " failed" : ""}${msg.pinned_at && !compact ? " pinned-mark" : ""}`}
       onContextMenu={msg.pending ? undefined : menu}
+      onDblClick={(e) => {
+        // Double-click replies (Settings › Chat); links, buttons and fields keep their own double-click.
+        if (msg.pending || editing || !settings.value.dblReply || (e.target as HTMLElement).closest("a,button,input,textarea,video,audio,.msg-actions")) return;
+        window.getSelection()?.removeAllRanges();
+        onReply(msg);
+      }}
+      {...swipe}
     >
       <div class="gutter">
         {compact ? (
@@ -665,7 +722,14 @@ interface PendingFile {
 }
 
 function Composer({ server, channelId, reply, clearReply, onEditLast }: { server: ServerStore; channelId: number; reply: Message | null; clearReply: () => void; onEditLast: () => void }) {
-  const [text, setText] = useState("");
+  const [text, setTextRaw] = useState(() => getDraft(server.id, channelId));
+  // Every change is kept as the channel's draft until it is sent.
+  const setText = (v: string | ((cur: string) => string)) =>
+    setTextRaw((cur) => {
+      const next = typeof v === "function" ? v(cur) : v;
+      setDraft(server.id, channelId, next);
+      return next;
+    });
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [sending, setSending] = useState(false);
   const [ac, setAc] = useState<{ query: string; index: number } | null>(null);
@@ -863,7 +927,8 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
       wrapSelection(ta.current, { b: "**", i: "*", u: "__" }[e.key.toLowerCase()]!, setText);
       return;
     }
-    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+    // Enter sends (or, with "Enter adds a line", Ctrl+Enter / the send button).
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing && (settings.value.enterSends || e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       if (cooldown <= 0) void send();
     } else if (e.key === "Escape" && reply) clearReply();
@@ -1005,7 +1070,7 @@ function Composer({ server, channelId, reply, clearReply, onEditLast }: { server
               {sending ? <Spinner /> : <Icon.Mic />}
             </IconButton>
           ) : (
-            <IconButton title={t("chat.send")} disabled={!canSend || sending || cooldown > 0 || (!text.trim() && !files.length)} onClick={() => void send()}>
+            <IconButton title={settings.value.enterSends ? t("chat.send") : t("vm.send")} disabled={!canSend || sending || cooldown > 0 || (!text.trim() && !files.length)} onClick={() => void send()}>
               {sending ? <Spinner /> : <Icon.Send class="icon flip" />}
             </IconButton>
           )}
@@ -1209,6 +1274,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
     <div class="content" style={{ flexDirection: "row" }}>
       <div class="content">
         <header class="main-head">
+          <NavBack />
           <div class="chan-title">
             {dm ? <Avatar server={server} userId={dm.user_id} name={title} size={24} presence={server.member(dm.user_id)?.presence} /> : <Icon.Hash />}
             <span class="ellipsis">{title}</span>
@@ -1229,6 +1295,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
               <Icon.Speaker />
             </IconButton>
           )}
+          {!dm && <MembersButton />}
           <IconButton title={t("chat.pins")} active={panel?.kind === "pins"} onClick={() => setPanel(panel?.kind === "pins" ? null : { kind: "pins" })}>
             <Icon.Pin />
           </IconButton>
@@ -1248,7 +1315,7 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
               }}
             />
           </div>
-          {ch && (
+          {ch && !narrow.value && (
             <IconButton title={settings.value.showMembers ? t("chat.hideMembers") : t("chat.showMembers")} active={settings.value.showMembers} onClick={() => updateSettings({ showMembers: !settings.value.showMembers })}>
               <Icon.Users />
             </IconButton>

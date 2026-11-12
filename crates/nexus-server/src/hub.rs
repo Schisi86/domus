@@ -20,6 +20,8 @@ pub const OUTBOX: usize = 512;
 pub struct Conn {
     pub user_id: i64,
     pub ip: IpAddr,
+    /// Hash of the session token this connection signed in with.
+    pub session: Vec<u8>,
     pub tx: mpsc::Sender<Out>,
     /// Signalled to force the connection's reader loop to stop.
     pub kill: Arc<Notify>,
@@ -66,10 +68,10 @@ impl Hub {
     }
 
     /// Registers a connection. Returns its id and whether it is the user's first.
-    pub fn register(&self, user_id: i64, ip: IpAddr, tx: mpsc::Sender<Out>, kill: Arc<Notify>, presence: &str) -> (u64, bool) {
+    pub fn register(&self, user_id: i64, ip: IpAddr, session: Vec<u8>, tx: mpsc::Sender<Out>, kill: Arc<Notify>, presence: &str) -> (u64, bool) {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed) + 1;
         let mut g = self.write();
-        g.conns.insert(id, Conn { user_id, ip, tx, kill });
+        g.conns.insert(id, Conn { user_id, ip, session, tx, kill });
         let list = g.by_user.entry(user_id).or_default();
         list.push(id);
         let first = list.len() == 1;
@@ -185,6 +187,17 @@ impl Hub {
         }
     }
 
+    /// Closes the connections of one session of a user (a device was signed out).
+    pub fn disconnect_session(&self, user_id: i64, session: &[u8], code: u16, reason: &'static str) {
+        let g = self.read();
+        for id in g.by_user.get(&user_id).into_iter().flatten() {
+            if let Some(c) = g.conns.get(id).filter(|c| c.session == session) {
+                let _ = c.tx.try_send(Out::Close(code, reason));
+                c.kill.notify_one();
+            }
+        }
+    }
+
     pub fn disconnect_all(&self, code: u16, reason: &'static str) {
         let g = self.read();
         for c in g.conns.values() {
@@ -203,9 +216,9 @@ mod tests {
         let ip: IpAddr = "127.0.0.1".parse().unwrap();
         let (tx1, mut rx1) = mpsc::channel(4);
         let (tx2, _rx2) = mpsc::channel(4);
-        let (a, first) = hub.register(1, ip, tx1, Arc::new(Notify::new()), "invisible");
+        let (a, first) = hub.register(1, ip, vec![1], tx1, Arc::new(Notify::new()), "invisible");
         assert!(first);
-        let (b, first) = hub.register(1, ip, tx2, Arc::new(Notify::new()), "online");
+        let (b, first) = hub.register(1, ip, vec![2], tx2, Arc::new(Notify::new()), "online");
         assert!(!first);
         assert_eq!(hub.ip_count(ip), 2);
         assert_eq!(hub.public_presence(1), "offline", "invisible looks offline");
@@ -224,7 +237,7 @@ mod tests {
         let hub = Hub::default();
         let (tx, _rx) = mpsc::channel(1);
         let kill = Arc::new(Notify::new());
-        hub.register(1, "127.0.0.1".parse().unwrap(), tx, kill.clone(), "online");
+        hub.register(1, "127.0.0.1".parse().unwrap(), vec![1], tx, kill.clone(), "online");
         let msg: Arc<str> = "m".into();
         hub.send_user(1, &msg);
         hub.send_user(1, &msg);

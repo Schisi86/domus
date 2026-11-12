@@ -24,6 +24,7 @@ pub mod maintenance;
 pub mod media;
 pub mod ops_admin;
 pub mod ops_chat;
+pub mod ops_devices;
 pub mod ops_social;
 pub mod ops_voice;
 pub mod perms;
@@ -68,6 +69,8 @@ pub struct AppState {
     /// Public TURN-over-TCP address (e.g. through the desktop app's internet tunnel).
     pub turn_public: RwLock<Option<String>>,
     pub fingerprint: Option<String>,
+    /// One-time codes for signing in another device (QR code).
+    pub links: ops_devices::Links,
     pub control: tokio::sync::watch::Sender<Control>,
     cpu_sample: Mutex<Option<(Instant, Duration)>>,
 }
@@ -345,6 +348,7 @@ pub async fn start(cfg: Config, data_dir: &Path) -> Result<RunningServer, StartE
         fingerprint: tls.as_ref().map(|t| t.fingerprint.clone()),
         control,
         cpu_sample: Mutex::new(None),
+        links: Default::default(),
     });
 
     let app = http::router(state.clone());

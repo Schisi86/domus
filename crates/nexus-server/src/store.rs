@@ -427,6 +427,21 @@ pub fn session_user(c: &Connection, token_hash: &[u8], max_age_ms: i64) -> ApiRe
     user_by_id(c, uid)
 }
 
+#[derive(Debug, Clone)]
+pub struct SessionRow {
+    pub token_hash: Vec<u8>,
+    pub device: String,
+    pub created_at: i64,
+    pub last_seen: i64,
+}
+
+/// The sessions (signed-in devices) of a user, most recently used first.
+pub fn user_sessions(c: &Connection, user_id: i64) -> ApiResult<Vec<SessionRow>> {
+    let mut st = c.prepare("SELECT token_hash, device, created_at, last_seen FROM sessions WHERE user_id=?1 ORDER BY last_seen DESC")?;
+    let rows = st.query_map(params![user_id], |r| Ok(SessionRow { token_hash: r.get(0)?, device: r.get(1)?, created_at: r.get(2)?, last_seen: r.get(3)? }))?;
+    Ok(rows.collect::<Result<_, _>>()?)
+}
+
 pub fn delete_session(c: &Connection, token_hash: &[u8]) -> ApiResult<()> {
     c.execute("DELETE FROM sessions WHERE token_hash=?1", params![token_hash])?;
     Ok(())

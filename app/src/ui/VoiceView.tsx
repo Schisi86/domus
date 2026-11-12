@@ -1,5 +1,6 @@
 // Voice channel view: participant tiles, screen shares, cameras, controls.
 
+import { NavBack } from "./mobile";
 import { useEffect, useState } from "preact/hooks";
 import { toast } from "../state/app";
 import { errorText } from "../i18n";
@@ -198,6 +199,7 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
   return (
     <div class="voice-view">
       <header class="main-head" style={{ background: "transparent" }}>
+        <NavBack />
         <div class="chan-title"><Icon.Speaker /> {channel.name}</div>
         <div class="grow faint small">{v.state.value === "reconnecting" ? t("voice.restoring") : t("voice.participants", { n: members.length })}</div>
         {handOrder.length > 0 && <div class="hand-count" title={handOrder.map((u) => server.memberName(u)).join(", ")}>✋ {handOrder.length}</div>}

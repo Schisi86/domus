@@ -3,7 +3,7 @@
 // panel always show the live state.
 
 import { computed, signal } from "@preact/signals";
-import { isTauri, tauriInvoke } from "../platform";
+import { isAndroidApp, isTauri, tauriInvoke } from "../platform";
 import { servers } from "./app";
 import type { ServerStore } from "./server";
 
@@ -120,7 +120,7 @@ export function internetAddress(h: HostStatus): { host: string; port: number; vi
 
 let timer: ReturnType<typeof setInterval> | null = null;
 export function startHostPolling() {
-  if (!isTauri || timer) return;
+  if (!isTauri || isAndroidApp || timer) return;
   void refreshHosts().then(() => {
     if (hosts.value.some((h) => h.exposed)) void checkFirewall();
   });

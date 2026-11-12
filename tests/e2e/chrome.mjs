@@ -103,7 +103,7 @@ try {
   await page.locator(".modal input.input").fill("127.0.0.1:7998");
   await page.locator(".modal .btn.primary").click();
   const help = await waitFor(() => page.locator(".modal .notice.warn").textContent({ timeout: 500 }), 20000);
-  check("connecting to a PC without server explains the cause", /läuft kein NexUs-Server/.test(help ?? ""), help ?? "");
+  check("connecting to a PC without server explains the cause", /läuft kein Domus-Server/.test(help ?? ""), help ?? "");
   // No answer at all (what a blocking firewall looks like from outside).
   await page.locator(".modal input.input").fill("10.255.255.1:7878");
   await page.locator(".modal .btn.primary").click();
@@ -166,7 +166,7 @@ try {
   const blocked = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke("plugin:opener|open_url", { url: "file:///C:/Windows/win.ini" }).then(() => "opened", (e) => String(e)));
   check("non-web links stay blocked", /not allowed/i.test(blocked), blocked);
   const brand = await page.locator(".titlebar .wordmark").textContent();
-  check("title bar shows the new name NexUs", brand === "NexUs", brand ?? "");
+  check("title bar shows the name Domus", brand === "Domus", brand ?? "");
   await page.evaluate(() => window.__TAURI_INTERNALS__.invoke("quit_app")).catch(() => {});
 } catch (e) {
   check("test run", false, String(e?.stack ?? e));

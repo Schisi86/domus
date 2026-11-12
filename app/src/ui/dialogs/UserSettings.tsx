@@ -4,10 +4,12 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { activeServer, closeModal, hostsAutostart, minimizeToTray, openModal, persistNow, removeServer, servers, settings, toast, updateSettings, type Settings } from "../../state/app";
 import type { ServerStore } from "../../state/server";
-import { errorText, lang, LANGS, presenceText, t, type Key } from "../../i18n";
+import { errorText, fmtStamp, lang, LANGS, presenceText, t, type Key } from "../../i18n";
+import { TransferDialog } from "./Transfer";
 import { transport } from "../../net/transport";
-import { appInfo, autostart, isTauri, openFolder, quitApp, type AppInfo } from "../../platform";
-import { Avatar, Field, IconButton, Icon, LogoMark, Modal, Toggle, bannerCss, confirmDialog, promptDialog } from "../components";
+import { appInfo, autostart, isAndroidApp, isMobile, isTauri, openFolder, quitApp, type AppInfo } from "../../platform";
+import { pauseUntil } from "../Sidebar";
+import { Avatar, Field, IconButton, Icon, LogoMark, Modal, Spinner, Toggle, bannerCss, confirmDialog, promptDialog } from "../components";
 import { pickAndCropImage } from "../ImageCrop";
 import { voice } from "../../rtc/voice";
 import { ScreenOptions } from "../ScreenShare";
@@ -21,7 +23,7 @@ import { openExternal } from "../links";
 import { play, playDemo, playBoard } from "../../sound";
 import { createGate, dbToUnit, type Gate, type GateInfo } from "../../rtc/gate";
 
-type Tab = "account" | "voice" | "screen" | "notify" | "look" | "app" | "about";
+type Tab = "account" | "devices" | "voice" | "screen" | "notify" | "look" | "app" | "about";
 
 /** Banner presets (two-color gradients). */
 const BANNERS = ["#2ee59d,#14a0be", "#6b97ff,#9650ff", "#f472b6,#fb923c", "#fcee0a,#ff2a6d", "#38bdf8,#2dd4bf", "#c084fc,#f472b6", "#e8b54a,#7c5a1e", "#0f172a,#334155"];
@@ -169,6 +171,77 @@ function Account() {
   );
 }
 
+interface DeviceRow {
+  id: string;
+  device: string;
+  created_at: number;
+  last_seen: number;
+  current: boolean;
+}
+
+/** Signed-in devices of the own account (per server) and the QR transfer. */
+function Devices() {
+  const [sid, setSid] = useState(activeServer.value?.id ?? servers.value[0]?.id ?? "");
+  const server = servers.value.find((s) => s.id === sid) ?? null;
+  const [list, setList] = useState<DeviceRow[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const load = () => {
+    if (!server) return;
+    setErr(null);
+    server.rpc<{ devices: DeviceRow[] }>("device.list").then((r) => setList(r.devices), (e) => { setList([]); setErr(errorText(e)); });
+  };
+  useEffect(load, [sid]);
+  const revoke = async (d: DeviceRow) => {
+    if (!server || !(await confirmDialog({ title: t("dev.revokeTitle"), body: t("dev.revokeBody", { device: d.device || t("move.unnamed") }), confirm: t("dev.revoke"), danger: true }))) return;
+    server.rpc("device.revoke", { id: d.id }).then(() => { toast(t("dev.revoked"), d.device, "ok"); load(); }, (e) => toast(t("common.error"), errorText(e), "error"));
+  };
+  return (
+    <>
+      <h2>{t("dev.title")}</h2>
+      <div class="card transfer-card">
+        <div class="transfer-art" aria-hidden="true"><Icon.Laptop size={30} /><span /><Icon.Phone size={26} /></div>
+        <div class="grow">
+          <b>{t("move.title")}</b>
+          <div class="faint small">{t("move.cardDesc")}</div>
+        </div>
+        <div class="row wrap" style={{ gap: "8px" }}>
+          <button class="btn primary" disabled={!servers.value.length} onClick={() => openModal(<TransferDialog mode="send" />)}><Icon.Upload size={16} /> {t("move.send")}</button>
+          <button class="btn outline" onClick={() => openModal(<TransferDialog mode="receive" />)}><Icon.Download size={16} /> {t("move.receive")}</button>
+        </div>
+      </div>
+      {server && (
+        <>
+          {servers.value.length > 1 && (
+            <Field label={t("settings.server")} hint={t("settings.perServer")}>
+              <select class="select" value={sid} onChange={(e) => setSid((e.target as HTMLSelectElement).value)}>
+                {servers.value.map((s) => (
+                  <option key={s.id} value={s.id}>{s.displayName()}</option>
+                ))}
+              </select>
+            </Field>
+          )}
+          <div class="card col" style={{ gap: "2px" }}>
+            <div class="label">{t("dev.signedIn")}</div>
+            {list === null && <Spinner />}
+            {err && <div class="faint small">{/unbekannt|unknown/i.test(err) ? t("move.tooOld") : err}</div>}
+            {list?.map((d) => (
+              <div key={d.id} class="device-row">
+                {/android|phone|handy|mobil/i.test(d.device) ? <Icon.Phone /> : <Icon.Laptop />}
+                <div class="grow" style={{ minWidth: "0px" }}>
+                  <div class="ellipsis">{d.device || t("move.unnamed")} {d.current && <span class="badge ok">{t("dev.this")}</span>}</div>
+                  <div class="faint xs">{t("dev.since", { date: fmtStamp(d.created_at) })} · {t("dev.lastSeen", { date: fmtStamp(d.last_seen) })}</div>
+                </div>
+                {!d.current && <button class="btn sm ghost on-danger" onClick={() => void revoke(d)}>{t("dev.revoke")}</button>}
+              </div>
+            ))}
+          </div>
+          <div class="faint xs">{t("dev.hint")}</div>
+        </>
+      )}
+    </>
+  );
+}
+
 function useDevices() {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   useEffect(() => {
@@ -272,7 +345,7 @@ function Voice() {
     if (v && ("inputDevice" in patch || "echoCancellation" in patch || "noiseSuppression" in patch || "autoGainControl" in patch)) void v.changeInputDevice();
     if (v && ("inputGate" in patch || "gateThreshold" in patch)) v.updateGate();
     if (v && "outputDevice" in patch) v.refreshOutputs();
-    if (v && ("pushToTalk" in patch || "globalPtt" in patch || "globalPttKey" in patch)) {
+    if (v && ("pushToTalk" in patch || "globalPtt" in patch || "globalPttKey" in patch || "globalMuteKey" in patch)) {
       v.applyMicEnabled();
       void v.registerGlobalPtt();
     }
@@ -308,13 +381,20 @@ function Voice() {
       <div class="card col">
         <Toggle checked={s.pushToTalk} onChange={(x) => set({ pushToTalk: x })} label={t("settings.ptt")} desc={t("settings.pttDesc")} />
         {s.pushToTalk && <KeyCapture value={s.pttKey} allowAll onChange={(k) => set({ pttKey: k })} />}
-        {s.pushToTalk && isTauri && (
+        {s.pushToTalk && isTauri && !isMobile && (
           <>
             <Toggle checked={s.globalPtt} onChange={(x) => set({ globalPtt: x })} label={t("settings.globalPtt")} desc={t("settings.globalPttDesc")} />
             {s.globalPtt && <KeyCapture value={s.globalPttKey} allowAll={false} onChange={(k) => set({ globalPttKey: k })} />}
           </>
         )}
       </div>
+      <Toggle checked={s.keepAwake} onChange={(x) => set({ keepAwake: x })} label={t("settings.keepAwake")} desc={t("settings.keepAwakeDesc")} />
+      {isTauri && !isMobile && (
+        <div class="card col">
+          <Toggle checked={!!s.globalMuteKey} onChange={(x) => set({ globalMuteKey: x ? "F6" : "" })} label={t("settings.globalMute")} desc={t("settings.globalMuteDesc")} />
+          {!!s.globalMuteKey && <KeyCapture value={s.globalMuteKey} allowAll={false} onChange={(k) => set({ globalMuteKey: k })} />}
+        </div>
+      )}
       <Field label={t("settings.camera")}>
         <select class="select" value={s.videoDevice} onChange={(e) => set({ videoDevice: (e.target as HTMLSelectElement).value })}>
           <option value="">{t("common.default")}</option>
@@ -430,6 +510,20 @@ function Notify() {
           </Field>
         )}
       </div>
+      <div class="card col">
+        <div class="row wrap" style={{ gap: "8px" }}>
+          <div class="grow">
+            <b>{t("pause.title")}</b>
+            <div class="faint xs">{s.notifyPauseUntil > Date.now() ? t("pause.activeUntil", { time: fmtStamp(s.notifyPauseUntil) }) : t("pause.desc")}</div>
+          </div>
+          {s.notifyPauseUntil > Date.now() && <button class="btn sm primary" onClick={() => updateSettings({ notifyPauseUntil: 0 })}>{t("pause.resume")}</button>}
+        </div>
+        <div class="row wrap" style={{ gap: "8px" }}>
+          <button class="btn sm outline" onClick={() => updateSettings({ notifyPauseUntil: pauseUntil("1h") })}>{t("pause.1h")}</button>
+          <button class="btn sm outline" onClick={() => updateSettings({ notifyPauseUntil: pauseUntil("8h") })}>{t("pause.8h")}</button>
+          <button class="btn sm outline" onClick={() => updateSettings({ notifyPauseUntil: pauseUntil("morning") })}>{t("pause.morning")}</button>
+        </div>
+      </div>
       <div class="faint small">{t("settings.notifyHint")}</div>
     </>
   );
@@ -470,6 +564,15 @@ function Look() {
       </Field>
       <Toggle checked={s.ambient} onChange={(x) => updateSettings({ ambient: x })} label={t("look.ambient")} desc={t("look.ambientDesc")} />
       <Toggle checked={s.compact} onChange={(x) => updateSettings({ compact: x })} label={t("look.compact")} desc={t("look.compactDesc")} />
+      <Field label={t("look.msgScale", { n: Math.round((s.msgScale || 1) * 100) })}>
+        <div class="row" style={{ gap: "10px" }}>
+          <span class="faint xs">A</span>
+          <input class="range grow" type="range" min={0.85} max={1.5} step={0.05} value={s.msgScale || 1} onInput={(e) => updateSettings({ msgScale: Number((e.target as HTMLInputElement).value) })} />
+          <span style={{ fontSize: "1.3em" }}>A</span>
+        </div>
+      </Field>
+      <Toggle checked={s.dblReply} onChange={(x) => updateSettings({ dblReply: x })} label={isMobile ? t("look.swipeReply") : t("look.dblReply")} desc={isMobile ? t("look.swipeReplyDesc") : t("look.dblReplyDesc")} />
+      <Toggle checked={s.enterSends} onChange={(x) => updateSettings({ enterSends: x })} label={t("look.enterSends")} desc={t("look.enterSendsDesc")} />
       <Field label={t("lang.title")}>
         <div class="flag-picker" style={{ width: "auto", padding: "0px" }}>
           {LANGS.map((l) => (
@@ -499,7 +602,7 @@ function AppTab() {
   return (
     <>
       <h2>{t("settings.app")}</h2>
-      {isTauri && (
+      {isTauri && !isAndroidApp && (
         <div class="card col">
           <Toggle
             checked={minimizeToTray.value}
@@ -558,7 +661,7 @@ function AppTab() {
           <dt>{t("settings.logs")}</dt><dd class="mono xs selectable">{info.log_dir}</dd>
         </dl>
       )}
-      {info && (
+      {info && !isAndroidApp && (
         <div class="row wrap">
           <button class="btn outline" onClick={() => void openFolder(info.log_dir)}><Icon.Folder /> {t("settings.openLogs")}</button>
           <button class="btn outline" onClick={() => void openFolder(info.data_dir)}><Icon.Folder /> {t("settings.openData")}</button>
@@ -596,6 +699,7 @@ export function UserSettingsDialog({ tab: initial }: { tab?: Tab }) {
   const [tab, setTab] = useState<Tab>(initial ?? "account");
   const items: [Tab, string, preact.ComponentChild][] = [
     ["account", t("settings.account"), <Icon.Users />],
+    ["devices", t("dev.tab"), <Icon.Phone />],
     ["voice", t("settings.voice"), <Icon.Mic />],
     ["screen", t("screen.title"), <Icon.Screen />],
     ["notify", t("settings.notifications"), <Icon.Bell />],
@@ -614,6 +718,7 @@ export function UserSettingsDialog({ tab: initial }: { tab?: Tab }) {
       <div class="pane-content">
         <div class="pane-close"><IconButton title={t("common.closeEsc")} onClick={closeModal}><Icon.X /></IconButton></div>
         {tab === "account" && <Account />}
+        {tab === "devices" && <Devices />}
         {tab === "voice" && <Voice />}
         {tab === "screen" && <Screen />}
         {tab === "notify" && <Notify />}

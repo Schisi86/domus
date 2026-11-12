@@ -3,5 +3,6 @@
   "identifier": "ink",
   "description": "The annotation overlay only listens for drawing events",
   "windows": ["ink"],
+  "platforms": ["windows", "linux", "macOS"],
   "permissions": ["core:event:default"]
 }

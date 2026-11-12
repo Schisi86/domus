@@ -5,7 +5,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { activeServer, activeServerId, homeDm, openChannel } from "../state/app";
 import { t } from "../i18n";
-import { isTauri } from "../platform";
+import { isMobile, isTauri } from "../platform";
 import { COPYRIGHT, DONATE_URL, HOMEPAGE } from "../brand";
 import { openExternal } from "./links";
 import { LangPicker } from "./LangPicker";
@@ -46,7 +46,7 @@ function contextTitle() {
 
 export function TitleBar() {
   // Only the desktop app has a window to control (the browser build has none).
-  return isTauri ? <DesktopTitleBar /> : null;
+  return isTauri && !isMobile ? <DesktopTitleBar /> : null;
 }
 
 function DesktopTitleBar() {

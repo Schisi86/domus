@@ -5,6 +5,7 @@
 // Negotiation follows the "perfect negotiation" pattern so both sides can add
 // or remove tracks (screen, camera) at any time without glare problems.
 
+import { keepAwake } from "./wakelock";
 import { signal } from "@preact/signals";
 import { settings, toast, updateSettings, voiceHooks, type ScreenOpts, type ScreenRes } from "../state/app";
 import type { ServerStore } from "../state/server";
@@ -220,6 +221,7 @@ export class VoiceSession {
     window.addEventListener("keydown", this.keyDown);
     window.addEventListener("keyup", this.keyUp);
     await this.registerGlobalPtt();
+    keepAwake(true);
     await this.joinChannel(false);
     this.loops.push(setInterval(() => this.pollSpeaking(), 200));
     this.loops.push(setInterval(() => void this.pollStats(), 2000));
@@ -342,6 +344,7 @@ export class VoiceSession {
     window.removeEventListener("keydown", this.keyDown);
     window.removeEventListener("keyup", this.keyUp);
     void this.unregisterGlobalPtt();
+    keepAwake(false);
     this.loops.forEach(clearInterval);
     for (const p of this.peers.values()) p.close();
     this.peers.clear();
@@ -531,7 +534,7 @@ export class VoiceSession {
       }
       const key = settings.value.remoteKey;
       if (!fn || !key || this.state.value === "ended") return;
-      if (key === this.globalKey) {
+      if (key === this.globalKey || key === this.globalMute) {
         toast(t("rc2.keyConflict", { key }), undefined, "warn", 7000);
         return;
       }
@@ -891,30 +894,46 @@ export class VoiceSession {
 
   private globalKey: string | null = null;
 
-  /** Registers the system-wide push-to-talk key (desktop app only). */
+  private globalMute: string | null = null;
+
+  /** Registers the system-wide push-to-talk and mute keys (desktop app only). */
   async registerGlobalPtt() {
     await this.unregisterGlobalPtt();
     const st = settings.value;
-    if (!isTauri || !st.pushToTalk || !st.globalPtt || !st.globalPttKey) return;
-    try {
-      const gs = await import("@tauri-apps/plugin-global-shortcut");
-      await gs.register(st.globalPttKey, (ev) => {
-        this.pttDown.value = ev.state === "Pressed";
-        this.applyMicEnabled();
-      });
-      this.globalKey = st.globalPttKey;
-    } catch (e) {
-      toast(t("voice.globalPttFailed"), String(e), "warn");
+    if (!isTauri) return;
+    const gs = await import("@tauri-apps/plugin-global-shortcut").catch(() => null);
+    if (!gs) return;
+    if (st.pushToTalk && st.globalPtt && st.globalPttKey) {
+      try {
+        await gs.register(st.globalPttKey, (ev) => {
+          this.pttDown.value = ev.state === "Pressed";
+          this.applyMicEnabled();
+        });
+        this.globalKey = st.globalPttKey;
+      } catch (e) {
+        toast(t("voice.globalPttFailed"), String(e), "warn");
+      }
+    }
+    if (st.globalMuteKey && st.globalMuteKey !== this.globalKey) {
+      try {
+        await gs.register(st.globalMuteKey, (ev) => {
+          if (ev.state === "Pressed") void this.setMuted(!this.muted.value);
+        });
+        this.globalMute = st.globalMuteKey;
+      } catch (e) {
+        toast(t("voice.globalMuteFailed"), String(e), "warn");
+      }
     }
   }
 
   async unregisterGlobalPtt() {
-    if (!this.globalKey) return;
-    const key = this.globalKey;
+    const keys = [this.globalKey, this.globalMute].filter((k): k is string => !!k);
     this.globalKey = null;
+    this.globalMute = null;
+    if (!keys.length) return;
     try {
       const gs = await import("@tauri-apps/plugin-global-shortcut");
-      await gs.unregister(key);
+      for (const k of keys) await gs.unregister(k).catch(() => {});
     } catch {
       /* ignore */
     }

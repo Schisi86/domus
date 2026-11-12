@@ -1,4 +1,4 @@
-# Funktionsstand (Version 1.0.0)
+# Funktionsstand (Version 1.0.1)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -78,6 +78,20 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Fehlerprotokolle (Client + Server, rotierend) | ✅ |
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
+
+### Android-App, Profil per QR-Code, kleine Verbesserungen (neu in 1.0.1)
+| Funktion | Stand |
+|---|---|
+| **Android-App** (APK, Android 8+, ARM64 und x86_64): derselbe Client wie unter Windows – Text, Sprache, Video, DMs inkl. Verschlüsselung, Soundboard, Umfragen, Dateien, Einladungen. Eigene Handy-Oberfläche: eine Spalte (Server/Kanäle ↔ Chat), Zurück-Taste schließt Dialoge und kehrt zur Kanalliste zurück, Mitgliederliste als Sheet, Menüs als Bottom-Sheet (lange drücken), Dialoge im Vollbild, große Touch-Flächen, Wischen zum Antworten, Bildschirm bleibt im Anruf an, App-Icon als adaptives Android-Icon | 🟡 APK gebaut und signiert; Oberfläche im Handy-Format automatisiert getestet (`mobile.mjs`, Chromium mit Android-Kennung und Touch). **Auf einem echten Handy oder im Emulator wurde die App nicht gestartet** – der Emulator braucht Hardware-Virtualisierung, die auf dem Entwicklungs-PC im BIOS/UEFI ausgeschaltet ist |
+| Android – bewusst nicht enthalten: Server hosten, Fernsteuerung, Zeichnen-Overlay auf dem Desktop, globale Tasten, Tray/Autostart, **eigenen Bildschirm teilen** (das Android-WebView kann keinen Bildschirm aufnehmen). Bildschirme anderer ansehen, Kamera und Mikrofon gehen | – |
+| **Profil übertragen per QR-Code** (PC → Handy und Handy → PC): Einmal-Codes je Server (3 Minuten, einmalig), Adressen, Fingerabdruck und auf Wunsch Design/Sprache/Schriftgröße/Benachrichtigungen; Empfang per Kamera-Scan oder eingefügtem Text, eigene Sitzung je Gerät, Hinweis „Neues Gerät angemeldet“. Server, die nur auf diesem PC erreichbar sind (localhost), werden mit Begründung ausgelassen | ✅ Rust-Integrationstest (Einmaligkeit, Ablauf, Liste, Abmelden) + `mobile.mjs`: QR aus der App → simulierte Kamera des anderen Geräts → Anmeldung, in beide Richtungen |
+| **Angemeldete Geräte** (Einstellungen › Geräte): Liste mit „Dieses Gerät“, andere Geräte abmelden (nur dieses wird getrennt) | ✅ Integrationstest + `mobile.mjs` |
+| **Entwürfe pro Kanal** (bleiben auch nach Neustart, Stift-Symbol in der Kanalliste) | ✅ `mobile.mjs` |
+| **Benachrichtigungen pausieren** (1 Std., 8 Std., bis morgen 8 Uhr; Rechtsklick auf den eigenen Namen oder Einstellungen › Benachrichtigungen; Glocken-Symbol zum Fortsetzen) | ✅ `mobile.mjs` (Windows-Toast selbst nicht automatisiert) |
+| **Antworten per Doppelklick** (Desktop) bzw. **Wischen nach links** (Touch), abschaltbar | ✅ Wischen in `mobile.mjs`; Doppelklick im Browser geprüft |
+| **Schriftgröße der Nachrichten** getrennt vom UI-Zoom; **„Enter sendet“** abschaltbar (am Handy standardmäßig aus) | ✅ `mobile.mjs` |
+| **Globale Stummschalt-Taste** (Desktop, Standard aus, z. B. F6) | 🟡 implementiert wie die globale Push-to-Talk-Taste, nicht automatisiert getestet |
+| **Einladung als QR-Code** (im Einladungsdialog, wenn die Adresse von außen erreichbar ist) und **QR-Scan beim Server-Hinzufügen** | 🟡 im Browser geprüft, Scan derselbe Code wie bei der Profilübertragung |
 
 ### Domus 1.0 – neuer Name, neues Logo (neu in 1.0.0)
 | Funktion | Stand |

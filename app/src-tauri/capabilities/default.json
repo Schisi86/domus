@@ -3,6 +3,7 @@
   "identifier": "default",
   "description": "Permissions for the main window",
   "windows": ["main"],
+  "platforms": ["windows", "linux", "macOS"],
   "permissions": [
     "core:default",
     "core:window:allow-set-title",

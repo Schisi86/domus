@@ -26,7 +26,7 @@ use crate::hub::{self, Out};
 use crate::perms::{self, PermCache};
 use crate::ratelimit::Bucket;
 use crate::store::{self, Category, Channel, Role, User};
-use crate::{auth, ops_admin, ops_chat, ops_social, ops_voice, AppState};
+use crate::{auth, ops_admin, ops_chat, ops_devices, ops_social, ops_voice, AppState};
 
 const AUTH_TIMEOUT: Duration = Duration::from_secs(10);
 /// Clients send a `ping` op every 30 s; silence for this long means the peer is gone.
@@ -160,7 +160,7 @@ async fn run(st: Arc<AppState>, mut socket: WebSocket, ip: IpAddr) {
     };
     let (tx, mut rx) = mpsc::channel::<Out>(hub::OUTBOX);
     let kill = Arc::new(Notify::new());
-    let (conn_id, first) = st.hub.register(user.id, ip, tx.clone(), kill.clone(), &user.presence_pref);
+    let (conn_id, first) = st.hub.register(user.id, ip, token_hash.clone(), tx.clone(), kill.clone(), &user.presence_pref);
     tracing::debug!(user = %user.username, %ip, conn_id, "connected");
 
     let ready = build_ready(&st, &user).await;
@@ -331,6 +331,9 @@ async fn dispatch(ctx: &mut Ctx, op: &str, d: Value) -> ApiResult<Value> {
         "mention.list" => ops_chat::mention_list(ctx, d).await,
         "rtc.signal" => ops_voice::signal(ctx, d).await,
         "p2p.signal" => ops_social::p2p_signal(ctx, d).await,
+        "device.link_create" => ops_devices::link_create(ctx, d).await,
+        "device.list" => ops_devices::list(ctx, d).await,
+        "device.revoke" => ops_devices::revoke(ctx, d).await,
         "e2e.publish" => ops_social::e2e_publish(ctx, d).await,
         "e2e.keys" => ops_social::e2e_keys(ctx, d).await,
         _ => Err(ApiError::bad(format!("Unbekannte Operation: {op}"))),

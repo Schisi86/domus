@@ -32,6 +32,7 @@ pub fn router(st: Arc<AppState>) -> Router {
         .route("/api/v1/auth/register", post(register))
         .route("/api/v1/auth/login", post(login))
         .route("/api/v1/auth/logout", post(logout))
+        .route("/api/v1/auth/link", post(link))
         .route("/api/v1/files", post(upload).layer(DefaultBodyLimit::disable()))
         .route("/api/v1/files/{id}", get(download))
         .route("/api/v1/avatar", post(avatar_upload).delete(avatar_delete).layer(DefaultBodyLimit::disable()))
@@ -192,6 +193,30 @@ async fn login(
     let (uid, device) = (user.id, device_name(&r.device));
     st.db.call(move |c| store::create_session(c, uid, &th, &device)).await?;
     tracing::info!(user = %user.username, ip = %addr.ip(), "login");
+    Ok(Json(json!({ "token": token, "user": user })))
+}
+
+#[derive(Deserialize)]
+struct LinkReq {
+    code: String,
+    #[serde(default)]
+    device: String,
+}
+
+/// Signs in a new device with a one-time code from an already signed-in one.
+async fn link(
+    State(st): State<Arc<AppState>>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    body: Bytes,
+) -> ApiResult<Json<Value>> {
+    if !st.auth_limiter.check(addr.ip()) {
+        return Err(ApiError::rate_limited());
+    }
+    let r: LinkReq = json_body(&body)?;
+    if r.code.len() > 64 {
+        return Err(ApiError::new(Code::InvalidCredentials, "Der Code ist ungültig oder abgelaufen"));
+    }
+    let (token, user) = crate::ops_devices::redeem(&st, &r.code, &r.device).await?;
     Ok(Json(json!({ "token": token, "user": user })))
 }
 
