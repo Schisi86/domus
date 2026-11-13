@@ -28,6 +28,8 @@ export const has = (perms: number, p: number) => (perms & p) === p;
 export type Presence = "online" | "idle" | "dnd" | "offline" | "invisible";
 
 export interface User {
+  /** Only on the own account: share read receipts in DMs. */
+  read_receipts?: boolean;
   id: number;
   username: string;
   display_name: string;
@@ -42,6 +44,8 @@ export interface User {
 }
 
 export interface Member {
+  /** Only on the own account: share read receipts in DMs. */
+  read_receipts?: boolean;
   id: number;
   username: string;
   display_name: string;
@@ -131,6 +135,14 @@ export interface Dm {
   channel_id: number;
   user_id: number;
   last_message_id: number | null;
+  /** In my archive (only for me). */
+  archived?: boolean;
+  /** Pinned to the top (only for me). */
+  pinned?: boolean;
+  /** "Deleted for me": messages up to this id are hidden; 0 = never deleted. */
+  cleared_before?: number;
+  /** How far the other person has read (only if both allow read receipts). */
+  peer_read?: number | null;
 }
 
 export interface VoiceMember {

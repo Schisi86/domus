@@ -4,7 +4,7 @@
 import { draftKey, draftKeys } from "../state/drafts";
 import { activeChannelId, activeServer, activeServerId, homeDm, isMuted, openDm, openModal, selectChannel, servers, settings, showMenu, toast, updateSettings, showContent, narrow, type MenuItem } from "../state/app";
 import type { ServerStore } from "../state/server";
-import type { Channel } from "../types";
+import type { Channel, Dm } from "../types";
 import { has, P } from "../types";
 import { Avatar, IconButton, Icon, Popover, confirmDialog, copyText } from "./components";
 import { joinVoice, endVoice, voice, voiceBusy } from "../rtc/voice";
@@ -235,9 +235,68 @@ function ServerSidebar({ server }: { server: ServerStore }) {
   );
 }
 
+export function dmMenu(e: MouseEvent, s: ServerStore, d: Dm) {
+  const name = s.dmName(d.user_id);
+  const fail = (er: unknown) => toast(t("common.error"), errorText(er), "error");
+  showMenu(e, [
+    { label: d.pinned ? t("dmx.unpin") : t("dmx.pin"), onClick: () => void s.setDmPrefs(d.channel_id, { pinned: !d.pinned }).catch(fail) },
+    {
+      label: d.archived ? t("dmx.unarchive") : t("dmx.archive"),
+      onClick: () =>
+        void s.setDmPrefs(d.channel_id, { archived: !d.archived, ...(d.archived ? {} : { pinned: false }) }).then(
+          () => !d.archived && toast(t("dmx.archived"), name, "ok", 2500),
+          fail,
+        ),
+    },
+    ...(s.isUnread(d.channel_id) ? [{ label: t("rail.markRead"), onClick: () => void s.ack(d.channel_id) }] : []),
+    { separator: true, label: "" },
+    {
+      label: t("dmx.delete"),
+      danger: true,
+      onClick: async () => {
+        if (!(await confirmDialog({ title: t("dmx.deleteTitle"), body: t("dmx.deleteBody", { name }), confirm: t("dmx.deleteConfirm"), danger: true }))) return;
+        const open = homeDm.value;
+        if (open?.serverId === s.id && open.channelId === d.channel_id) homeDm.value = null;
+        s.clearDm(d.channel_id).then(() => toast(t("dmx.deleted"), name, "ok", 2500), fail);
+      },
+    },
+  ]);
+}
+
+function DmRow({ s, d }: { s: ServerStore; d: Dm }) {
+  const cur = homeDm.value;
+  const m = s.member(d.user_id);
+  const active = cur?.serverId === s.id && cur.channelId === d.channel_id;
+  const unread = s.isUnread(d.channel_id);
+  const inCall = s.voiceMembers(d.channel_id).length > 0;
+  return (
+    <button
+      class={`chan${active ? " active" : ""}${unread ? " unread" : ""}`}
+      style={{ height: "44px" }}
+      onClick={() => openDm(s, d.channel_id)}
+      onContextMenu={(e) => dmMenu(e, s, d)}
+    >
+      <Avatar server={s} userId={d.user_id} name={s.dmName(d.user_id)} size={30} presence={m?.presence ?? "offline"} />
+      <span class="name">
+        <div class="ellipsis">{s.dmName(d.user_id)}</div>
+        <div class="faint xs ellipsis">{servers.value.length > 1 ? s.displayName() : (m?.status_text ?? "")}</div>
+      </span>
+      {inCall && <Icon.Speaker size={16} title={t("home.callActive")} />}
+      {d.pinned && <Icon.Pin size={13} title={t("dmx.pinned")} />}
+      {draftKeys.value.has(draftKey(s.id, d.channel_id)) && !active && <Icon.Edit size={13} title={t("chat.draft")} />}
+    </button>
+  );
+}
+
 function HomeSidebar() {
-  const entries = servers.value.flatMap((s) => s.dms.value.map((d) => ({ s, d, last: d.last_message_id ?? 0 })));
-  entries.sort((a, b) => b.last - a.last);
+  const [filter, setFilter] = useState("");
+  const [showArchive, setShowArchive] = useState(false);
+  const q = filter.trim().toLowerCase();
+  const all = servers.value.flatMap((s) => s.dms.value.filter((d) => !s.dmHidden(d)).map((d) => ({ s, d, last: d.last_message_id ?? 0 })));
+  const match = (x: (typeof all)[number]) => !q || x.s.dmName(x.d.user_id).toLowerCase().includes(q);
+  const live = all.filter((x) => !x.d.archived && match(x)).sort((a, b) => Number(!!b.d.pinned) - Number(!!a.d.pinned) || b.last - a.last);
+  const archived = all.filter((x) => x.d.archived && match(x)).sort((a, b) => b.last - a.last);
+  const archivedUnread = archived.filter((x) => x.s.isUnread(x.d.channel_id)).length;
   const cur = homeDm.value;
   return (
     <>
@@ -249,24 +308,22 @@ function HomeSidebar() {
           <Icon.Mail />
           <span class="name">{t("home.friends")}</span>
         </button>
+        {all.length > 4 && (
+          <input class="input dm-filter" value={filter} placeholder={t("dmx.filter")} aria-label={t("dmx.filter")} onInput={(e) => setFilter((e.target as HTMLInputElement).value)} />
+        )}
         <div class="cat-head" style={{ marginTop: "14px" }}>{t("home.conversations")}</div>
-        {entries.map(({ s, d }) => {
-          const m = s.member(d.user_id);
-          const active = cur?.serverId === s.id && cur.channelId === d.channel_id;
-          const unread = s.isUnread(d.channel_id);
-          const inCall = s.voiceMembers(d.channel_id).length > 0;
-          return (
-            <button key={`${s.id}:${d.channel_id}`} class={`chan${active ? " active" : ""}${unread ? " unread" : ""}`} style={{ height: "44px" }} onClick={() => openDm(s, d.channel_id)}>
-              <Avatar server={s} userId={d.user_id} name={s.dmName(d.user_id)} size={30} presence={m?.presence ?? "offline"} />
-              <span class="name">
-                <div class="ellipsis">{s.dmName(d.user_id)}</div>
-                <div class="faint xs ellipsis">{servers.value.length > 1 ? s.displayName() : (m?.status_text ?? "")}</div>
-              </span>
-              {inCall && <Icon.Speaker size={16} title={t("home.callActive")} />}
+        {live.map(({ s, d }) => <DmRow key={`${s.id}:${d.channel_id}`} s={s} d={d} />)}
+        {!live.length && !archived.length && <div class="faint small" style={{ padding: "8px 10px" }}>{q ? t("dmx.noMatch") : t("home.noDms")}</div>}
+        {archived.length > 0 && (
+          <>
+            <button class="cat-head archive-head" onClick={() => setShowArchive(!showArchive)} aria-expanded={showArchive || !!q}>
+              <Icon.ChevronRight size={12} class={`icon${showArchive || q ? " rot90" : ""}`} />
+              {t("dmx.archive.title", { n: archived.length })}
+              {archivedUnread > 0 && <span class="mention-count">{archivedUnread}</span>}
             </button>
-          );
-        })}
-        {!entries.length && <div class="faint small" style={{ padding: "8px 10px" }}>{t("home.noDms")}</div>}
+            {(showArchive || !!q) && archived.map(({ s, d }) => <DmRow key={`${s.id}:${d.channel_id}`} s={s} d={d} />)}
+          </>
+        )}
       </div>
     </>
   );

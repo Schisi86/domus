@@ -124,7 +124,10 @@ async function showQr(page) {
   await page.locator(".menu button", { hasText: "Profil übertragen" }).click();
   await page.getByRole("button", { name: "Von diesem Gerät senden" }).click();
   const qr = page.locator(".transfer-qr .qr-wrap");
-  await qr.waitFor({ timeout: 15000 });
+  await qr.waitFor({ timeout: 15000 }).catch(async (e) => {
+    if (process.env.DEBUG_DIR) await page.screenshot({ path: join(process.env.DEBUG_DIR, "showqr.png") });
+    throw e;
+  });
   return qr.screenshot();
 }
 

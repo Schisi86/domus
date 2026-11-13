@@ -24,6 +24,7 @@ function sendError(e: unknown): string {
 import { Markdown, wrapSelection } from "./markdown";
 import { getDraft, setDraft } from "../state/drafts";
 import { MembersButton, NavBack } from "./mobile";
+import { dmMenu } from "./Sidebar";
 import { EmojiPicker } from "./EmojiPicker";
 import { shortcode, suggestEmoji } from "./shortcodes";
 
@@ -1237,6 +1238,9 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
   let lastDay = "";
   let unreadShown = false;
   const items: ComponentChildren[] = [];
+  // Read receipt under my newest message in a DM (both sides must allow it).
+  const lastOwn = dm && dm.user_id !== me ? [...msgs].reverse().find((m) => m.author_id === me && !m.pending && !m.failed) : undefined;
+  const seen = !!lastOwn && (dm?.peer_read ?? 0) >= lastOwn.id;
   msgs.forEach((m, i) => {
     const day = fmtDay(m.created_at);
     if (day !== lastDay) {
@@ -1268,6 +1272,15 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
         setEditing={setEditing}
       />,
     );
+    if (lastOwn && m.id === lastOwn.id && server.me.value?.read_receipts !== false && typeof dm?.peer_read === "number") {
+      items.push(
+        <div class={`receipt${seen ? " seen" : ""}`} key="receipt" title={seen ? t("dmx.seenHint") : t("dmx.sentHint")}>
+          <Icon.Check size={12} />
+          {seen && <Icon.Check size={12} class="icon second" />}
+          {seen ? t("dmx.seen") : t("dmx.sent")}
+        </div>,
+      );
+    }
   });
 
   return (
@@ -1283,6 +1296,11 @@ export function ChatView({ server, channelId }: { server: ServerStore; channelId
           {dm && (
             <IconButton title={sealed ? t("e2e.headerOn") : t("e2e.headerOff")} active={sealed} class={sealed ? "sealed" : ""} onClick={() => openModal(<E2eDialog server={server} dm={dm} />)}>
               {sealed ? <Icon.Lock /> : <Icon.Unlock />}
+            </IconButton>
+          )}
+          {dm && (
+            <IconButton title={t("dmx.more")} onClick={(e) => dmMenu(e as unknown as MouseEvent, server, dm)}>
+              <Icon.More />
             </IconButton>
           )}
           {dm && dm.user_id !== me && (

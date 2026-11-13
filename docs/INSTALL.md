@@ -24,7 +24,8 @@
 3. Kamera und Mikrofon fragt Android erst, wenn sie gebraucht werden (QR-Scan, Anruf).
 
 * Das Handy muss den Server erreichen können: im selben WLAN über die LAN-Adresse, von unterwegs über den Internet-Link (Tunnel) des Servers. Server, die nur auf dem PC selbst erreichbar sind („Nur dieser PC“), lassen sich nicht übertragen.
-* Die App ist ein reiner Client: Server hosten, Fernsteuerung und das Teilen des eigenen Handy-Bildschirms gibt es dort nicht.
+* Ab 1.0.2 kann die App auch **Server hosten** (Server-Symbol in der linken Leiste) und **den Bildschirm teilen**. Ein laufender Server hält Domus über eine dauerhafte Benachrichtigung im Hintergrund wach – das kostet Akku. Manche Hersteller beenden Hintergrund-Apps trotzdem; dann in den Android-Einstellungen für Domus „Akku-Optimierung: nicht optimieren“ wählen. **Wichtig:** Eine Deinstallation löscht auch den Server samt Nachrichten – vorher in den Server-Einstellungen ein Backup anlegen.
+* Fernsteuerung und das Zeichnen-Overlay gibt es am Handy nicht.
 * **Update:** neueres APK einfach darüber installieren (gleicher Signaturschlüssel); Server und Einstellungen bleiben erhalten. **Deinstallation** löscht alle Daten der App.
 
 ## Eigener Server in der App

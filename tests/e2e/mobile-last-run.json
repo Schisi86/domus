@@ -1,5 +1,5 @@
 {
-  "at": "2026-11-12T19:59:37.108Z",
+  "at": "2026-11-13T16:18:00.979Z",
   "passed": 37,
   "failed": 0,
   "results": [
@@ -121,7 +121,7 @@
     {
       "name": "message menu is a bottom sheet",
       "ok": true,
-      "detail": "{\"bottom\":-180,\"width\":374}"
+      "detail": "{\"bottom\":8,\"width\":374}"
     },
     {
       "name": "swiping a message left replies to it",

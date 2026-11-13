@@ -23,7 +23,7 @@ export function FriendsView() {
         <div class="row wrap center welcome-actions">
           <button class="btn primary lg" onClick={() => openModal(<AddServerDialog />)}><Icon.Plus /> {t("rail.add")}</button>
           <button class={`btn lg${isAndroidApp ? " primary" : ""}`} onClick={() => openModal(<TransferDialog mode="receive" />)}><Icon.Qr /> {t("move.fromOther")}</button>
-          {!isAndroidApp && <button class="btn lg" onClick={() => openModal(<HostDialog />)}><Icon.ServerIcon /> {t("home.startOwn")}</button>}
+          <button class="btn lg" onClick={() => openModal(<HostDialog />)}><Icon.ServerIcon /> {t("home.startOwn")}</button>
         </div>
       </EmptyState>
     );

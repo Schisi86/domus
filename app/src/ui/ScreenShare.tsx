@@ -7,6 +7,7 @@ import { settings, updateSettings, type ScreenOpts, type ScreenRes } from "../st
 import { SCREEN_FPS, screenParams, type VoiceSession } from "../rtc/voice";
 import { t } from "../i18n";
 import { Icon, Popover, Toggle } from "./components";
+import { isAndroidApp } from "../platform";
 
 const RES: { id: ScreenRes; label: string }[] = [
   { id: "720", label: "720p" },
@@ -131,7 +132,7 @@ function ScreenMenu({ v, anchor, onClose }: { v: VoiceSession; anchor: DOMRect; 
             >
               <Icon.Screen size={16} /> {t("sc.wholeScreen")}
             </button>
-            <button
+            {!isAndroidApp && <button
               class="btn outline lg"
               title={t("sc.otherContentHint")}
               onClick={() => {
@@ -140,7 +141,8 @@ function ScreenMenu({ v, anchor, onClose }: { v: VoiceSession; anchor: DOMRect; 
               }}
             >
               <Icon.Copy size={15} /> {t("sc.otherContent")}
-            </button>
+            </button>}
+            {isAndroidApp && <div class="faint xs">{t("droid.screenHint")}</div>}
           </div>
         )}
       </div>
@@ -149,7 +151,7 @@ function ScreenMenu({ v, anchor, onClose }: { v: VoiceSession; anchor: DOMRect; 
 }
 
 /** Screen capture exists (desktop app and desktop browsers, not the Android web view). */
-export const canShareScreen = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === "function";
+export const canShareScreen = isAndroidApp || (typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === "function");
 
 /**
  * Share button: opens the options menu before starting; while sharing it stops

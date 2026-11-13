@@ -30,6 +30,7 @@
           "url": "mailto:*"
         }
       ]
-    }
+    },
+    "domus:default"
   ]
 }

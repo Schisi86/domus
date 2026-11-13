@@ -105,6 +105,10 @@ export interface Settings {
   notifyPauseUntil: number;
   /** System-wide key that toggles the microphone during calls ("" = off). */
   globalMuteKey: string;
+  /** Quiet hours: no notifications between `from` and `to` (local time, "HH:MM"). */
+  quietHours: { on: boolean; from: string; to: string };
+  /** serverId → time (ms) when the own status message is cleared automatically. */
+  statusExpiry: Record<string, number>;
 }
 
 
@@ -192,6 +196,8 @@ export const defaultSettings: Settings = {
   keepAwake: true,
   notifyPauseUntil: 0,
   globalMuteKey: "",
+  quietHours: { on: false, from: "22:00", to: "07:00" },
+  statusExpiry: {},
 };
 
 export const settings = signal<Settings>(defaultSettings);
@@ -355,7 +361,23 @@ export const linkedDevices = signal<{ server: string; device: string; at: number
 export const voiceHooks = new Set<(store: ServerStore, ev: string, d: any) => void>();
 
 /** Notifications are paused for a while (bell menu or Settings › Notifications). */
-export const notifyPaused = () => settings.value.notifyPauseUntil > Date.now();
+export const notifyPaused = () => settings.value.notifyPauseUntil > Date.now() || inQuietHours();
+
+const minutes = (hm: string) => {
+  const [h, m] = hm.split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+};
+
+/** Inside the quiet hours (also across midnight, e.g. 22:00–07:00). */
+export function inQuietHours(at = new Date()): boolean {
+  const q = settings.value.quietHours;
+  if (!q?.on) return false;
+  const now = at.getHours() * 60 + at.getMinutes();
+  const from = minutes(q.from);
+  const to = minutes(q.to);
+  if (from === to) return false;
+  return from < to ? now >= from && now < to : now >= from || now < to;
+}
 
 function maybeNotifyMessage(store: ServerStore, m: Message) {
   const s = settings.value;
@@ -510,6 +532,7 @@ export async function initApp() {
   loaded = true;
   if (warning) toast(t("toast.configReset"), warning, "warn", 12000);
   initAutoAway();
+  setInterval(clearExpiredStatus, 30_000);
   window.addEventListener("focus", () => (windowFocused.value = true));
   window.addEventListener("blur", () => (windowFocused.value = false));
   const first = servers.value[0];
@@ -523,6 +546,43 @@ export async function initApp() {
     });
     setTimeout(() => stop(), 15000);
   }
+}
+
+// ------------------------------------------------------------- status that expires
+
+/** Clears status messages whose time is up (Settings › Account › "Clear after"). */
+function clearExpiredStatus() {
+  const exp = settings.value.statusExpiry;
+  const now = Date.now();
+  for (const [sid, at] of Object.entries(exp)) {
+    if (at > now) continue;
+    const s = serverById(sid);
+    if (!s) {
+      const { [sid]: _, ...rest } = settings.value.statusExpiry;
+      updateSettings({ statusExpiry: rest });
+      continue;
+    }
+    if (!s.conn.ready) continue;
+    s.rpc("user.update", { status_text: "" }).then(
+      () => {
+        if (s.me.value) s.me.value = { ...s.me.value, status_text: "" };
+        const { [sid]: _, ...rest } = settings.value.statusExpiry;
+        updateSettings({ statusExpiry: rest });
+      },
+      () => {},
+    );
+  }
+}
+
+/** When a status set now should expire: minutes from now, or end of today. */
+export function statusExpiryAt(choice: string): number | null {
+  if (choice === "today") {
+    const d = new Date();
+    d.setHours(23, 59, 0, 0);
+    return d.getTime();
+  }
+  const min = Number(choice);
+  return min > 0 ? Date.now() + min * 60_000 : null;
 }
 
 // ------------------------------------------------------------- automatic "away"

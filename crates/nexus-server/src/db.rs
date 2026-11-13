@@ -209,6 +209,14 @@ const MIGRATIONS: &[&str] = &[
         PRIMARY KEY (user_id, kid)
     );
     "#,
+    // v6: per-user state of direct messages (archive, pin, "delete for me")
+    // and the read-receipt preference.
+    r#"
+    ALTER TABLE dm_members ADD COLUMN archived INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE dm_members ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE dm_members ADD COLUMN cleared_before INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE users ADD COLUMN read_receipts INTEGER NOT NULL DEFAULT 1;
+    "#,
 ];
 
 pub const SCHEMA_VERSION: i64 = MIGRATIONS.len() as i64;

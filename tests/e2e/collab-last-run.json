@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-12T20:08:00.457Z",
+  "date": "2026-11-13T16:15:13.099Z",
   "results": [
     {
       "name": "call: data channel open between both",
@@ -94,7 +94,7 @@
     {
       "name": "ink: laser pointer with name arrives",
       "ok": true,
-      "detail": "{\"x\":0.71,\"y\":0.61,\"at\":1794514056487,\"color\":\"#34d27b\",\"name\":\"bob\"}"
+      "detail": "{\"x\":0.71,\"y\":0.61,\"at\":1794586491018,\"color\":\"#34d27b\",\"name\":\"bob\"}"
     },
     {
       "name": "ink: sharer can switch annotations off",
@@ -104,7 +104,7 @@
     {
       "name": "clip: buffer runs for the watched stream and yields a video",
       "ok": true,
-      "detail": "{\"size\":516559,\"type\":\"video/mp4\",\"seconds\":15,\"name\":\"Domus-Clip_2026-11-12_21-07-40.mp4\"}"
+      "detail": "{\"size\":381339,\"type\":\"video/mp4\",\"seconds\":13,\"name\":\"Domus-Clip_2026-11-13_17-14-55.mp4\"}"
     },
     {
       "name": "clip: the others are told",
@@ -124,7 +124,7 @@
     {
       "name": "watch: video started for everyone",
       "ok": true,
-      "detail": "{\"id\":\"b732d410-79b5-4bf3-9e31-6eb4b70bdab5\",\"by\":1,\"kind\":\"yt\",\"src\":\"aqz-KE-bpKQ\",\"title\":\"\",\"playing\":true,\"pos\":65,\"n\":1}"
+      "detail": "{\"id\":\"c6c192b0-e0fc-4ba5-98b9-067cb6bb0389\",\"by\":1,\"kind\":\"yt\",\"src\":\"aqz-KE-bpKQ\",\"title\":\"\",\"playing\":true,\"pos\":65,\"n\":1}"
     },
     {
       "name": "watch: player tile shown on both sides",
@@ -144,7 +144,7 @@
     {
       "name": "watch: late joiner gets the running video at the right position",
       "ok": true,
-      "detail": "carol at 301.5 s"
+      "detail": "carol at 301.1 s"
     },
     {
       "name": "watch: ending it ends it for everyone",
@@ -199,7 +199,7 @@
     {
       "name": "e2e: the server only stores ciphertext",
       "ok": true,
-      "detail": "nxe1.91c6cfa99e19cb38.3b4900cc976c94db.pHC5JHVq5YKp_sVD.ac40"
+      "detail": "nxe1.d246a2129f484be2.f3fdacc2e6fc8ab0.YcwaV7Ia62VEKPAO.RbeG"
     },
     {
       "name": "e2e: bob reads the message, lock shown",

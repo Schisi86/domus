@@ -126,15 +126,14 @@ export function Rail() {
         </button>
       </div>
       <div class="spacer" />
-      {isAndroidApp ? (
+      {isAndroidApp && (
         <div class="rail-item">
           <button class="rail-btn add" title={t("move.title")} aria-label={t("move.title")} onClick={() => openModal(<TransferDialog />)}>
             <Icon.Qr size={20} class="" />
           </button>
         </div>
-      ) : (
-        <HostButton />
       )}
+      <HostButton />
     </nav>
   );
 }

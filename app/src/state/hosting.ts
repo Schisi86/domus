@@ -2,8 +2,9 @@
 // The list is polled from the Rust side so the rail button and the hosting
 // panel always show the live state.
 
-import { computed, signal } from "@preact/signals";
+import { computed, effect, signal } from "@preact/signals";
 import { isAndroidApp, isTauri, tauriInvoke } from "../platform";
+import { keepAlive } from "../rtc/android";
 import { servers } from "./app";
 import type { ServerStore } from "./server";
 
@@ -94,6 +95,9 @@ export async function openFirewall(): Promise<"ok" | "cancelled" | string> {
 export const reachProblem = computed(() => hosts.value.some((h) => h.running && h.exposed) && !firewallOk(firewall.value));
 export const runningHosts = computed(() => hosts.value.filter((h) => h.running).length);
 
+// Android: a foreground service keeps the app (and its servers) alive in the background.
+if (isAndroidApp) effect(() => void keepAlive({ host: runningHosts.value > 0 }));
+
 export async function refreshHosts() {
   if (!isTauri) return;
   try {
@@ -120,7 +124,7 @@ export function internetAddress(h: HostStatus): { host: string; port: number; vi
 
 let timer: ReturnType<typeof setInterval> | null = null;
 export function startHostPolling() {
-  if (!isTauri || isAndroidApp || timer) return;
+  if (!isTauri || timer) return;
   void refreshHosts().then(() => {
     if (hosts.value.some((h) => h.exposed)) void checkFirewall();
   });

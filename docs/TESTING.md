@@ -21,6 +21,8 @@ node tests/e2e/chrome.mjs <adresse> <token>
 node tests/e2e/collab.mjs
 # 0.10: Server-Autostart und native Helfer in der echten App (Testbuild wie bei hosting.mjs)
 node tests/e2e/native.mjs
+# 1.0.2: Chats archivieren/anheften/löschen, Filter, Lesebestätigungen, Ruhezeiten, Status mit Ablaufzeit (UI-Devserver muss laufen)
+node tests/e2e/chats.mjs
 # 1.0.1: Handy-Oberfläche, QR-Profilübertragung (beide Richtungen, simulierte Kamera), Geräte, Entwürfe (UI-Devserver muss laufen)
 node tests/e2e/mobile.mjs
 # Android-APK bauen (Windows ohne Entwicklermodus, siehe docs/INSTALL.md)
@@ -92,8 +94,17 @@ Echte Weboberfläche, echter Server, 3–4 Clients in Chromium mit virtuellem Mi
 | Verlassen/erneuter Beitritt baut Medien neu auf | ✅ |
 | Gast ohne Bildschirmrecht wird serverseitig abgelehnt (mit Meldung) | ✅ |
 
+### Chats verwalten – `tests/e2e/chats.mjs`: 19/19 bestanden (1.0.2)
+Fünf Personen schreiben „alice“ an. Geprüft in der echten Oberfläche: Filter, Anheften (nach oben, Markierung), Archivieren (Bereich mit Zähler, auf dem Server gespeichert, zurückholen), Lesebestätigung „Zugestellt“ → „Gelesen“, sobald die andere Person liest, „Chat löschen“ über das Menü im Chat (verschwindet, die andere Person behält die Nachrichten, eine neue Nachricht bringt den Chat mit nur dieser Nachricht zurück), Ruhezeiten inkl. über Mitternacht, Status mit Ablaufzeit (wird auf dem Server gelöscht). Dabei gefunden und behoben: Felder in „Mein Konto“ wurden kurz nach dem Öffnen zurückgesetzt. Server-Integrationstest `dm_archive_pin_delete_for_me_and_read_receipts` prüft dieselben Regeln ohne Oberfläche (auch: abgeschaltete Bestätigungen werden nicht mehr gesendet, Suche respektiert „gelöscht“).
+
+### Server und Bildschirm in der Android-App (1.0.2) – gebaut, nicht auf einem Gerät gestartet
+Der Hosting-Teil ist derselbe Rust-Code wie am PC (dort mit `hosting.mjs`/`native.mjs` getestet) und kompiliert für Android. Neu und **ungetestet**, weil kein Handy und kein Emulator zur Verfügung stand: der Vordergrund-Dienst (`DomusService.kt`: Server am Leben halten, Mikrofon im Hintergrund, MediaProjection) und der Weg der Bildschirmbilder über das Plugin (`DomusPlugin.kt` → `rtc/android.ts` → Canvas-Videospur). Geprüft ist nur, dass Kotlin- und Rust-Code kompilieren und das APK alle Berechtigungen und den Dienst enthält.
+
 ### Handy-Oberfläche und Profilübertragung – `tests/e2e/mobile.mjs`: 37/37 bestanden (1.0.1)
 Chromium im Handy-Format (390×844, Android-Kennung, Touch). Der PC zeigt in der echten Oberfläche den QR-Code, der Test fotografiert ihn ab und spielt ihn als simulierte Kamera (`--use-file-for-fake-video-capture`) ins Handy ein; das Handy scannt, löst den Einmal-Code ein und bekommt eine eigene Sitzung. Danach dasselbe rückwärts vom Handy auf einen zweiten, leeren PC. Geprüft werden außerdem: Hinweis „Neues Gerät angemeldet“ am PC, mitgenommenes Design und Schriftgröße, abgelehnte Wiederverwendung des Codes, eine Spalte mit Zurück-Taste und Zurück-Pfeil, Mitgliederliste als Sheet, Menü als Bottom-Sheet, Wischen zum Antworten, „Enter fügt Zeile ein“, Entwürfe samt Markierung, Geräteliste mit Abmelden (alte Sitzung danach ungültig) und Benachrichtigungs-Pause. Dabei gefunden und behoben: Schloss sich ein Menü im selben Moment, in dem sich ein Dialog öffnete, überholten sich zwei Verlaufssprünge und die nächste Zurück-Aktion verließ die App.
+
+### Regression 1.0.2
+Rust 48 Unit- + 23 Integrationstests (Server, neu: Chat-Archiv/-Löschen/Lesebestätigungen), 21 App-/Netz-Tests; `chats.mjs` 19/19, `mobile.mjs` 37/37, `collab.mjs` 46/46, `interact.mjs` 34/34, `features.mjs` 16/16, `rtc.mjs` 20/20 (ein Lauf vorher 19/20 – einmaliger Timing-Ausreißer, im Wiederholungslauf bestanden), `native.mjs` 17/17 in der echten Desktop-App (nach dem Umbau, der Hosting auch für Android freischaltet), Typprüfung, 15 Sprachen vollständig (1331 Schlüssel). APK 1.0.2 mit `apksigner` geprüft (Signatur, Version 1.0.2, Dienst und Berechtigungen im Manifest, eingebettete Bibliotheken identisch mit dem Build).
 
 ### Regression 1.0.1
 Nach dem Umbau (Desktop-/Android-Trennung im Rust-Teil, Handy-Layout) erneut bestanden: Rust 48 Unit- + 22 Integrationstests (Server, inkl. neuem Geräte-Test), 21 App-/Netz-Tests; `collab.mjs` 46/46, `interact.mjs` 34/34, `rtc.mjs` 20/20, `features.mjs` 16/16, `chrome.mjs` 17/17 (zwei Erwartungen enthielten noch den alten Namen „NexUs“ – angepasst), `native.mjs` 17/17 in der echten Desktop-App (im ersten Lauf kam der Strich auf dem Zeichen-Overlay einmal zu spät an, im zweiten Lauf bestanden – Timing, kein Fehlerbild), Typprüfung, alle 15 Sprachen vollständig (1290 Schlüssel). `hosting.mjs` (Internet-Relay) wurde für 1.0.1 nicht erneut ausgeführt; der Hosting-Code ist unverändert.

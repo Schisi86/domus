@@ -26,7 +26,7 @@ use crate::hub::{self, Out};
 use crate::perms::{self, PermCache};
 use crate::ratelimit::Bucket;
 use crate::store::{self, Category, Channel, Role, User};
-use crate::{auth, ops_admin, ops_chat, ops_devices, ops_social, ops_voice, AppState};
+use crate::{auth, ops_admin, ops_chat, ops_devices, ops_dms, ops_social, ops_voice, AppState};
 
 const AUTH_TIMEOUT: Duration = Duration::from_secs(10);
 /// Clients send a `ping` op every 30 s; silence for this long means the peer is gone.
@@ -331,6 +331,9 @@ async fn dispatch(ctx: &mut Ctx, op: &str, d: Value) -> ApiResult<Value> {
         "mention.list" => ops_chat::mention_list(ctx, d).await,
         "rtc.signal" => ops_voice::signal(ctx, d).await,
         "p2p.signal" => ops_social::p2p_signal(ctx, d).await,
+        "dm.prefs" => ops_dms::prefs(ctx, d).await,
+        "dm.clear" => ops_dms::clear(ctx, d).await,
+        "user.read_receipts" => ops_dms::set_receipts(ctx, d).await,
         "device.link_create" => ops_devices::link_create(ctx, d).await,
         "device.list" => ops_devices::list(ctx, d).await,
         "device.revoke" => ops_devices::revoke(ctx, d).await,
@@ -416,7 +419,7 @@ pub fn server_public(st: &AppState) -> Value {
 
 async fn build_ready(st: &Arc<AppState>, user: &User) -> ApiResult<Value> {
     let uid = user.id;
-    let (roles, cats, chans, members, dms, reads, mentions, rels) = st
+    let (roles, cats, chans, members, dms, reads, mentions, rels, receipts) = st
         .db
         .call(move |c| {
             Ok((
@@ -428,6 +431,7 @@ async fn build_ready(st: &Arc<AppState>, user: &User) -> ApiResult<Value> {
                 store::read_states(c, uid)?,
                 store::mention_counts(c, uid)?,
                 store::relationships(c, uid)?,
+                store::read_receipts(c, uid)?,
             ))
         })
         .await?;
@@ -437,6 +441,7 @@ async fn build_ready(st: &Arc<AppState>, user: &User) -> ApiResult<Value> {
     let voice = ops_voice::visible_states(st, &pc, uid);
     let mut me = serde_json::to_value(user).unwrap_or_default();
     me["presence"] = json!(user.presence_pref);
+    me["read_receipts"] = json!(receipts);
     Ok(json!({
         "protocol": crate::PROTOCOL,
         "me": me,

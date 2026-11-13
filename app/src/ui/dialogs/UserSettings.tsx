@@ -2,7 +2,7 @@
 // notifications, design & language, app & diagnostics, about.
 
 import { useEffect, useRef, useState } from "preact/hooks";
-import { activeServer, closeModal, hostsAutostart, minimizeToTray, openModal, persistNow, removeServer, servers, settings, toast, updateSettings, type Settings } from "../../state/app";
+import { activeServer, closeModal, hostsAutostart, inQuietHours, statusExpiryAt, minimizeToTray, openModal, persistNow, removeServer, servers, settings, toast, updateSettings, type Settings } from "../../state/app";
 import type { ServerStore } from "../../state/server";
 import { errorText, fmtStamp, lang, LANGS, presenceText, t, type Key } from "../../i18n";
 import { TransferDialog } from "./Transfer";
@@ -40,10 +40,17 @@ function Account() {
   const [display, setDisplay] = useState(me?.display_name ?? "");
   const [status, setStatus] = useState(me?.status_text ?? "");
   const [bio, setBio] = useState(me?.bio ?? "");
+  const [expiry, setExpiry] = useState("0");
   const [banner, setBanner] = useState<[string, string]>(splitBanner(me?.banner));
   const [oldPw, setOldPw] = useState("");
   const [newPw, setNewPw] = useState("");
+  // Reload the fields when another server is picked – not on the first render,
+  // which already has them (an effect after mount would wipe fast typing).
+  const shownFor = useRef(`${sid}:${me?.id}`);
   useEffect(() => {
+    const key = `${sid}:${me?.id}`;
+    if (shownFor.current === key) return;
+    shownFor.current = key;
     setDisplay(me?.display_name ?? "");
     setStatus(me?.status_text ?? "");
     setBio(me?.bio ?? "");
@@ -52,7 +59,17 @@ function Account() {
   if (!server || !me) return <div class="muted">{t("settings.noServer")}</div>;
 
   const bannerValue = banner[0] ? (banner[1] ? `${banner[0]},${banner[1]}` : banner[0]) : "";
-  const saveProfile = () => server.rpc("user.update", { display_name: display, status_text: status, bio, banner: bannerValue }).then(() => toast(t("settings.profileSaved"), undefined, "ok"), (e) => toast(t("common.error"), errorText(e), "error"));
+  const saveProfile = () =>
+    server.rpc("user.update", { display_name: display, status_text: status, bio, banner: bannerValue }).then(
+      () => {
+        // The expiry only applies to a status that is set; clearing it ends the timer.
+        const at = status.trim() ? statusExpiryAt(expiry) : null;
+        const { [server.id]: _, ...rest } = settings.value.statusExpiry;
+        updateSettings({ statusExpiry: at ? { ...rest, [server.id]: at } : rest });
+        toast(t("settings.profileSaved"), undefined, "ok");
+      },
+      (e) => toast(t("common.error"), errorText(e), "error"),
+    );
   const setPresence = (p: string) => server.rpc("user.presence", { presence: p }).then(() => (server.me.value = { ...me, presence: p as never }), (e) => toast(t("common.error"), errorText(e), "error"));
   const avatar = async () => {
     const img = await pickAndCropImage({ round: true });
@@ -122,6 +139,16 @@ function Account() {
       <div class="row wrap" style={{ gap: "12px", alignItems: "flex-end" }}>
         <Field label={t("settings.displayName")}><input class="input" maxLength={32} value={display} onInput={(e) => setDisplay((e.target as HTMLInputElement).value)} /></Field>
         <Field label={t("settings.statusText")}><input class="input" maxLength={128} value={status} onInput={(e) => setStatus((e.target as HTMLInputElement).value)} /></Field>
+        <Field label={t("status.clearAfter")} hint={settings.value.statusExpiry[server.id] ? t("status.clearsAt", { time: fmtStamp(settings.value.statusExpiry[server.id]) }) : undefined}>
+          <select class="select" value={expiry} onChange={(e) => setExpiry((e.target as HTMLSelectElement).value)}>
+            <option value="0">{t("status.never")}</option>
+            <option value="30">{t("status.m30")}</option>
+            <option value="60">{t("status.h1")}</option>
+            <option value="240">{t("status.h4")}</option>
+            <option value="today">{t("status.today")}</option>
+            <option value="10080">{t("status.week")}</option>
+          </select>
+        </Field>
         <button class="btn primary" onClick={() => void saveProfile()}>{t("common.save")}</button>
       </div>
       <div class="card col profile-editor">
@@ -153,6 +180,14 @@ function Account() {
             <div><button class="btn primary" onClick={() => void saveProfile()}>{t("common.save")}</button></div>
           </div>
         </div>
+      </div>
+      <div class="card col">
+        <Toggle
+          checked={me.read_receipts !== false}
+          onChange={(x) => void server.setReadReceipts(x).catch((e) => toast(t("common.error"), errorText(e), "error"))}
+          label={t("dmx.receipts")}
+          desc={t("dmx.receiptsDesc")}
+        />
       </div>
       <div class="card col">
         <div class="label">{t("settings.changePw")}</div>
@@ -522,6 +557,19 @@ function Notify() {
           <button class="btn sm outline" onClick={() => updateSettings({ notifyPauseUntil: pauseUntil("1h") })}>{t("pause.1h")}</button>
           <button class="btn sm outline" onClick={() => updateSettings({ notifyPauseUntil: pauseUntil("8h") })}>{t("pause.8h")}</button>
           <button class="btn sm outline" onClick={() => updateSettings({ notifyPauseUntil: pauseUntil("morning") })}>{t("pause.morning")}</button>
+        </div>
+      </div>
+      <div class="card col">
+        <Toggle checked={s.quietHours.on} onChange={(x) => updateSettings({ quietHours: { ...s.quietHours, on: x } })} label={t("quiet.title")} desc={inQuietHours() ? t("quiet.activeNow") : t("quiet.desc")} />
+        <div class="row wrap" style={{ gap: "10px", opacity: s.quietHours.on ? 1 : 0.5 }}>
+          <label class="row" style={{ gap: "6px" }}>
+            <span class="label" style={{ margin: "0px" }}>{t("quiet.from")}</span>
+            <input class="input" type="time" value={s.quietHours.from} disabled={!s.quietHours.on} style={{ width: "120px" }} onChange={(e) => updateSettings({ quietHours: { ...s.quietHours, from: (e.target as HTMLInputElement).value || "22:00" } })} />
+          </label>
+          <label class="row" style={{ gap: "6px" }}>
+            <span class="label" style={{ margin: "0px" }}>{t("quiet.to")}</span>
+            <input class="input" type="time" value={s.quietHours.to} disabled={!s.quietHours.on} style={{ width: "120px" }} onChange={(e) => updateSettings({ quietHours: { ...s.quietHours, to: (e.target as HTMLInputElement).value || "07:00" } })} />
+          </label>
         </div>
       </div>
       <div class="faint small">{t("settings.notifyHint")}</div>

@@ -154,6 +154,38 @@ export class ServerStore {
     return this.channel(cid)?.last_message_id ?? this.dm(cid)?.last_message_id ?? null;
   }
 
+  /** A DM that was deleted for me and has no newer message yet. */
+  dmHidden(d: Dm): boolean {
+    return (d.cleared_before ?? 0) > 0 && (d.last_message_id ?? 0) <= (d.cleared_before ?? 0);
+  }
+
+  private patchDm(cid: number, patch: Partial<Dm>) {
+    this.dms.value = this.dms.value.map((d) => (d.channel_id === cid ? { ...d, ...patch } : d));
+  }
+
+  /** Archive or pin a DM (for me only). */
+  async setDmPrefs(cid: number, patch: { archived?: boolean; pinned?: boolean }) {
+    this.patchDm(cid, patch);
+    await this.rpc("dm.prefs", { channel_id: cid, ...patch });
+  }
+
+  /** Delete a DM for me: older messages disappear here, the other person keeps them. */
+  async clearDm(cid: number) {
+    const r = await this.rpc<{ cleared_before: number }>("dm.clear", { channel_id: cid });
+    this.applyCleared(cid, r.cleared_before);
+  }
+
+  private applyCleared(cid: number, marker: number) {
+    this.patchDm(cid, { cleared_before: marker, archived: false, pinned: false });
+    this.logs.delete(cid);
+    this.readStates.value = { ...this.readStates.value, [cid]: Math.max(this.readStates.value[cid] ?? 0, marker) };
+  }
+
+  async setReadReceipts(on: boolean) {
+    await this.rpc("user.read_receipts", { enabled: on });
+    if (this.me.value) this.me.value = { ...this.me.value, read_receipts: on };
+  }
+
   isUnread(cid: number): boolean {
     const last = this.lastMessageId(cid);
     return !!last && (this.readStates.value[cid] ?? 0) < last;
@@ -557,6 +589,24 @@ export class ServerStore {
         break;
       case "dm.created":
         if (!this.dm(d.channel_id)) this.dms.value = [...this.dms.value, d];
+        break;
+      case "dm.prefs": {
+        const patch: Partial<Dm> = {};
+        if (typeof d.archived === "boolean") patch.archived = d.archived;
+        if (typeof d.pinned === "boolean") patch.pinned = d.pinned;
+        this.patchDm(d.channel_id, patch);
+        break;
+      }
+      case "dm.cleared":
+        if ((this.dm(d.channel_id)?.cleared_before ?? 0) < d.cleared_before) this.applyCleared(d.channel_id, d.cleared_before);
+        break;
+      case "dm.read": {
+        const cur = this.dm(d.channel_id);
+        if (cur && (cur.peer_read ?? 0) < d.message_id) this.patchDm(d.channel_id, { peer_read: d.message_id });
+        break;
+      }
+      case "user.read_receipts":
+        if (this.me.value) this.me.value = { ...this.me.value, read_receipts: !!d.enabled };
         break;
       case "relationship.update": {
         const map = new Map(this.relationships.value);

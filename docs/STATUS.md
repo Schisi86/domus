@@ -1,4 +1,4 @@
-# Funktionsstand (Version 1.0.1)
+# Funktionsstand (Version 1.0.2)
 
 Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/manuell oder nicht automatisiert getestet · ⬜ offen
 
@@ -79,11 +79,24 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
 
+### Server und Bildschirm am Handy, Chats verwalten (neu in 1.0.2)
+| Funktion | Stand |
+|---|---|
+| **Server hosten in der Android-App:** dieselbe Hosting-Zentrale wie am PC (Server anlegen, starten, Einladungslink, Internet-Link über den Tunnel, mehrere Server, Autostart mit der App). Ein Vordergrund-Dienst mit Benachrichtigung „Domus-Server läuft“ hält die App samt Server im Hintergrund am Leben (Wake-Lock und WLAN-Lock) | 🟡 Rust-Teil identisch mit dem Desktop und dort getestet; der Android-Build kompiliert und enthält alles. **Auf einem Handy nicht ausprobiert.** Grenzen: Android-Energiesparmodi einzelner Hersteller können den Dienst trotzdem beenden; im Mobilfunknetz ist das Handy nur über den Tunnel erreichbar; die Windows-Firewall-Hilfe entfällt |
+| **Bildschirm teilen in der Android-App:** Android-Freigabedialog (MediaProjection), das Bild geht als Videospur in den Anruf (bis 1600 px lange Seite, bis 15 FPS), beendbar in Domus oder über Android | 🟡 gebaut, **nicht auf einem Handy getestet**. Bewusst nicht: Ton des Handys, Fernsteuerung, Zeichnen-Overlay auf dem Handy. Dreht man das Handy während der Freigabe, bleibt das Format der Startausrichtung |
+| **Anrufe laufen am Handy im Hintergrund weiter** (Vordergrund-Dienst vom Typ Mikrofon; ohne ihn schaltet Android das Mikrofon ab, sobald man die App verlässt – z. B. beim Bildschirmteilen) | 🟡 wie oben |
+| **Chats archivieren, anheften, löschen** (Rechtsklick bzw. lange drücken auf eine Unterhaltung oder „⋯“ im Chat): Archiv als eigener, einklappbarer Bereich mit Ungelesen-Zähler; angeheftete Chats oben; „Chat löschen“ entfernt den Verlauf **nur für dich** – die andere Person behält ihn, eine neue Nachricht bringt den Chat ohne die alten Nachrichten zurück (gilt auch für die Suche). Alles serverseitig pro Konto gespeichert, also auf allen Geräten gleich | ✅ Rust-Integrationstest + `chats.mjs` |
+| **Unterhaltungen filtern** (Suchfeld ab fünf Chats) | ✅ `chats.mjs` |
+| **Lesebestätigungen** in Direktnachrichten („Zugestellt“ → „Gelesen“), nur wenn beide sie eingeschaltet haben (Standard: an; abschaltbar unter Einstellungen › Mein Konto) | ✅ Integrationstest + `chats.mjs` |
+| **Ruhezeiten** (täglich, z. B. 22–7 Uhr, auch über Mitternacht) | ✅ `chats.mjs` |
+| **Status mit Ablaufzeit** (30 Min., 1 Std., 4 Std., heute, 1 Woche) | ✅ `chats.mjs`; Hinweis: gelöscht wird er von einem laufenden Domus dieses Kontos – ist keins offen, verschwindet er beim nächsten Start |
+| Behoben: Eingaben direkt nach dem Öffnen von „Mein Konto“ wurden kurz danach zurückgesetzt | ✅ |
+
 ### Android-App, Profil per QR-Code, kleine Verbesserungen (neu in 1.0.1)
 | Funktion | Stand |
 |---|---|
 | **Android-App** (APK, Android 8+, ARM64 und x86_64): derselbe Client wie unter Windows – Text, Sprache, Video, DMs inkl. Verschlüsselung, Soundboard, Umfragen, Dateien, Einladungen. Eigene Handy-Oberfläche: eine Spalte (Server/Kanäle ↔ Chat), Zurück-Taste schließt Dialoge und kehrt zur Kanalliste zurück, Mitgliederliste als Sheet, Menüs als Bottom-Sheet (lange drücken), Dialoge im Vollbild, große Touch-Flächen, Wischen zum Antworten, Bildschirm bleibt im Anruf an, App-Icon als adaptives Android-Icon | 🟡 APK gebaut und signiert; Oberfläche im Handy-Format automatisiert getestet (`mobile.mjs`, Chromium mit Android-Kennung und Touch). **Auf einem echten Handy oder im Emulator wurde die App nicht gestartet** – der Emulator braucht Hardware-Virtualisierung, die auf dem Entwicklungs-PC im BIOS/UEFI ausgeschaltet ist |
-| Android – bewusst nicht enthalten: Server hosten, Fernsteuerung, Zeichnen-Overlay auf dem Desktop, globale Tasten, Tray/Autostart, **eigenen Bildschirm teilen** (das Android-WebView kann keinen Bildschirm aufnehmen). Bildschirme anderer ansehen, Kamera und Mikrofon gehen | – |
+| Android – in 1.0.1 nicht enthalten: Server hosten und eigenen Bildschirm teilen (beides seit 1.0.2 möglich); weiterhin nicht: Fernsteuerung, Zeichnen-Overlay auf dem Desktop, globale Tasten, Tray/Autostart mit dem System | – |
 | **Profil übertragen per QR-Code** (PC → Handy und Handy → PC): Einmal-Codes je Server (3 Minuten, einmalig), Adressen, Fingerabdruck und auf Wunsch Design/Sprache/Schriftgröße/Benachrichtigungen; Empfang per Kamera-Scan oder eingefügtem Text, eigene Sitzung je Gerät, Hinweis „Neues Gerät angemeldet“. Server, die nur auf diesem PC erreichbar sind (localhost), werden mit Begründung ausgelassen | ✅ Rust-Integrationstest (Einmaligkeit, Ablauf, Liste, Abmelden) + `mobile.mjs`: QR aus der App → simulierte Kamera des anderen Geräts → Anmeldung, in beide Richtungen |
 | **Angemeldete Geräte** (Einstellungen › Geräte): Liste mit „Dieses Gerät“, andere Geräte abmelden (nur dieses wird getrennt) | ✅ Integrationstest + `mobile.mjs` |
 | **Entwürfe pro Kanal** (bleiben auch nach Neustart, Stift-Symbol in der Kanalliste) | ✅ `mobile.mjs` |

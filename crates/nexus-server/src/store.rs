@@ -150,6 +150,15 @@ pub struct DmChannel {
     pub channel_id: i64,
     pub user_id: i64,
     pub last_message_id: Option<i64>,
+    /// Moved to the archive by this user.
+    pub archived: bool,
+    /// Pinned to the top by this user.
+    pub pinned: bool,
+    /// "Deleted for me": older messages are hidden for this user. The chat is
+    /// hidden while no newer message exists.
+    pub cleared_before: i64,
+    /// How far the other person has read (only if both allow read receipts).
+    pub peer_read: Option<i64>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -749,19 +758,83 @@ pub fn find_or_create_dm(c: &mut Connection, a: i64, b: i64) -> ApiResult<(i64, 
 
 pub fn list_dms(c: &Connection, user_id: i64) -> ApiResult<Vec<DmChannel>> {
     let mut st = c.prepare(
-        "SELECT x.channel_id, y.user_id, (SELECT max(m.id) FROM messages m WHERE m.channel_id = x.channel_id)
+        "SELECT x.channel_id, y.user_id, (SELECT max(m.id) FROM messages m WHERE m.channel_id = x.channel_id),
+                x.archived, x.pinned, x.cleared_before,
+                CASE WHEN ux.read_receipts = 1 AND uy.read_receipts = 1
+                     THEN coalesce((SELECT rs.last_read_id FROM read_states rs WHERE rs.user_id = y.user_id AND rs.channel_id = x.channel_id), 0) END
          FROM dm_members x JOIN dm_members y ON x.channel_id = y.channel_id AND y.user_id != x.user_id
+         JOIN users ux ON ux.id = x.user_id JOIN users uy ON uy.id = y.user_id
          WHERE x.user_id = ?1
-         UNION
-         SELECT channel_id, ?1, (SELECT max(m.id) FROM messages m WHERE m.channel_id = dm_members.channel_id)
-         FROM dm_members GROUP BY channel_id HAVING count(*) = 1 AND max(user_id) = ?1",
+         UNION ALL
+         SELECT d.channel_id, ?1, (SELECT max(m.id) FROM messages m WHERE m.channel_id = d.channel_id),
+                d.archived, d.pinned, d.cleared_before, NULL
+         FROM dm_members d
+         WHERE d.user_id = ?1 AND d.channel_id IN (SELECT channel_id FROM dm_members GROUP BY channel_id HAVING count(*) = 1)",
     )?;
     let rows = st
         .query_map(params![user_id], |r| {
-            Ok(DmChannel { channel_id: r.get(0)?, user_id: r.get(1)?, last_message_id: r.get(2)? })
+            Ok(DmChannel {
+                channel_id: r.get(0)?,
+                user_id: r.get(1)?,
+                last_message_id: r.get(2)?,
+                archived: r.get::<_, i64>(3)? != 0,
+                pinned: r.get::<_, i64>(4)? != 0,
+                cleared_before: r.get(5)?,
+                peer_read: r.get(6)?,
+            })
         })?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(rows)
+}
+
+/// Members of a DM channel (one for notes-to-self, two otherwise); empty if it is no DM.
+pub fn dm_members(c: &Connection, channel_id: i64) -> ApiResult<Vec<i64>> {
+    let mut st = c.prepare("SELECT user_id FROM dm_members WHERE channel_id=?1")?;
+    let rows = st.query_map(params![channel_id], |r| r.get(0))?.collect::<Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
+/// Archive / pin a DM for one user. `None` leaves a flag unchanged.
+pub fn set_dm_flags(c: &Connection, user_id: i64, channel_id: i64, archived: Option<bool>, pinned: Option<bool>) -> ApiResult<bool> {
+    let n = c.execute(
+        "UPDATE dm_members SET archived = coalesce(?3, archived), pinned = coalesce(?4, pinned) WHERE user_id=?1 AND channel_id=?2",
+        params![user_id, channel_id, archived.map(i64::from), pinned.map(i64::from)],
+    )?;
+    Ok(n > 0)
+}
+
+/// "Delete chat for me": hides all current messages for this user and
+/// unpins/unarchives the chat. Returns the new marker.
+pub fn clear_dm(c: &Connection, user_id: i64, channel_id: i64) -> ApiResult<Option<i64>> {
+    let last: i64 = c.query_row("SELECT coalesce(max(id), 0) FROM messages WHERE channel_id=?1", params![channel_id], |r| r.get(0))?;
+    let n = c.execute(
+        "UPDATE dm_members SET cleared_before = ?3, archived = 0, pinned = 0 WHERE user_id=?1 AND channel_id=?2",
+        params![user_id, channel_id, last],
+    )?;
+    Ok((n > 0).then_some(last))
+}
+
+/// Messages up to this id are hidden for the user ("deleted for me"); 0 otherwise.
+pub fn dm_cleared_before(c: &Connection, user_id: i64, channel_id: i64) -> ApiResult<i64> {
+    Ok(c.query_row("SELECT cleared_before FROM dm_members WHERE user_id=?1 AND channel_id=?2", params![user_id, channel_id], |r| r.get(0))
+        .optional()?
+        .unwrap_or(0))
+}
+
+/// All "deleted for me" markers of a user (channel → marker), for search.
+pub fn dm_cleared_map(c: &Connection, user_id: i64) -> ApiResult<HashMap<i64, i64>> {
+    let mut st = c.prepare("SELECT channel_id, cleared_before FROM dm_members WHERE user_id=?1 AND cleared_before > 0")?;
+    let rows = st.query_map(params![user_id], |r| Ok((r.get(0)?, r.get(1)?)))?.collect::<Result<HashMap<_, _>, _>>()?;
+    Ok(rows)
+}
+
+pub fn read_receipts(c: &Connection, user_id: i64) -> ApiResult<bool> {
+    Ok(c.query_row("SELECT read_receipts FROM users WHERE id=?1", params![user_id], |r| r.get::<_, i64>(0)).optional()?.unwrap_or(1) != 0)
+}
+
+pub fn set_read_receipts(c: &Connection, user_id: i64, on: bool) -> ApiResult<()> {
+    c.execute("UPDATE users SET read_receipts=?2 WHERE id=?1", params![user_id, i64::from(on)])?;
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------

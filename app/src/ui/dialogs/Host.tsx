@@ -2,6 +2,7 @@
 // with ready-made defaults and a permanent invite link per server.
 // Exposure to the network is an explicit, confirmed step.
 
+import { isAndroidApp } from "../../platform";
 import { useEffect, useState } from "preact/hooks";
 import { addServer, closeModal, removeServer, selectServer, servers, toast } from "../../state/app";
 import { checkFirewall, clientFor, firewall, firewallOk, hostName, hosts, internetAddress, localAddress, openFirewall, refreshHosts, setRelay, startHost, startingHosts, whenReady, type HostConfig, type HostStatus } from "../../state/hosting";
@@ -28,7 +29,7 @@ function ExposureWarning({ cfg }: { cfg: Pick<HostConfig, "port" | "media"> }) {
         {(cfg.media.stun_enabled || cfg.media.turn_enabled) && <li><b>UDP {cfg.media.udp_port}</b> – {cfg.media.turn_enabled ? t("host.portStunTurn") : t("host.portStun")}</li>}
         {cfg.media.turn_enabled && <li><b>UDP {cfg.media.relay_port_min}–{cfg.media.relay_port_max}</b> – {t("host.portRelay")}</li>}
       </ul>
-      <div>{t("host.firewallText")}</div>
+      {!isAndroidApp && <div>{t("host.firewallText")}</div>}
     </div>
   );
 }

@@ -25,6 +25,7 @@ pub mod media;
 pub mod ops_admin;
 pub mod ops_chat;
 pub mod ops_devices;
+pub mod ops_dms;
 pub mod ops_social;
 pub mod ops_voice;
 pub mod perms;

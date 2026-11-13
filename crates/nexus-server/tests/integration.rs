@@ -1092,3 +1092,57 @@ async fn link_device_with_one_time_code_and_sign_it_out() {
     assert!(t.as_str().contains("UNAUTHORIZED"), "revoked token no longer works");
     ts.stop().await;
 }
+
+#[tokio::test]
+async fn dm_archive_pin_delete_for_me_and_read_receipts() {
+    let (ts, ep, owner, member) = setup("dmprefs").await;
+    let (mut a, ra) = Client::connect(&ep, &owner).await;
+    let (mut b, rb) = Client::connect(&ep, &member).await;
+    let (ida, idb) = (ra["me"]["id"].as_i64().unwrap(), rb["me"]["id"].as_i64().unwrap());
+    assert_eq!(ra["me"]["read_receipts"], true, "receipts are on by default");
+    let cid = a.req("dm.open", json!({ "user_id": idb })).await.unwrap()["channel_id"].as_i64().unwrap();
+    let m1 = a.req("message.send", json!({ "channel_id": cid, "content": "eins" })).await.unwrap()["id"].as_i64().unwrap();
+    a.req("message.send", json!({ "channel_id": cid, "content": "zwei" })).await.unwrap();
+
+    // Archive and pin are per user and reported back.
+    let r = a.req("dm.prefs", json!({ "channel_id": cid, "archived": true, "pinned": true })).await.unwrap();
+    assert_eq!((r["archived"].as_bool(), r["pinned"].as_bool()), (Some(true), Some(true)));
+    assert_eq!(a.event("dm.prefs").await["channel_id"], cid);
+    assert_eq!(code(&a.req("dm.prefs", json!({ "channel_id": cid })).await.unwrap_err()), "VALIDATION");
+    assert_eq!(code(&a.req("dm.prefs", json!({ "channel_id": 99999, "pinned": true })).await.unwrap_err()), "NOT_FOUND");
+    let (_, ra2) = Client::connect(&ep, &owner).await;
+    let d = ra2["dms"].as_array().unwrap().iter().find(|d| d["channel_id"] == cid).unwrap().clone();
+    assert_eq!((d["archived"].as_bool(), d["pinned"].as_bool()), (Some(true), Some(true)));
+    let (_, rb2) = Client::connect(&ep, &member).await;
+    let db = rb2["dms"].as_array().unwrap().iter().find(|d| d["channel_id"] == cid).unwrap().clone();
+    assert_eq!(db["archived"], false, "the other side is not affected");
+
+    // Read receipts: B reads, A is told; B can turn them off (then nobody sees them).
+    b.req("channel.ack", json!({ "channel_id": cid, "message_id": m1 })).await.unwrap();
+    let ev = a.event("dm.read").await;
+    assert_eq!((ev["user_id"].as_i64(), ev["message_id"].as_i64()), (Some(idb), Some(m1)));
+    let (_, ra3) = Client::connect(&ep, &owner).await;
+    assert_eq!(ra3["dms"].as_array().unwrap().iter().find(|d| d["channel_id"] == cid).unwrap()["peer_read"], m1);
+    b.req("user.read_receipts", json!({ "enabled": false })).await.unwrap();
+    b.req("channel.ack", json!({ "channel_id": cid, "message_id": m1 + 1 })).await.unwrap();
+    a.assert_no_event("dm.read").await;
+    let (_, ra4) = Client::connect(&ep, &owner).await;
+    assert!(ra4["dms"].as_array().unwrap().iter().find(|d| d["channel_id"] == cid).unwrap()["peer_read"].is_null());
+
+    // Delete for me: A no longer sees old messages (also not in search), B still does.
+    let r = a.req("dm.clear", json!({ "channel_id": cid })).await.unwrap();
+    assert_eq!(r["cleared_before"].as_i64(), Some(m1 + 1));
+    let h = a.req("message.history", json!({ "channel_id": cid })).await.unwrap();
+    assert_eq!(h["messages"].as_array().unwrap().len(), 0);
+    assert_eq!(a.req("message.search", json!({ "query": "eins" })).await.unwrap()["messages"].as_array().unwrap().len(), 0);
+    let hb = b.req("message.history", json!({ "channel_id": cid })).await.unwrap();
+    assert_eq!(hb["messages"].as_array().unwrap().len(), 2, "the other side keeps the chat");
+    // A new message brings the chat back with only the new message.
+    b.req("message.send", json!({ "channel_id": cid, "content": "drei" })).await.unwrap();
+    let h = a.req("message.history", json!({ "channel_id": cid })).await.unwrap();
+    let list = h["messages"].as_array().unwrap();
+    assert_eq!(list.len(), 1);
+    assert_eq!(list[0]["content"], "drei");
+    let _ = ida;
+    ts.stop().await;
+}

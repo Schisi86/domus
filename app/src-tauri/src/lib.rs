@@ -8,23 +8,23 @@
 //! * `store` – client configuration with DPAPI-encrypted session tokens
 //! * tray icon, single instance, autostart, media permission handling
 //!
-//! On Android the same crate builds the phone app: a client only (no hosting,
-//! tray, global keys, remote control or desktop overlay).
+//! On Android the same crate builds the phone app. It can host servers too
+//! (kept alive by a foreground service); tray, global keys, remote control and
+//! the desktop overlay are desktop-only.
 
+#[cfg(mobile)]
+mod android;
 #[cfg(desktop)]
 mod capture_bar;
-#[cfg(desktop)]
 mod host;
 #[cfg(desktop)]
 mod ink;
 mod local;
 mod net;
-#[cfg(desktop)]
 mod reach;
 #[cfg(desktop)]
 mod remotectl;
 mod store;
-#[cfg(desktop)]
 mod tunnel;
 
 use std::path::PathBuf;
@@ -125,8 +125,9 @@ async fn quit_app(app: AppHandle) {
 }
 
 async fn shutdown_and_exit(app: &AppHandle) {
-    #[cfg(desktop)]
-    app.state::<host::HostManager>().stop_all().await;
+    if let Some(h) = app.try_state::<host::HostManager>() {
+        h.stop_all().await;
+    }
     app.exit(0);
 }
 
@@ -176,6 +177,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(android::init())
         .manage(net::NetState::default())
         .manage(Flags { background: false })
         .invoke_handler(tauri::generate_handler![
@@ -195,6 +197,22 @@ pub fn run() {
             local::file_save_begin,
             local::file_save_chunk,
             local::file_save_end,
+            host::host_list,
+            host::host_status,
+            host::host_create,
+            host::host_remove,
+            host::host_rename,
+            host::host_set_autostart,
+            host::host_set_relay,
+            host::host_config,
+            host::host_config_save,
+            host::host_config_reset,
+            host::host_start,
+            host::host_stop,
+            host::host_restart,
+            host::host_setup_done,
+            reach::firewall_check,
+            reach::firewall_open,
             store::config_load,
             store::config_save,
         ])
@@ -203,10 +221,17 @@ pub fn run() {
             let dir = app.path().app_data_dir()?;
             let _ = std::fs::create_dir_all(&dir);
             let _ = APP_DIR.set(dir.clone());
-            init_mobile_log(&dir.join("logs"));
+            // Same log setup as the desktop (also feeds the server log view).
+            std::mem::forget(nexus_server::logbuf::init(Some(&dir.join("logs")), "domus", "info", 5, false));
             tracing::info!(version = env!("CARGO_PKG_VERSION"), "Domus (Android) starting");
-            app.manage(store::ConfigStore { path: dir.join("client.json") });
+            let store = store::ConfigStore { path: dir.join("client.json") };
+            let (initial, _) = store.load();
+            app.manage(store);
+            app.manage(host::HostManager::load(dir.clone(), initial.host_autostart));
             WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into())).build()?;
+            if initial.hosts_autostart {
+                spawn_host_autostart(app.handle().clone());
+            }
             Ok(())
         })
         .run(tauri::generate_context!());
@@ -215,24 +240,30 @@ pub fn run() {
     }
 }
 
-/// Daily log files in the app folder (the phone app has no server crate).
-#[cfg(mobile)]
-fn init_mobile_log(dir: &std::path::Path) {
-    use tracing_subscriber::prelude::*;
-    let _ = std::fs::create_dir_all(dir);
-    let Ok(appender) = tracing_appender::rolling::Builder::new()
-        .rotation(tracing_appender::rolling::Rotation::DAILY)
-        .filename_prefix("domus")
-        .filename_suffix("log")
-        .max_log_files(5)
-        .build(dir)
-    else {
-        return;
-    };
-    let _ = tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new("info"))
-        .with(tracing_subscriber::fmt::layer().with_writer(std::sync::Mutex::new(appender)).with_ansi(false))
-        .try_init();
+/// Starts the hosted servers marked for autostart; retries a few times because
+/// the network may not be ready yet right after start-up.
+fn spawn_host_autostart(handle: AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        let hosts = handle.state::<host::HostManager>();
+        let mut pending = hosts.autostart_ids();
+        for wait in [0u64, 3, 8, 20] {
+            if pending.is_empty() {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_secs(wait)).await;
+            let mut failed = Vec::new();
+            for id in pending {
+                match async { hosts.get(&id)?.start().await }.await {
+                    Ok(_) => tracing::info!(host = %id, "Server automatisch gestartet"),
+                    Err(e) => {
+                        tracing::error!(host = %id, "Server-Autostart fehlgeschlagen: {e}");
+                        failed.push(id);
+                    }
+                }
+            }
+            pending = failed;
+        }
+    });
 }
 
 #[cfg(desktop)]
@@ -320,35 +351,11 @@ pub fn run() {
                 })
                 .build()?;
             build_tray(app.handle())?;
-            let handle = app.handle().clone();
-            let autostart = initial.hosts_autostart;
-            tauri::async_runtime::spawn(async move {
-                if !autostart {
-                    tracing::info!("Server-Autostart ist in den Einstellungen abgeschaltet");
-                    return;
-                }
-                let hosts = handle.state::<host::HostManager>();
-                // Right after the Windows sign-in the network may not be ready yet,
-                // so a failed start is retried a few times before giving up.
-                let mut pending = hosts.autostart_ids();
-                for wait in [0u64, 3, 8, 20] {
-                    if pending.is_empty() {
-                        break;
-                    }
-                    tokio::time::sleep(std::time::Duration::from_secs(wait)).await;
-                    let mut failed = Vec::new();
-                    for id in pending {
-                        match async { hosts.get(&id)?.start().await }.await {
-                            Ok(_) => tracing::info!(host = %id, "Server automatisch gestartet"),
-                            Err(e) => {
-                                tracing::error!(host = %id, "Server-Autostart fehlgeschlagen: {e}");
-                                failed.push(id);
-                            }
-                        }
-                    }
-                    pending = failed;
-                }
-            });
+            if initial.hosts_autostart {
+                spawn_host_autostart(app.handle().clone());
+            } else {
+                tracing::info!("Server-Autostart ist in den Einstellungen abgeschaltet");
+            }
             Ok(())
         })
         .on_window_event(|window, event| {

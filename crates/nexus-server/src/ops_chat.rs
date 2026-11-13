@@ -210,15 +210,25 @@ pub async fn history(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
     let r: HistoryReq = parse(d)?;
     ctx.require_in(r.channel_id, VIEW_CHANNEL)?;
     let limit = r.limit.unwrap_or(50).clamp(1, 100);
-    let msgs = ctx
+    let uid = ctx.uid;
+    let (msgs, has_more) = ctx
         .st
         .db
-        .call(move |c| match r.after {
-            Some(a) => store::history_after(c, r.channel_id, a, limit),
-            None => store::history(c, r.channel_id, r.before, limit),
+        .call(move |c| {
+            let mut msgs = match r.after {
+                Some(a) => store::history_after(c, r.channel_id, a, limit)?,
+                None => store::history(c, r.channel_id, r.before, limit)?,
+            };
+            let full = msgs.len() == limit;
+            // A DM "deleted for me" shows only newer messages.
+            let cleared = store::dm_cleared_before(c, uid, r.channel_id)?;
+            let before = msgs.len();
+            msgs.retain(|m| m.id > cleared);
+            let more = full && (msgs.len() == before || r.after.is_some());
+            Ok((msgs, more))
         })
         .await?;
-    Ok(json!({ "messages": msgs, "has_more": msgs.len() == limit }))
+    Ok(json!({ "messages": msgs, "has_more": has_more }))
 }
 
 #[derive(Deserialize)]
@@ -240,7 +250,17 @@ pub async fn search(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
         None => ctx.perms().visible_channels(ctx.uid).collect(),
     };
     let q = r.query;
-    let msgs = ctx.st.db.call(move |c| store::search(c, &q, &channels, 50)).await?;
+    let uid = ctx.uid;
+    let msgs = ctx
+        .st
+        .db
+        .call(move |c| {
+            let mut msgs = store::search(c, &q, &channels, 50)?;
+            let cleared = store::dm_cleared_map(c, uid)?;
+            msgs.retain(|m| cleared.get(&m.channel_id).is_none_or(|b| m.id > *b));
+            Ok(msgs)
+        })
+        .await?;
     Ok(json!({ "messages": msgs }))
 }
 
@@ -264,6 +284,9 @@ pub async fn ack(ctx: &mut Ctx, d: Value) -> ApiResult<Value> {
         .await?;
     let ev = hub::event("read_state.update", &json!({ "channel_id": r.channel_id, "message_id": r.message_id }));
     ctx.st.hub.send_user_except(uid, ctx.conn_id, &ev);
+    if !unread {
+        crate::ops_dms::after_ack(&ctx.st, uid, cid, mid).await;
+    }
     Ok(json!({}))
 }
 

@@ -28,21 +28,17 @@ futures-util = "0.3.34"
 tracing = "0.1.44"
 base64 = "0.22"
 tauri-plugin-opener = "2"
-
-# Desktop only: hosting servers, tray, autostart, single instance.
-[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+# Hosting servers (desktop and Android).
 nexus-server = { path = "../../crates/nexus-server" }
+igd-next = { version = "0.18", features = ["aio_tokio"] }
+bore-cli = { version = "0.6", default-features = false }
+
+# Desktop only: tray, autostart, single instance, global keys.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-global-shortcut = "2"
-igd-next = { version = "0.18", features = ["aio_tokio"] }
-bore-cli = { version = "0.6", default-features = false }
-
-# Android/iOS: the app is a client only; logs go to a file in the app folder.
-[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
-tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
-tracing-appender = "0.2.5"
 
 [target."cfg(windows)".dependencies]
 windows-sys = { version = "0.61.2", features = ["Win32_Security_Cryptography", "Win32_Foundation", "Win32_System_Memory", "Win32_UI_Shell", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging", "Win32_System_Registry", "Win32_UI_Input_KeyboardAndMouse", "Win32_Graphics_Gdi"] }

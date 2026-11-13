@@ -6,12 +6,13 @@
 // or remove tracks (screen, camera) at any time without glare problems.
 
 import { keepAwake } from "./wakelock";
+import { captureAndroidScreen, keepAlive } from "./android";
 import { signal } from "@preact/signals";
 import { settings, toast, updateSettings, voiceHooks, type ScreenOpts, type ScreenRes } from "../state/app";
 import type { ServerStore } from "../state/server";
 import type { IceConfig, VoiceMember } from "../types";
 import { errorText, t } from "../i18n";
-import { isTauri, log, notify, requestAttention, secretGet, secretSet, tauriInvoke } from "../platform";
+import { isAndroidApp, isTauri, log, notify, requestAttention, secretGet, secretSet, tauriInvoke } from "../platform";
 import { normalizeAddress } from "../net/transport";
 import { play, playBoard, preloadBoard } from "../sound";
 import { createGate, type Gate } from "./gate";
@@ -222,6 +223,7 @@ export class VoiceSession {
     window.addEventListener("keyup", this.keyUp);
     await this.registerGlobalPtt();
     keepAwake(true);
+    void keepAlive({ call: true });
     await this.joinChannel(false);
     this.loops.push(setInterval(() => this.pollSpeaking(), 200));
     this.loops.push(setInterval(() => void this.pollStats(), 2000));
@@ -345,6 +347,7 @@ export class VoiceSession {
     window.removeEventListener("keyup", this.keyUp);
     void this.unregisterGlobalPtt();
     keepAwake(false);
+    void keepAlive({ call: false });
     this.loops.forEach(clearInterval);
     for (const p of this.peers.values()) p.close();
     this.peers.clear();
@@ -1053,6 +1056,12 @@ export class VoiceSession {
     let stream: MediaStream;
     captureBar(true);
     try {
+      if (isAndroidApp) {
+        // Android web view: native capture (MediaProjection), no system audio.
+        stream = await captureAndroidScreen({ maxWidth: Math.min(prof.width, 1600), fps: Math.min(prof.fps, 15) });
+        if (!(await this.publishScreen(stream, { monitor: false, capture: true }))) return;
+        return;
+      }
       stream = await navigator.mediaDevices.getDisplayMedia({
         video: { displaySurface: surface, frameRate: { ideal: prof.fps, max: prof.fps }, width: { max: prof.width }, height: { max: prof.height } } as MediaTrackConstraints,
         // restrictOwnAudio: keep Domus' own output (the others' voices) out of

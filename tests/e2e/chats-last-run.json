@@ -1,0 +1,102 @@
+{
+  "at": "2026-11-13T16:17:33.689Z",
+  "passed": 19,
+  "failed": 0,
+  "results": [
+    {
+      "name": "five conversations are listed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "filter narrows the list",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pinned chat moves to the top",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pin mark is shown",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "archived chat leaves the list",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "archive section shows the count",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "archive opens on click",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "archive is stored on the server",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "unarchive brings it back",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "own message shows 'Zugestellt'",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "turns into 'Gelesen' when bob reads it",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "deleted chat disappears",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "bob still has the messages",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a new message brings the chat back",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "only the new message is shown",
+      "ok": true,
+      "detail": "Bist du noch da?"
+    },
+    {
+      "name": "quiet hours can be switched on",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "quiet hours also work across midnight",
+      "ok": true,
+      "detail": "[true,true,true,false]"
+    },
+    {
+      "name": "status gets an expiry about 30 minutes ahead",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "expired status is cleared on the server",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

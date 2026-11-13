@@ -1662,3 +1662,14 @@ body.resizing, body.resizing * { cursor: col-resize !important; user-select: non
 .app.touch .msg-text { user-select: none; }
 .app.touch .user-panel { height: 60px; }
 .app.touch * { -webkit-tap-highlight-color: transparent; }
+
+/* ===================================================================== 1.0.2 additions */
+.dm-filter { margin: 8px 2px 0; height: 32px; font-size: var(--fs-sm); width: calc(100% - 4px); }
+.archive-head { display: flex; align-items: center; gap: 5px; width: 100%; border: 0; background: transparent; cursor: pointer; text-align: start; margin-top: 14px; color: inherit; font: inherit; }
+.archive-head:hover { color: var(--text-2); }
+.archive-head .mention-count { margin-inline-start: auto; }
+.icon.rot90 { transform: rotate(90deg); }
+.archive-head .icon { transition: transform var(--dur); }
+.receipt { display: flex; align-items: center; justify-content: flex-end; gap: 2px; padding: 0 18px 2px; font-size: var(--fs-2xs); color: var(--text-3); }
+.receipt .second { margin-inline-start: -8px; }
+.receipt.seen { color: var(--accent); }
