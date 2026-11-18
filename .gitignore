@@ -7,3 +7,4 @@ website/download/*.exe
 website/download/*.apk
 .netlify/
 release/
+.tools/

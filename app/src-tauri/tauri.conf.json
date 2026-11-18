@@ -55,6 +55,25 @@
         "language": "de-DE"
       }
     },
-    "homepage": "https://domus-talk.netlify.app"
+    "homepage": "https://domus-talk.netlify.app",
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "signingIdentity": "-",
+      "dmg": {
+        "background": "macos/dmg-background.png",
+        "windowSize": {
+          "width": 660,
+          "height": 420
+        },
+        "appPosition": {
+          "x": 170,
+          "y": 215
+        },
+        "applicationFolderPosition": {
+          "x": 490,
+          "y": 215
+        }
+      }
+    }
   }
 }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Domus braucht das Mikrofon für Sprach- und Videoanrufe und Sprachnachrichten.</string>
+  <key>NSCameraUsageDescription</key>
+  <string>Domus braucht die Kamera für Videoanrufe und zum Scannen von QR-Codes.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Domus verbindet sich mit Servern in deinem Netzwerk und kann selbst einen Server für deine Freunde bereitstellen.</string>
+  <key>NSHumanReadableCopyright</key>
+  <string>© 2026 Christian Schiessl</string>
+</dict>
+</plist>

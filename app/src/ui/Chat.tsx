@@ -139,7 +139,7 @@ function AudioMessage({ server, att }: { server: ServerStore; att: Attachment })
   const [pos, setPos] = useState(0);
   const [speed, setSpeed] = useState(1);
   const audio = useRef<HTMLAudioElement | null>(null);
-  const voiceMsg = /\.weba$/i.test(att.filename);
+  const voiceMsg = /\.weba$/i.test(att.filename) || /^sprachnachricht-.*\.m4a$/i.test(att.filename);
   useEffect(() => {
     let alive = true;
     loadBlobUrl(server, `/api/v1/files/${att.id}`).then((u) => {
@@ -230,8 +230,11 @@ function useRecorder(onDone: (file: File) => void) {
     } catch (e) {
       return toast(t("vm.micFailed"), String(e), "error");
     }
-    const type = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
-    const rec = new MediaRecorder(stream, { mimeType: type, audioBitsPerSecond: 48000 });
+    // WebM/Opus where available (Chromium, Android); macOS WebKit records AAC in MP4.
+    const webm = ["audio/webm;codecs=opus", "audio/webm"].find((m) => MediaRecorder.isTypeSupported(m));
+    const type = webm ?? (MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "");
+    const ext = webm ? "weba" : "m4a";
+    const rec = type ? new MediaRecorder(stream, { mimeType: type, audioBitsPerSecond: 48000 }) : new MediaRecorder(stream);
     const chunks: Blob[] = [];
     rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
     const ctx = new AudioContext();
@@ -256,7 +259,7 @@ function useRecorder(onDone: (file: File) => void) {
       setState(null);
       if (!r || r.cancel || !chunks.length) return;
       if (Date.now() - begun < 700) return toast(t("vm.tooShort"), undefined, "warn", 2500);
-      onDone(new File(chunks, `sprachnachricht-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.weba`, { type: "audio/webm" }));
+      onDone(new File(chunks, `sprachnachricht-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.${ext}`, { type: webm ? "audio/webm" : "audio/mp4" }));
     };
     ref.current = { rec, stream, chunks, cancel: false, timer, ctx };
     rec.start(250);

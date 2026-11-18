@@ -1,0 +1,52 @@
+# Builds the macOS installer (universal .dmg for Apple Silicon and Intel) on a
+# GitHub-hosted Mac and runs the Rust tests there. Started by hand
+# (Actions › "macOS installer" › Run workflow) or by pushing a tag v*.
+name: macOS installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Rust (Apple Silicon + Intel)
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Rust tests (server, network, app)
+        run: cargo test -p nexus-server -p nexus-net -p nexustalk
+
+      - name: UI dependencies
+        run: npm ci --prefix app
+
+      - name: Build app and .dmg (universal)
+        working-directory: app
+        run: npx tauri build --target universal-apple-darwin --bundles app,dmg
+
+      - name: Checksums
+        run: |
+          cd target/universal-apple-darwin/release/bundle/dmg
+          shasum -a 256 *.dmg | tee SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Domus-macOS
+          path: |
+            target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            target/universal-apple-darwin/release/bundle/dmg/SHA256SUMS.txt
+          if-no-files-found: error

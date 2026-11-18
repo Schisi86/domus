@@ -17,6 +17,20 @@
 | `%APPDATA%\NexusTalk\server\` | Daten des integrierten Servers (Datenbank, Uploads, Zertifikat, Backups, `server.toml`) |
 | `%LOCALAPPDATA%\org.nexustalk.desktop\` | WebView2-Profil (Cache) |
 
+## macOS-App (ab 1.0.2, macOS 11 Big Sur oder neuer, Apple Silicon und Intel)
+
+1. `Domus_<version>_universal.dmg` öffnen und **Domus** in den Ordner **Programme** ziehen.
+2. Beim ersten Start meldet macOS, dass die App nicht von einem verifizierten Entwickler stammt (sie ist nur „ad hoc“ signiert und nicht von Apple notarisiert – dafür wäre ein kostenpflichtiges Apple-Entwicklerkonto nötig). So öffnest du sie trotzdem:
+   * **macOS 15 und neuer:** Domus einmal starten (Meldung schließen) → *Systemeinstellungen › Datenschutz & Sicherheit* → ganz unten bei „Domus wurde blockiert“ **„Dennoch öffnen“** → bestätigen.
+   * **macOS 11–14:** im Programme-Ordner **Rechtsklick auf Domus › Öffnen** → „Öffnen“.
+   * Alternativ im Terminal: `xattr -dr com.apple.quarantine /Applications/Domus.app`
+3. Mikrofon, Kamera und Bildschirmaufnahme fragt macOS beim ersten Gebrauch ab. Die Bildschirmaufnahme erlaubst du unter *Datenschutz & Sicherheit › Bildschirm- & Systemaudioaufnahme*; danach Domus neu starten.
+4. Hostest du einen Server, fragt macOS ggf., ob Domus eingehende Verbindungen annehmen darf – „Erlauben“.
+
+* Daten liegen in `~/Library/Application Support/Domus`; Sitzungstoken sind mit einem Schlüssel aus deinem **Schlüsselbund** verschlüsselt (Eintrag „Domus“).
+* Unterschiede zu Windows: **keine Fernsteuerung dieses Macs** (andere Rechner steuern geht), kein Zeichnen-Overlay auf dem eigenen Desktop (die Zuschauer sehen die Markierungen trotzdem), keine Firewall-Hilfe. Ob die Bildschirmfreigabe und die Auswahl des Ausgabegeräts gehen, hängt von der WebKit-Version deines macOS ab.
+* Gebaut wird auf einem Mac: `bash scripts/macos-build.sh` oder in GitHub Actions („macOS installer“, `.github/workflows/macos.yml`).
+
 ## Android-App (ab 1.0.1, Android 8 oder neuer)
 
 1. `Domus_<version>_android.apk` von der Projektseite auf das Handy laden und öffnen. Android fragt beim ersten Mal, ob der Browser bzw. Dateimanager Apps installieren darf („Unbekannte Apps installieren“) – für diese Installation erlauben.

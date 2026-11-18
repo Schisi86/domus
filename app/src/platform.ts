@@ -7,6 +7,12 @@ export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in
 export const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad/i.test(navigator.userAgent);
 /** The Android app (no hosting, tray, global keys or screen sharing there). */
 export const isAndroidApp = isTauri && isMobile;
+/** macOS (desktop app or browser). */
+export const isMac = typeof navigator !== "undefined" && !isMobile && /Mac/i.test(navigator.platform || navigator.userAgent);
+/** Windows – the only system with remote control and the desktop drawing overlay. */
+export const isWindows = typeof navigator !== "undefined" && /Win/i.test(navigator.platform || navigator.userAgent);
+/** Name of the modifier key for shortcuts ("Ctrl" or "⌘"). */
+export const MOD_KEY = isMac ? "⌘" : "Ctrl";
 
 async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   const core = await import("@tauri-apps/api/core");

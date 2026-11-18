@@ -1673,3 +1673,7 @@ body.resizing, body.resizing * { cursor: col-resize !important; user-select: non
 .receipt { display: flex; align-items: center; justify-content: flex-end; gap: 2px; padding: 0 18px 2px; font-size: var(--fs-2xs); color: var(--text-3); }
 .receipt .second { margin-inline-start: -8px; }
 .receipt.seen { color: var(--accent); }
+
+/* macOS: the native traffic lights sit on top of the title bar (overlay) */
+.titlebar.mac { height: 30px; padding-inline-start: 82px; }
+.titlebar.mac .tb-title { max-width: 52%; }

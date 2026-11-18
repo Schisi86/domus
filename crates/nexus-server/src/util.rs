@@ -117,6 +117,9 @@ pub fn sniff_audio(head: &[u8], filename: &str) -> Option<&'static str> {
         Some("audio/mpeg")
     } else if head.len() >= 12 && &head[0..4] == b"RIFF" && &head[8..12] == b"WAVE" {
         Some("audio/wav")
+    } else if head.len() >= 12 && &head[4..8] == b"ftyp" && lower.ends_with(".m4a") {
+        // Voice messages from macOS/iOS WebKit (MediaRecorder records AAC in MP4).
+        Some("audio/mp4")
     } else {
         None
     }

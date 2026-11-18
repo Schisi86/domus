@@ -1,6 +1,7 @@
 // Ctrl+K: jump to any channel, DM or member across all servers.
 // Ctrl+/: keyboard shortcut overview.
 
+import { MOD_KEY } from "../platform";
 import { useMemo, useState } from "preact/hooks";
 import { closeModal, openDm, selectChannel, selectServer, servers, startDm, toast } from "../state/app";
 import type { ServerStore } from "../state/server";
@@ -116,16 +117,16 @@ export function QuickSwitcher() {
 
 export function ShortcutsDialog() {
   const rows: [string, string][] = [
-    ["Ctrl + K", t("keys.switcher")],
+    [`${MOD_KEY} + K`, t("keys.switcher")],
     ["Alt + ↑ / ↓", t("keys.channelNav")],
-    ["Ctrl + /", t("keys.help")],
+    [`${MOD_KEY} + /`, t("keys.help")],
     ["Enter", t("keys.send")],
     ["Shift + Enter", t("keys.newline")],
     ["↑", t("keys.editLast")],
-    ["Ctrl + B / I / U", t("keys.format")],
+    [`${MOD_KEY} + B / I / U`, t("keys.format")],
     ["Esc", t("keys.cancel")],
-    ["Ctrl + Shift + M", t("keys.mute")],
-    ["Ctrl + Shift + D", t("keys.deafen")],
+    [`${MOD_KEY} + Shift + M`, t("keys.mute")],
+    [`${MOD_KEY} + Shift + D`, t("keys.deafen")],
   ];
   return (
     <Modal title={t("keys.title")} footer={<button class="btn" onClick={closeModal}>{t("common.close")}</button>}>

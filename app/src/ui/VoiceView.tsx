@@ -1,5 +1,6 @@
 // Voice channel view: participant tiles, screen shares, cameras, controls.
 
+import { isTauri, isWindows } from "../platform";
 import { NavBack } from "./mobile";
 import { useEffect, useState } from "preact/hooks";
 import { toast } from "../state/app";
@@ -255,7 +256,8 @@ export function VoiceView({ server, channel }: { server: ServerStore; channel: C
           {v.cameraOn.value ? <Icon.Webcam /> : <Icon.WebcamOff />}
         </button>
         <ScreenShareControl v={v} variant="round" disabled={!canShare} />
-        <ControlHostButton v={v} />
+        {/* Remote control of this computer exists only on Windows. */}
+        {(!isTauri || isWindows) && <ControlHostButton v={v} />}
         <WatchButton v={v} />
         <ReactionButton v={v} />
         <button class={`round-btn${myHand ? " on" : ""}`} title={myHand ? t("call.lowerHand") : t("call.raiseHand")} onClick={() => void v.setHand(!myHand).catch(() => {})}>

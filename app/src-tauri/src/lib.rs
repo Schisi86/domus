@@ -48,6 +48,11 @@ pub fn app_dir() -> PathBuf {
     if let Some(d) = APP_DIR.get() {
         return d.clone();
     }
+    // macOS: the usual place for app data (~/Library/Application Support/Domus).
+    #[cfg(target_os = "macos")]
+    if let Some(home) = std::env::var_os("HOME") {
+        return PathBuf::from(home).join("Library/Application Support/Domus");
+    }
     let base = std::env::var_os("APPDATA")
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))
@@ -116,6 +121,8 @@ fn open_folder(path: String) -> Result<(), String> {
     let _ = std::fs::create_dir_all(&p);
     #[cfg(windows)]
     std::process::Command::new("explorer").arg(&p).spawn().map_err(|e| e.to_string())?;
+    #[cfg(target_os = "macos")]
+    std::process::Command::new("open").arg(&p).spawn().map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -335,12 +342,19 @@ pub fn run() {
             store::config_save,
         ])
         .setup(move |app| {
-            WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
+            #[cfg(target_os = "macos")]
+            let main = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
+                .title_bar_style(tauri::TitleBarStyle::Overlay)
+                .hidden_title(true);
+            #[cfg(not(target_os = "macos"))]
+            let main = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()));
+            main
                 .title("Domus")
                 .inner_size(1180.0, 760.0)
                 .min_inner_size(760.0, 480.0)
-                // The UI draws its own title bar in the colours of the active design.
-                .decorations(false)
+                // Windows: the UI draws its own title bar in the colours of the
+                // active design. macOS keeps the native traffic lights on top of it.
+                .decorations(cfg!(target_os = "macos"))
                 .visible(!background)
                 .on_permission_request(|_, kind| match kind {
                     // Requested only after an explicit user action (joining voice,

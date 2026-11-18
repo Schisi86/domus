@@ -5,7 +5,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { activeServer, activeServerId, homeDm, openChannel } from "../state/app";
 import { t } from "../i18n";
-import { isMobile, isTauri } from "../platform";
+import { isMac, isMobile, isTauri } from "../platform";
 import { COPYRIGHT, DONATE_URL, HOMEPAGE } from "../brand";
 import { openExternal } from "./links";
 import { LangPicker } from "./LangPicker";
@@ -52,13 +52,14 @@ export function TitleBar() {
 function DesktopTitleBar() {
   const { win, maximized } = useWindow();
   return (
-    <header class="titlebar" data-tauri-drag-region>
+    <header class={`titlebar${isMac ? " mac" : ""}`} data-tauri-drag-region>
       <div class="tb-brand" data-tauri-drag-region>
         <img src="/icon.png" alt="" draggable={false} />
         <span data-tauri-drag-region class="wordmark">Dom<b>us</b></span>
       </div>
       <div class="tb-title ellipsis" data-tauri-drag-region>{contextTitle()}</div>
-      <div class="tb-controls">
+      {/* macOS draws its own traffic lights at the left (title bar overlay). */}
+      {!isMac && <div class="tb-controls">
         <button class="tb-btn" title={t("tb.minimize")} aria-label={t("tb.minimize")} onClick={() => void win?.minimize()}>
           <svg viewBox="0 0 10 10" width="10" height="10"><path d="M0 5.5h10" stroke="currentColor" stroke-width="1" /></svg>
         </button>
@@ -72,7 +73,7 @@ function DesktopTitleBar() {
         <button class="tb-btn close" title={t("tb.close")} aria-label={t("tb.close")} onClick={() => void win?.close()}>
           <svg viewBox="0 0 10 10" width="10" height="10" stroke="currentColor" stroke-width="1.1"><path d="M.5.5l9 9M9.5.5l-9 9" /></svg>
         </button>
-      </div>
+      </div>}
     </header>
   );
 }

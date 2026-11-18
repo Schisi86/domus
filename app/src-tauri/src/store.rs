@@ -97,9 +97,63 @@ mod dpapi {
     }
 }
 
-#[cfg(not(windows))]
+/// macOS: tokens are encrypted with AES-256-GCM; the key lives in the user's
+/// login keychain ("Domus" / "token-key") and is created on first use.
+#[cfg(target_os = "macos")]
 mod dpapi {
-    // Non-Windows builds are development only; tokens are merely encoded.
+    use std::sync::OnceLock;
+
+    use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, AES_256_GCM, NONCE_LEN};
+    use ring::rand::{SecureRandom, SystemRandom};
+
+    const SERVICE: &str = "Domus";
+    const ACCOUNT: &str = "token-key";
+
+    fn key() -> Option<&'static LessSafeKey> {
+        static KEY: OnceLock<Option<LessSafeKey>> = OnceLock::new();
+        KEY.get_or_init(|| {
+            use security_framework::passwords::{get_generic_password, set_generic_password};
+            let raw = match get_generic_password(SERVICE, ACCOUNT) {
+                Ok(k) if k.len() == 32 => k,
+                _ => {
+                    let mut k = vec![0u8; 32];
+                    SystemRandom::new().fill(&mut k).ok()?;
+                    set_generic_password(SERVICE, ACCOUNT, &k).ok()?;
+                    k
+                }
+            };
+            Some(LessSafeKey::new(UnboundKey::new(&AES_256_GCM, &raw).ok()?))
+        })
+        .as_ref()
+    }
+
+    pub fn protect(data: &[u8]) -> Option<Vec<u8>> {
+        let k = key()?;
+        let mut nonce = [0u8; NONCE_LEN];
+        SystemRandom::new().fill(&mut nonce).ok()?;
+        let mut buf = data.to_vec();
+        k.seal_in_place_append_tag(Nonce::assume_unique_for_key(nonce), Aad::empty(), &mut buf).ok()?;
+        let mut out = nonce.to_vec();
+        out.extend_from_slice(&buf);
+        Some(out)
+    }
+
+    pub fn unprotect(data: &[u8]) -> Option<Vec<u8>> {
+        if data.len() < NONCE_LEN {
+            return None;
+        }
+        let k = key()?;
+        let (n, c) = data.split_at(NONCE_LEN);
+        let mut buf = c.to_vec();
+        let plain = k.open_in_place(Nonce::try_assume_unique_for_key(n).ok()?, Aad::empty(), &mut buf).ok()?;
+        Some(plain.to_vec())
+    }
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
+mod dpapi {
+    // Android stores the file in the app-private folder; Linux builds are
+    // development only. Tokens are merely encoded.
     pub fn protect(data: &[u8]) -> Option<Vec<u8>> {
         Some(data.to_vec())
     }
