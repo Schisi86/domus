@@ -15,6 +15,10 @@ on:
         description: "Also test in the iOS simulator (1/0)"
         required: false
         default: "1"
+      device:
+        description: "Build the .ipa for iPhone/iPad (1/0)"
+        required: false
+        default: "1"
 
 concurrency:
   group: ios-${{ github.ref }}
@@ -51,6 +55,7 @@ jobs:
       - name: Build (and test in the simulator)
         env:
           SIMULATOR: ${{ inputs.simulator || '1' }}
+          DEVICE: ${{ inputs.device || '1' }}
         run: bash scripts/ios-build.sh
 
       - uses: actions/upload-artifact@v4

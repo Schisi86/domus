@@ -43,12 +43,14 @@ $PB -c "Delete :UIBackgroundModes" "$PLIST" >/dev/null 2>&1
 $PB -c "Add :UIBackgroundModes array" -c "Add :UIBackgroundModes:0 string audio" "$PLIST"
 $PB -c "Print" "$PLIST" | head -60
 
+if [ "${DEVICE:-1}" = "1" ]; then
 step "Device build (unsigned .ipa)"
 npx tauri ios build --target aarch64 --no-sign --ci 2>&1 | tee "$OUT/build-device.log"
 IPA=$(find src-tauri/gen/apple/build -name "*.ipa" | head -1)
 if [ -z "$IPA" ]; then echo "no .ipa produced"; exit 1; fi
 cp "$IPA" "$OUT/Domus_${VERSION}_unsigned.ipa"
 (cd "$OUT" && unzip -l "Domus_${VERSION}_unsigned.ipa" | tail -3; unzip -p "Domus_${VERSION}_unsigned.ipa" "Payload/*.app/Info.plist" > Info-device.plist && plutil -p Info-device.plist | head -40)
+fi
 
 if [ "${SIMULATOR:-0}" != "1" ]; then exit 0; fi
 
@@ -72,7 +74,7 @@ xcrun simctl status_bar "$DEV" override --time "9:41" --batteryState charged --b
 # `tauri ios dev` builds for the simulator, installs the app and starts it
 # (the UI comes from the Vite dev server – the same code as the release build).
 cd "$ROOT/app"
-npx tauri ios dev "$NAME" --no-watch --ci > "$OUT/build-sim.log" 2>&1 &
+npx tauri ios dev "$NAME" --no-watch > "$OUT/build-sim.log" 2>&1 &
 DEVPID=$!
 BUNDLE=org.domus.app
 for i in $(seq 1 240); do
