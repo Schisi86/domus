@@ -7,7 +7,7 @@
   <key>NSCameraUsageDescription</key>
   <string>Domus braucht die Kamera für Videoanrufe und zum Scannen von QR-Codes.</string>
   <key>NSLocalNetworkUsageDescription</key>
-  <string>Domus verbindet sich mit Servern in deinem Netzwerk und kann selbst einen Server für deine Freunde bereitstellen.</string>
+  <string>Domus verbindet sich mit Servern in deinem lokalen Netzwerk.</string>
   <key>NSHumanReadableCopyright</key>
   <string>© 2026 Christian Schiessl</string>
 </dict>

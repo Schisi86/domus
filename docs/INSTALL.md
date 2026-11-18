@@ -31,6 +31,21 @@
 * Unterschiede zu Windows: **keine Fernsteuerung dieses Macs** (andere Rechner steuern geht), kein Zeichnen-Overlay auf dem eigenen Desktop (die Zuschauer sehen die Markierungen trotzdem), keine Firewall-Hilfe. Ob die Bildschirmfreigabe und die Auswahl des Ausgabegeräts gehen, hängt von der WebKit-Version deines macOS ab.
 * Gebaut wird auf einem Mac: `bash scripts/macos-build.sh` oder in GitHub Actions („macOS installer“, `.github/workflows/macos.yml`).
 
+## iOS-App (iPhone und iPad, ab iOS 15)
+
+Apple erlaubt Apps außerhalb des App Stores nur, wenn sie mit einer Apple-ID signiert sind. Domus wird deshalb als **unsignierte** `Domus_<version>_unsigned.ipa` ausgeliefert, die du beim Installieren mit **deiner eigenen Apple-ID** signierst:
+
+1. **Sideloadly** (Windows/macOS, kostenlos, sideloadly.io) oder **AltStore** (altstore.io) auf dem PC/Mac installieren.
+2. iPhone per Kabel anschließen, dem Computer vertrauen.
+3. Die `.ipa` in Sideloadly ziehen, Apple-ID eintragen, „Start“. (AltStore: über AltServer und „My Apps › +“.)
+4. Auf dem iPhone: *Einstellungen › Allgemein › VPN & Geräteverwaltung* → deine Apple-ID → „Vertrauen“. Ab iOS 16 zusätzlich *Einstellungen › Datenschutz & Sicherheit › Entwicklermodus* einschalten (Neustart).
+5. Domus öffnen → „Von anderem Gerät übertragen“ und den QR-Code vom PC scannen – oder „Server hinzufügen“.
+
+* **Gültigkeit:** Mit einer kostenlosen Apple-ID läuft die Signatur nach **7 Tagen** ab (AltStore/Sideloadly erneuern sie automatisch, wenn der PC im selben WLAN ist); mit einem kostenpflichtigen Apple-Entwicklerkonto (99 $/Jahr) ein Jahr bzw. per TestFlight/App Store ohne Sideloading. Server, Konten und Einstellungen bleiben beim Erneuern erhalten.
+* Die iOS-App ist ein **reiner Client**: iOS hält Apps im Hintergrund nicht am Leben, deshalb gibt es dort kein Server-Hosting. Den eigenen Bildschirm teilen geht auf dem iPhone nicht (dafür bräuchte es eine eigene ReplayKit-Erweiterung); Bildschirme anderer ansehen, Kamera, Mikrofon, Chats, QR-Übertragung gehen.
+* Anrufe laufen kurz weiter, wenn du die App verlässt, iOS kann sie im Hintergrund aber beenden – für längere Gespräche Domus geöffnet lassen.
+* Gebaut wird auf einem Mac: `bash scripts/ios-build.sh` oder GitHub Actions („iOS app“, `.github/workflows/ios.yml`); `SIMULATOR=1` startet zusätzlich einen Test im iOS-Simulator mit Screenshots.
+
 ## Android-App (ab 1.0.1, Android 8 oder neuer)
 
 1. `Domus_<version>_android.apk` von der Projektseite auf das Handy laden und öffnen. Android fragt beim ersten Mal, ob der Browser bzw. Dateimanager Apps installieren darf („Unbekannte Apps installieren“) – für diese Installation erlauben.
