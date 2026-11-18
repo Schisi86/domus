@@ -8,3 +8,4 @@ website/download/*.apk
 .netlify/
 release/
 .tools/
+dist-ios/

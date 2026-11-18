@@ -1,0 +1,61 @@
+# Builds the iOS app on a GitHub-hosted Mac: an unsigned .ipa for iPhone/iPad
+# (to be signed with AltStore/Sideloadly or a developer account) and a test run
+# in the iOS simulator with screenshots. Started by hand
+# (Actions › "iOS app" › Run workflow).
+name: iOS app
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "GitHub-Mac (macos-15-intel, macos-latest, …)"
+        required: false
+        default: macos-15-intel
+      simulator:
+        description: "Also test in the iOS simulator (1/0)"
+        required: false
+        default: "1"
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner || 'macos-15-intel' }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            app/package-lock.json
+            tests/e2e/package-lock.json
+
+      - name: Rust targets
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Dependencies
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          npm ci --prefix app
+          npm ci --prefix tests/e2e
+
+      - name: Build (and test in the simulator)
+        env:
+          SIMULATOR: ${{ inputs.simulator || '1' }}
+        run: bash scripts/ios-build.sh
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Domus-iOS
+          path: dist-ios/
+          if-no-files-found: warn

@@ -1,7 +1,7 @@
 // Left server rail: home, servers, add and the hosting center.
 
 import { TransferDialog } from "./dialogs/Transfer";
-import { isAndroidApp } from "../platform";
+import { isIOSApp, isMobileApp } from "../platform";
 import { activeServerId, isMuted, openModal, removeServer, selectServer, servers, settings, showMenu, toast, updateSettings } from "../state/app";
 import type { ServerStore } from "../state/server";
 import { transport } from "../net/transport";
@@ -126,14 +126,15 @@ export function Rail() {
         </button>
       </div>
       <div class="spacer" />
-      {isAndroidApp && (
+      {isMobileApp && (
         <div class="rail-item">
           <button class="rail-btn add" title={t("move.title")} aria-label={t("move.title")} onClick={() => openModal(<TransferDialog />)}>
             <Icon.Qr size={20} class="" />
           </button>
         </div>
       )}
-      <HostButton />
+      {/* iOS stops apps in the background: hosting a server is not possible there. */}
+      {!isIOSApp && <HostButton />}
     </nav>
   );
 }

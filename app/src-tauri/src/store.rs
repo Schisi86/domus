@@ -97,9 +97,9 @@ mod dpapi {
     }
 }
 
-/// macOS: tokens are encrypted with AES-256-GCM; the key lives in the user's
-/// login keychain ("Domus" / "token-key") and is created on first use.
-#[cfg(target_os = "macos")]
+/// macOS and iOS: tokens are encrypted with AES-256-GCM; the key lives in the
+/// keychain ("Domus" / "token-key") and is created on first use.
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 mod dpapi {
     use std::sync::OnceLock;
 
@@ -112,19 +112,44 @@ mod dpapi {
     fn key() -> Option<&'static LessSafeKey> {
         static KEY: OnceLock<Option<LessSafeKey>> = OnceLock::new();
         KEY.get_or_init(|| {
-            use security_framework::passwords::{get_generic_password, set_generic_password};
-            let raw = match get_generic_password(SERVICE, ACCOUNT) {
-                Ok(k) if k.len() == 32 => k,
-                _ => {
-                    let mut k = vec![0u8; 32];
-                    SystemRandom::new().fill(&mut k).ok()?;
-                    set_generic_password(SERVICE, ACCOUNT, &k).ok()?;
-                    k
-                }
-            };
+            let raw = keychain_key().or_else(file_key)?;
             Some(LessSafeKey::new(UnboundKey::new(&AES_256_GCM, &raw).ok()?))
         })
         .as_ref()
+    }
+
+    fn new_key() -> Option<Vec<u8>> {
+        let mut k = vec![0u8; 32];
+        SystemRandom::new().fill(&mut k).ok()?;
+        Some(k)
+    }
+
+    /// The key from the keychain (created on first use).
+    fn keychain_key() -> Option<Vec<u8>> {
+        use security_framework::passwords::{get_generic_password, set_generic_password};
+        match get_generic_password(SERVICE, ACCOUNT) {
+            Ok(k) if k.len() == 32 => Some(k),
+            _ => {
+                let k = new_key()?;
+                set_generic_password(SERVICE, ACCOUNT, &k).ok()?;
+                Some(k)
+            }
+        }
+    }
+
+    /// Fallback when the keychain refuses access (unsigned builds, e.g. in the
+    /// iOS simulator): a key file in the app's private data folder.
+    fn file_key() -> Option<Vec<u8>> {
+        let path = crate::app_dir().join("token.key");
+        if let Ok(k) = std::fs::read(&path) {
+            if k.len() == 32 {
+                return Some(k);
+            }
+        }
+        let k = new_key()?;
+        let _ = std::fs::create_dir_all(path.parent()?);
+        std::fs::write(&path, &k).ok()?;
+        Some(k)
     }
 
     pub fn protect(data: &[u8]) -> Option<Vec<u8>> {
@@ -150,7 +175,7 @@ mod dpapi {
     }
 }
 
-#[cfg(not(any(windows, target_os = "macos")))]
+#[cfg(not(any(windows, target_os = "macos", target_os = "ios")))]
 mod dpapi {
     // Android stores the file in the app-private folder; Linux builds are
     // development only. Tokens are merely encoded.
@@ -184,12 +209,16 @@ impl ConfigStore {
         match serde_json::from_str::<ClientConfig>(&text) {
             Ok(mut cfg) => {
                 for s in &mut cfg.servers {
+                    // A plain `token` (written by hand or by an automated test)
+                    // is taken over and encrypted on the next save.
+                    let plain = s.token.take();
                     s.token = s
                         .token_enc
                         .take()
                         .and_then(|e| b64().decode(e).ok())
                         .and_then(|e| dpapi::unprotect(&e))
-                        .and_then(|t| String::from_utf8(t).ok());
+                        .and_then(|t| String::from_utf8(t).ok())
+                        .or(plain);
                 }
                 (cfg, None)
             }

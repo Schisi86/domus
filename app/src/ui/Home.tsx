@@ -10,7 +10,7 @@ import { Avatar, EmptyState, IconButton, Icon, LogoMark } from "./components";
 import { AddServerDialog } from "./dialogs/AddServer";
 import { HostDialog } from "./dialogs/Host";
 import { TransferDialog } from "./dialogs/Transfer";
-import { isAndroidApp } from "../platform";
+import { isIOSApp, isMobileApp } from "../platform";
 
 type Tab = "online" | "all" | "pending" | "blocked";
 
@@ -22,8 +22,8 @@ export function FriendsView() {
         <p class="muted">{t("home.welcomeText")}</p>
         <div class="row wrap center welcome-actions">
           <button class="btn primary lg" onClick={() => openModal(<AddServerDialog />)}><Icon.Plus /> {t("rail.add")}</button>
-          <button class={`btn lg${isAndroidApp ? " primary" : ""}`} onClick={() => openModal(<TransferDialog mode="receive" />)}><Icon.Qr /> {t("move.fromOther")}</button>
-          <button class="btn lg" onClick={() => openModal(<HostDialog />)}><Icon.ServerIcon /> {t("home.startOwn")}</button>
+          <button class={`btn lg${isMobileApp ? " primary" : ""}`} onClick={() => openModal(<TransferDialog mode="receive" />)}><Icon.Qr /> {t("move.fromOther")}</button>
+          {!isIOSApp && <button class="btn lg" onClick={() => openModal(<HostDialog />)}><Icon.ServerIcon /> {t("home.startOwn")}</button>}
         </div>
       </EmptyState>
     );

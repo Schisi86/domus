@@ -3,8 +3,8 @@ import "./styles.css";
 import { App } from "./ui/App";
 import { initApp } from "./state/app";
 import { startHostPolling } from "./state/hosting";
-import { isMobile, isTauri, log } from "./platform";
-import { initBackKey } from "./ui/mobile";
+import { isIOSApp, isMobile, isTauri, log } from "./platform";
+import { initBackKey, initIOSViewport } from "./ui/mobile";
 import { voice } from "./rtc/voice";
 import { servers, settings, startDm, updateSettings } from "./state/app";
 import { acceptTransfer, offerFile, transfers } from "./rtc/transfer";
@@ -25,6 +25,7 @@ window.addEventListener("unhandledrejection", (e) => {
 void initApp().finally(() => {
   render(<App />, document.getElementById("app")!);
   if (isMobile) initBackKey();
+  if (isIOSApp) initIOSViewport();
   startHostPolling();
   log("info", "ui ready");
 });

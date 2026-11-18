@@ -40,8 +40,8 @@ tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-global-shortcut = "2"
 
-# macOS: session tokens encrypted with a key from the login keychain.
-[target.'cfg(target_os = "macos")'.dependencies]
+# macOS and iOS: session tokens encrypted with a key from the keychain.
+[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
 security-framework = "3"
 ring = "0.17"
 

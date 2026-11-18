@@ -8,7 +8,7 @@ import type { SavedServer, ServerInfo } from "../../types";
 import { errorText, regMode, t } from "../../i18n";
 import { isNetError, normalizeAddress, parseInvite, transport, type NetError } from "../../net/transport";
 import { Field, Icon, Modal, Spinner } from "../components";
-import { isAndroidApp, isTauri } from "../../platform";
+import { isAndroidApp, isIOSApp, isTauri } from "../../platform";
 import { QrScanner } from "../qr";
 import { LINK_PREFIX } from "../../state/link";
 import { TransferDialog } from "./Transfer";
@@ -31,6 +31,10 @@ function connectHelp(address: string, e: unknown): string | null {
 }
 
 export function deviceName() {
+  if (isIOSApp) {
+    const ipad = /iPad/i.test(navigator.userAgent) || (!/iPhone/i.test(navigator.userAgent) && (navigator.maxTouchPoints ?? 0) > 1);
+    return ipad ? "Domus iOS (iPad)" : "Domus iOS (iPhone)";
+  }
   if (isAndroidApp) {
     // "Android 15; Pixel 9" → model name from the user agent when available.
     const m = /Android [\d.]+; ([^;)]+?)(?: Build|\))/.exec(navigator.userAgent);

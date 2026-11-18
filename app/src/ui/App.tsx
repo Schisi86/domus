@@ -13,7 +13,7 @@ import { FriendsView } from "./Home";
 import { voice } from "../rtc/voice";
 import { lang, t } from "../i18n";
 import { applyTheme } from "../themes";
-import { isMobile, isTauri, tauriInvoke } from "../platform";
+import { isIOSApp, isMobile, isTauri, tauriInvoke } from "../platform";
 import { QuickSwitcher, ShortcutsDialog } from "./QuickSwitcher";
 import { Footer, TitleBar } from "./Chrome";
 import { ControlRequestPrompt } from "./remotecontrol";
@@ -131,7 +131,7 @@ export function App() {
   void lang.value;
   return (
     <div
-      class={`app${narrow.value ? " narrow" : ""}${narrow.value && mobileNav.value && servers.value.length ? " nav-open" : ""}${isMobile ? " touch" : ""}`}
+      class={`app${narrow.value ? " narrow" : ""}${narrow.value && mobileNav.value && servers.value.length ? " nav-open" : ""}${isMobile ? " touch" : ""}${isIOSApp ? " ios" : ""}`}
       onContextMenu={(e) => {
         // Native context menu only inside editable/selectable text.
         const tg = e.target as HTMLElement;

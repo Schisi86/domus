@@ -7,7 +7,7 @@ import type { ServerStore } from "../../state/server";
 import { errorText, fmtStamp, lang, LANGS, presenceText, t, type Key } from "../../i18n";
 import { TransferDialog } from "./Transfer";
 import { transport } from "../../net/transport";
-import { appInfo, autostart, isAndroidApp, isMobile, isTauri, openFolder, quitApp, type AppInfo } from "../../platform";
+import { appInfo, autostart, isMobileApp, isMobile, isTauri, openFolder, quitApp, type AppInfo } from "../../platform";
 import { pauseUntil } from "../Sidebar";
 import { Avatar, Field, IconButton, Icon, LogoMark, Modal, Spinner, Toggle, bannerCss, confirmDialog, promptDialog } from "../components";
 import { pickAndCropImage } from "../ImageCrop";
@@ -650,7 +650,7 @@ function AppTab() {
   return (
     <>
       <h2>{t("settings.app")}</h2>
-      {isTauri && !isAndroidApp && (
+      {isTauri && !isMobileApp && (
         <div class="card col">
           <Toggle
             checked={minimizeToTray.value}
@@ -709,7 +709,7 @@ function AppTab() {
           <dt>{t("settings.logs")}</dt><dd class="mono xs selectable">{info.log_dir}</dd>
         </dl>
       )}
-      {info && !isAndroidApp && (
+      {info && !isMobileApp && (
         <div class="row wrap">
           <button class="btn outline" onClick={() => void openFolder(info.log_dir)}><Icon.Folder /> {t("settings.openLogs")}</button>
           <button class="btn outline" onClick={() => void openFolder(info.data_dir)}><Icon.Folder /> {t("settings.openData")}</button>

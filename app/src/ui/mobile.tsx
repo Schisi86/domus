@@ -6,6 +6,24 @@ import { closeDialog, closeModal, contextMenu, dialog, lightbox, membersSheet, m
 import { t } from "../i18n";
 import { IconButton, Icon } from "./components";
 
+/**
+ * iOS: the web view does not shrink when the keyboard opens – the visual
+ * viewport does. The app follows its height so the composer stays visible,
+ * and the page never scrolls away underneath the fixed layout.
+ */
+export function initIOSViewport() {
+  const vv = window.visualViewport;
+  document.documentElement.classList.add("ios");
+  if (!vv) return;
+  const apply = () => {
+    document.documentElement.style.setProperty("--app-h", `${Math.round(vv.height)}px`);
+    if (window.scrollY !== 0) window.scrollTo(0, 0);
+  };
+  vv.addEventListener("resize", apply);
+  vv.addEventListener("scroll", apply);
+  apply();
+}
+
 /** "Back to the channel list" – only on narrow screens. */
 export function NavBack() {
   if (!narrow.value) return null;

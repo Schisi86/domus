@@ -219,7 +219,7 @@ function ClipDialog({ v, clip }: { v: VoiceSession; clip: Clip }) {
         </>
       }
     >
-      <video class="clip-preview" src={url} controls autoPlay loop />
+      <video class="clip-preview" src={url} controls autoPlay loop playsInline />
       {uploads && targets.length > 0 && (
         <div class="clip-share">
           <select class="select grow" value={String(target)} onChange={(e) => setTarget(Number((e.target as HTMLSelectElement).value))}>

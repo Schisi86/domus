@@ -3,10 +3,18 @@
 import type { SavedServer } from "./types";
 
 export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-/** Running on a phone or tablet (the Android app, or a mobile browser). */
-export const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad/i.test(navigator.userAgent);
-/** The Android app (no hosting, tray, global keys or screen sharing there). */
-export const isAndroidApp = isTauri && isMobile;
+/** iPhone / iPad (an iPad reports itself as a Mac with a touch screen). */
+export const isIOS =
+  typeof navigator !== "undefined" &&
+  (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (/Macintosh/i.test(navigator.userAgent) && (navigator.maxTouchPoints ?? 0) > 1));
+/** Running on a phone or tablet (the Android or iOS app, or a mobile browser). */
+export const isMobile = typeof navigator !== "undefined" && (/Android|iPhone|iPad/i.test(navigator.userAgent) || isIOS);
+/** The Android app: hosts servers and shares the screen through native helpers. */
+export const isAndroidApp = isTauri && typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+/** The iOS app: a client (iOS stops apps in the background, so no hosting there). */
+export const isIOSApp = isTauri && isIOS;
+/** Any of the phone apps (no tray, autostart, global keys, data folders). */
+export const isMobileApp = isAndroidApp || isIOSApp;
 /** macOS (desktop app or browser). */
 export const isMac = typeof navigator !== "undefined" && !isMobile && /Mac/i.test(navigator.platform || navigator.userAgent);
 /** Windows – the only system with remote control and the desktop drawing overlay. */
