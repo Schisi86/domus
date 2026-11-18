@@ -82,7 +82,7 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 ### macOS (neu in 1.0.2)
 | Funktion | Stand |
 |---|---|
-| **macOS-Installer** (`.dmg`, universal für Apple Silicon + Intel, ab macOS 11) mit eigenem Installationsfenster (in „Programme“ ziehen); ad hoc signiert, **nicht notarisiert** (Gatekeeper fragt beim ersten Start) | 🟡 gebaut auf einem GitHub-Mac (siehe TESTING.md); **auf einem echten Mac nicht ausprobiert** |
+| **macOS-Installer** (`.dmg`, universal für Apple Silicon + Intel, ab macOS 11) mit eigenem Installationsfenster (in „Programme“ ziehen); ad hoc signiert, **nicht notarisiert** (Gatekeeper fragt beim ersten Start) | 🟡 gebaut auf einem GitHub-Mac (Rust-Tests dort alle grün, siehe TESTING.md); **auf einem echten Mac nicht ausprobiert** |
 | Native Fensterknöpfe (Ampel) über der eigenen Titelleiste, ⌘ statt Strg in der Tastenübersicht, Daten in `~/Library/Application Support/Domus`, Sitzungstoken mit Schlüsselbund-Schlüssel (AES-256-GCM) verschlüsselt, Hinweistexte für Mikrofon/Kamera/lokales Netzwerk | 🟡 kompiliert und Rust-Tests auf macOS im Build-Lauf; Oberfläche nicht auf einem Mac gesichtet |
 | Server hosten, Chats, Anrufe, Kamera, Soundboard, Direktversand, E2E-DMs, QR-Übertragung | 🟡 derselbe Code wie unter Windows; auf macOS ungetestet |
 | Sprachnachrichten: WebKit nimmt ggf. kein WebM auf → AAC/M4A als Ausweichformat (Server erkennt `.m4a`) | ✅ Server-Erkennung; 🟡 Aufnahme auf macOS ungetestet |
