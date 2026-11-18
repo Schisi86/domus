@@ -79,6 +79,15 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Automatische Updates | ⬜ Konzept dokumentiert (INSTALL.md), nicht aktiviert |
 | Code-Signatur des Installers | ⬜ (SmartScreen-Warnung beim ersten Start möglich) |
 
+### iOS – iPhone und iPad (neu in 1.0.2)
+| Funktion | Stand |
+|---|---|
+| **iOS-App** (iOS 15+, iPhone und iPad): derselbe Client wie auf Android – Text, Sprache, Video, DMs inkl. Verschlüsselung, Chats archivieren/anheften/löschen, Lesebestätigungen, Soundboard, Umfragen, QR-Profilübertragung (Kamera-Scan), Einladungen; Handy-Oberfläche mit Rücksicht auf Notch/Dynamic Island und Home-Indikator, Bildschirmtastatur verschiebt das Eingabefeld nach oben, eigenes randloses App-Symbol | 🟡 gebaut auf einem GitHub-Mac und **im iPhone-16-Pro-Simulator gestartet**: Willkommensseite, Anmeldung über die gespeicherte Sitzung, Verbindung zum Testserver und Kanalliste per Screenshot belegt (siehe TESTING.md). **Auf einem echten iPhone nicht ausprobiert**; Mikrofon/Kamera/Benachrichtigungen im Simulator nicht prüfbar |
+| Auslieferung als **unsignierte `.ipa`**, Installation per AltStore/Sideloadly mit eigener Apple-ID (kostenlos: 7 Tage gültig, wird automatisch erneuert) | – (Apple-Vorgabe; App Store/TestFlight bräuchten ein Entwicklerkonto) |
+| Nicht auf iOS: Server hosten (iOS beendet Apps im Hintergrund), eigenen Bildschirm teilen (bräuchte eine ReplayKit-Erweiterung), Fernsteuerung. Anrufe können im Hintergrund von iOS beendet werden | – |
+| Behoben beim iOS-Test: Absturz beim Start, weil Tauris Entwicklungs-Proxy vor Domus' TLS-Einrichtung lief (jetzt beim Start für alle Plattformen) | ✅ im Simulator bestätigt |
+| Weißer Streifen unter dem Inhalt (durchscheinender Hintergrund, Höhe an der Tastatur ausgerichtet) | 🟡 im Code behoben, aber **nicht mehr gebaut**: Die GitHub-Mac-Minuten des privaten Repositorys waren aufgebraucht. Die ausgelieferte `Domus_1.0.2_ios_unsigned.ipa` zeigt den Streifen noch |
+
 ### macOS (neu in 1.0.2)
 | Funktion | Stand |
 |---|---|
