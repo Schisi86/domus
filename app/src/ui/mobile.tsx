@@ -15,8 +15,13 @@ export function initIOSViewport() {
   const vv = window.visualViewport;
   document.documentElement.classList.add("ios");
   if (!vv) return;
+  const root = document.documentElement;
   const apply = () => {
-    document.documentElement.style.setProperty("--app-h", `${Math.round(vv.height)}px`);
+    // Only while the keyboard covers part of the screen: then the app shrinks
+    // to the visible part. Otherwise it fills the whole web view.
+    const keyboard = window.innerHeight - vv.height > 120;
+    if (keyboard) root.style.setProperty("--app-h", `${Math.round(vv.height)}px`);
+    else root.style.removeProperty("--app-h");
     if (window.scrollY !== 0) window.scrollTo(0, 0);
   };
   vv.addEventListener("resize", apply);

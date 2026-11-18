@@ -1679,7 +1679,9 @@ body.resizing, body.resizing * { cursor: col-resize !important; user-select: non
 .titlebar.mac .tb-title { max-width: 52%; }
 
 /* ---------- iOS app: notch / home indicator and the on-screen keyboard ---------- */
-html.ios, html.ios body { height: var(--app-h, 100%); overflow: hidden; overscroll-behavior: none; background: var(--bg-0); }
+/* opaque: the design colours are translucent and WebKit would show white behind them */
+html.ios { background: var(--solid, #0b0f0e); }
+html.ios, html.ios body { height: var(--app-h, 100%); overflow: hidden; overscroll-behavior: none; }
 .app.ios { height: var(--app-h, 100%); padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); box-sizing: border-box; }
 .app.ios .user-panel, .app.ios .composer-wrap, .app.ios .voice-controls { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
 .app.ios .user-panel { height: auto; min-height: 60px; }
