@@ -212,6 +212,7 @@ macro_rules! mobile_commands {
 #[cfg(mobile)]
 #[tauri::mobile_entry_point]
 pub fn run() {
+    nexus_net::init_crypto();
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -329,6 +330,7 @@ fn spawn_host_autostart(handle: AppHandle) {
 
 #[cfg(desktop)]
 pub fn run() {
+    nexus_net::init_crypto();
     let background = std::env::args().any(|a| a == "--background");
     let dir = app_dir();
     let _ = std::fs::create_dir_all(&dir);

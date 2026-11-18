@@ -145,6 +145,13 @@ pub fn parse_address(input: &str) -> Result<(bool, String), NetError> {
     Ok((tls, url))
 }
 
+/// Installs the process-wide TLS crypto provider (ring). Call it once at start-up:
+/// other HTTP clients in the process (e.g. Tauri's dev-server proxy on mobile)
+/// need it before Domus opens its first connection.
+pub fn init_crypto() {
+    let _ = ring::default_provider().install_default();
+}
+
 impl Endpoint {
     pub fn new(address: &str, pin: Option<&str>) -> Result<Endpoint, NetError> {
         let (tls, base) = parse_address(address)?;
