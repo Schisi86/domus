@@ -5,6 +5,11 @@ name: macOS installer
 
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: "GitHub-Mac (macos-15-intel, macos-latest, macos-15, …)"
+        required: false
+        default: macos-15-intel
   push:
     tags: ["v*"]
 
@@ -14,7 +19,8 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-latest
+    # Intel runners are usually free sooner than arm64 ones; the .dmg is universal either way.
+    runs-on: ${{ inputs.runner || 'macos-15-intel' }}
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
