@@ -5,5 +5,14 @@
     "iOS": {
       "minimumSystemVersion": "15.0"
     }
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "url": "index.html",
+        "title": "Domus"
+      }
+    ]
   }
 }

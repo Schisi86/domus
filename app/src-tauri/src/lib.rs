@@ -255,7 +255,11 @@ pub fn run() {
             app.manage(store);
             #[cfg(target_os = "android")]
             app.manage(host::HostManager::load(dir.clone(), initial.host_autostart));
-            WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into())).build()?;
+            // iOS gets its window from tauri.ios.conf.json; Android creates it here.
+            if app.get_webview_window("main").is_none() {
+                WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into())).build()?;
+            }
+            tracing::info!("main window ready");
             #[cfg(target_os = "android")]
             if initial.hosts_autostart {
                 spawn_host_autostart(app.handle().clone());

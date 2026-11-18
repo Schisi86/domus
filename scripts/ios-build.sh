@@ -89,6 +89,10 @@ xcrun simctl install "$DEV" "$APP"
 xcrun simctl launch "$DEV" "$BUNDLE"
 sleep 30
 xcrun simctl io "$DEV" screenshot "$OUT/ios-1-welcome.png"
+xcrun simctl spawn "$DEV" launchctl list | grep -i domus > "$OUT/running-1.txt" || echo "not running" > "$OUT/running-1.txt"
+xcrun simctl spawn "$DEV" log show --last 2m --style compact --predicate 'process == "Domus"' > "$OUT/syslog-1.txt" 2>&1 || true
+ls -t "$HOME"/Library/Logs/DiagnosticReports/ 2>/dev/null | head -20 > "$OUT/crash-list.txt"
+for f in "$HOME"/Library/Logs/DiagnosticReports/Domus*; do [ -f "$f" ] && cp "$f" "$OUT/"; done
 DATA=$(xcrun simctl get_app_container "$DEV" "$BUNDLE" data)
 echo "data container: $DATA"
 find "$DATA" -maxdepth 6 \( -name logs -o -name client.json -o -name "*.log" \) | tee "$OUT/paths.txt"
@@ -104,6 +108,8 @@ JSON
 xcrun simctl launch "$DEV" "$BUNDLE"
 sleep 30
 xcrun simctl io "$DEV" screenshot "$OUT/ios-2-channels.png"
+xcrun simctl spawn "$DEV" launchctl list | grep -i domus > "$OUT/running-2.txt" || echo "not running" > "$OUT/running-2.txt"
+xcrun simctl spawn "$DEV" log show --last 2m --style compact --predicate 'process == "Domus"' > "$OUT/syslog-2.txt" 2>&1 || true
 cp "$APPDIR/client.json" "$OUT/client-after.json" 2>/dev/null
 find "$APPDIR/logs" -type f -exec tail -60 {} \; > "$OUT/app.log" 2>/dev/null
 kill $VITEPID 2>/dev/null
