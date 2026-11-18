@@ -2950,6 +2950,8 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tokio",
  "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
  "turn",
  "webrtc-util",
  "windows-sys 0.61.2",

@@ -16,15 +16,18 @@
 mod android;
 #[cfg(desktop)]
 mod capture_bar;
+#[cfg(not(target_os = "ios"))]
 mod host;
 #[cfg(desktop)]
 mod ink;
 mod local;
 mod net;
+#[cfg(not(target_os = "ios"))]
 mod reach;
 #[cfg(desktop)]
 mod remotectl;
 mod store;
+#[cfg(not(target_os = "ios"))]
 mod tunnel;
 
 use std::path::PathBuf;
@@ -132,6 +135,7 @@ async fn quit_app(app: AppHandle) {
 }
 
 async fn shutdown_and_exit(app: &AppHandle) {
+    #[cfg(not(target_os = "ios"))]
     if let Some(h) = app.try_state::<host::HostManager>() {
         h.stop_all().await;
     }
@@ -177,17 +181,11 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
+/// Commands shared by the phone apps.
 #[cfg(mobile)]
-#[tauri::mobile_entry_point]
-pub fn run() {
-    let result = tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_notification::init())
-        .plugin(android::init())
-        .manage(net::NetState::default())
-        .manage(Flags { background: false })
-        .invoke_handler(tauri::generate_handler![
+macro_rules! mobile_commands {
+    ($($extra:path),* $(,)?) => {
+        tauri::generate_handler![
             app_info,
             client_log,
             open_folder,
@@ -204,41 +202,66 @@ pub fn run() {
             local::file_save_begin,
             local::file_save_chunk,
             local::file_save_end,
-            host::host_list,
-            host::host_status,
-            host::host_create,
-            host::host_remove,
-            host::host_rename,
-            host::host_set_autostart,
-            host::host_set_relay,
-            host::host_config,
-            host::host_config_save,
-            host::host_config_reset,
-            host::host_start,
-            host::host_stop,
-            host::host_restart,
-            host::host_setup_done,
-            reach::firewall_check,
-            reach::firewall_open,
             store::config_load,
             store::config_save,
-        ])
+            $($extra),*
+        ]
+    };
+}
+
+#[cfg(mobile)]
+#[tauri::mobile_entry_point]
+pub fn run() {
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(android::init())
+        .manage(net::NetState::default())
+        .manage(Flags { background: false });
+    // Android hosts servers (kept alive by a foreground service); iOS stops
+    // apps in the background, so the iOS app is a client only.
+    #[cfg(target_os = "android")]
+    let builder = builder.invoke_handler(mobile_commands![
+        host::host_list,
+        host::host_status,
+        host::host_create,
+        host::host_remove,
+        host::host_rename,
+        host::host_set_autostart,
+        host::host_set_relay,
+        host::host_config,
+        host::host_config_save,
+        host::host_config_reset,
+        host::host_start,
+        host::host_stop,
+        host::host_restart,
+        host::host_setup_done,
+        reach::firewall_check,
+        reach::firewall_open,
+    ]);
+    #[cfg(target_os = "ios")]
+    let builder = builder.invoke_handler(mobile_commands![]);
+    let result = builder
         .setup(|app| {
             // The private app folder (only Domus can read it).
             let dir = app.path().app_data_dir()?;
             let _ = std::fs::create_dir_all(&dir);
             let _ = APP_DIR.set(dir.clone());
-            // Same log setup as the desktop (also feeds the server log view).
-            std::mem::forget(nexus_server::logbuf::init(Some(&dir.join("logs")), "domus", "info", 5, false));
-            tracing::info!(version = env!("CARGO_PKG_VERSION"), "Domus (Android) starting");
+            init_mobile_log(&dir.join("logs"));
+            tracing::info!(version = env!("CARGO_PKG_VERSION"), os = std::env::consts::OS, "Domus (mobile) starting");
             let store = store::ConfigStore { path: dir.join("client.json") };
             let (initial, _) = store.load();
             app.manage(store);
+            #[cfg(target_os = "android")]
             app.manage(host::HostManager::load(dir.clone(), initial.host_autostart));
             WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into())).build()?;
+            #[cfg(target_os = "android")]
             if initial.hosts_autostart {
                 spawn_host_autostart(app.handle().clone());
             }
+            #[cfg(target_os = "ios")]
+            let _ = initial;
             Ok(())
         })
         .run(tauri::generate_context!());
@@ -247,6 +270,33 @@ pub fn run() {
     }
 }
 
+/// Android: the server crate's log setup (also feeds the server log view).
+#[cfg(target_os = "android")]
+fn init_mobile_log(dir: &std::path::Path) {
+    std::mem::forget(nexus_server::logbuf::init(Some(dir), "domus", "info", 5, false));
+}
+
+/// iOS: daily log files in the app folder (the server crate is not built there).
+#[cfg(target_os = "ios")]
+fn init_mobile_log(dir: &std::path::Path) {
+    use tracing_subscriber::prelude::*;
+    let _ = std::fs::create_dir_all(dir);
+    let Ok(appender) = tracing_appender::rolling::Builder::new()
+        .rotation(tracing_appender::rolling::Rotation::DAILY)
+        .filename_prefix("domus")
+        .filename_suffix("log")
+        .max_log_files(5)
+        .build(dir)
+    else {
+        return;
+    };
+    let _ = tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new("info"))
+        .with(tracing_subscriber::fmt::layer().with_writer(std::sync::Mutex::new(appender)).with_ansi(false))
+        .try_init();
+}
+
+#[cfg(not(target_os = "ios"))]
 /// Starts the hosted servers marked for autostart; retries a few times because
 /// the network may not be ready yet right after start-up.
 fn spawn_host_autostart(handle: AppHandle) {
