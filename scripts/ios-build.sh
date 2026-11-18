@@ -71,17 +71,22 @@ xcrun simctl boot "$DEV" || true
 xcrun simctl bootstatus "$DEV" -b
 xcrun simctl status_bar "$DEV" override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4 || true
 
-# `tauri ios dev` builds for the simulator, installs the app and starts it
-# (the UI comes from the Vite dev server – the same code as the release build).
+# `tauri ios dev` builds the debug app for the simulator (the Rust build
+# phase needs the Tauri CLI running). Its own install step then tries to
+# archive and fails without a development team – the built .app is used directly.
 cd "$ROOT/app"
-npx tauri ios dev "$NAME" --no-watch > "$OUT/build-sim.log" 2>&1 &
-DEVPID=$!
-BUNDLE=org.domus.app
-for i in $(seq 1 240); do
-  if xcrun simctl get_app_container "$DEV" "$BUNDLE" data >/dev/null 2>&1 && grep -qiE "launch|running" "$OUT/build-sim.log"; then break; fi
-  kill -0 $DEVPID 2>/dev/null || { echo "tauri ios dev ended"; tail -60 "$OUT/build-sim.log"; exit 4; }
-  sleep 5
-done
+npx tauri ios dev "$NAME" --no-watch > "$OUT/build-sim.log" 2>&1 || true
+APP=$(ls -d "$HOME"/Library/Developer/Xcode/DerivedData/*/Build/Products/debug-iphonesimulator/*.app 2>/dev/null | head -1)
+echo "simulator app: ${APP:-none}"
+[ -n "$APP" ] || { tail -60 "$OUT/build-sim.log"; exit 4; }
+lipo -info "$APP/$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Info.plist")" || true
+# The debug app loads its UI from the Vite dev server.
+npm run dev -- --port 5173 --strictPort > "$OUT/vite.log" 2>&1 &
+VITEPID=$!
+for i in $(seq 1 60); do curl -s -o /dev/null http://localhost:5173 && break; sleep 1; done
+BUNDLE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist")
+xcrun simctl install "$DEV" "$APP"
+xcrun simctl launch "$DEV" "$BUNDLE"
 sleep 30
 xcrun simctl io "$DEV" screenshot "$OUT/ios-1-welcome.png"
 DATA=$(xcrun simctl get_app_container "$DEV" "$BUNDLE" data)
@@ -101,5 +106,5 @@ sleep 30
 xcrun simctl io "$DEV" screenshot "$OUT/ios-2-channels.png"
 cp "$APPDIR/client.json" "$OUT/client-after.json" 2>/dev/null
 find "$APPDIR/logs" -type f -exec tail -60 {} \; > "$OUT/app.log" 2>/dev/null
-kill $DEVPID 2>/dev/null
+kill $VITEPID 2>/dev/null
 echo "done"
