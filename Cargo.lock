@@ -2935,6 +2935,7 @@ dependencies = [
  "igd-next",
  "nexus-net",
  "nexus-server",
+ "objc2",
  "ring",
  "rusqlite",
  "security-framework",

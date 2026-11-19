@@ -108,6 +108,8 @@ JSON
 xcrun simctl launch "$DEV" "$BUNDLE"
 sleep 30
 xcrun simctl io "$DEV" screenshot "$OUT/ios-2-channels.png"
+sleep 20
+xcrun simctl io "$DEV" screenshot "$OUT/ios-3-channels-later.png"
 xcrun simctl spawn "$DEV" launchctl list | grep -i domus > "$OUT/running-2.txt" || echo "not running" > "$OUT/running-2.txt"
 xcrun simctl spawn "$DEV" log show --last 2m --style compact --predicate 'process == "Domus"' > "$OUT/syslog-2.txt" 2>&1 || true
 cp "$APPDIR/client.json" "$OUT/client-after.json" 2>/dev/null

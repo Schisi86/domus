@@ -260,6 +260,10 @@ pub fn run() {
             if app.get_webview_window("main").is_none() {
                 WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into())).build()?;
             }
+            #[cfg(target_os = "ios")]
+            if let Some(w) = app.get_webview_window("main") {
+                ios_fill_screen(&w);
+            }
             tracing::info!("main window ready");
             #[cfg(target_os = "android")]
             if initial.hosts_autostart {
@@ -279,6 +283,35 @@ pub fn run() {
 #[cfg(target_os = "android")]
 fn init_mobile_log(dir: &std::path::Path) {
     std::mem::forget(nexus_server::logbuf::init(Some(dir), "domus", "info", 5, false));
+}
+
+/// iOS: the web view covers the whole screen (no automatic safe-area insets –
+/// the page handles them with `env(safe-area-inset-*)`) and everything behind
+/// the page is the app's dark background instead of white.
+#[cfg(target_os = "ios")]
+fn ios_fill_screen(win: &tauri::WebviewWindow) {
+    let res = win.with_webview(|wv| unsafe {
+        use objc2::runtime::{AnyClass, AnyObject, Bool};
+        use objc2::msg_send;
+        let wk = wv.inner() as *mut AnyObject;
+        let Some(wk) = wk.as_ref() else { return };
+        let Some(ui_color) = AnyClass::get(c"UIColor") else { return };
+        // #07160f – the darkest tone of the default theme.
+        let color: *mut AnyObject = msg_send![ui_color, colorWithRed: 7.0f64 / 255.0, green: 22.0f64 / 255.0, blue: 15.0f64 / 255.0, alpha: 1.0f64];
+        let Some(color) = color.as_ref() else { return };
+        let _: () = msg_send![wk, setOpaque: Bool::NO];
+        let _: () = msg_send![wk, setBackgroundColor: color];
+        let _: () = msg_send![wk, setUnderPageBackgroundColor: color];
+        let sv: *mut AnyObject = msg_send![wk, scrollView];
+        if let Some(sv) = sv.as_ref() {
+            let _: () = msg_send![sv, setBackgroundColor: color];
+            // UIScrollViewContentInsetAdjustmentNever
+            let _: () = msg_send![sv, setContentInsetAdjustmentBehavior: 2isize];
+        }
+    });
+    if let Err(e) = res {
+        tracing::warn!(error = %e, "web view setup failed");
+    }
 }
 
 /// iOS: daily log files in the app folder (the server crate is not built there).
