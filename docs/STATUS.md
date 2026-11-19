@@ -86,7 +86,7 @@ Legende: ✅ implementiert und getestet · 🟡 implementiert, nur teilweise/man
 | Auslieferung als **unsignierte `.ipa`**, Installation per AltStore/Sideloadly mit eigener Apple-ID (kostenlos: 7 Tage gültig, wird automatisch erneuert) | – (Apple-Vorgabe; App Store/TestFlight bräuchten ein Entwicklerkonto) |
 | Nicht auf iOS: Server hosten (iOS beendet Apps im Hintergrund), eigenen Bildschirm teilen (bräuchte eine ReplayKit-Erweiterung), Fernsteuerung. Anrufe können im Hintergrund von iOS beendet werden | – |
 | Behoben beim iOS-Test: Absturz beim Start, weil Tauris Entwicklungs-Proxy vor Domus' TLS-Einrichtung lief (jetzt beim Start für alle Plattformen) | ✅ im Simulator bestätigt |
-| Weißer Streifen unter dem Inhalt (durchscheinender Hintergrund, Höhe an der Tastatur ausgerichtet) | 🟡 im Code behoben, aber **nicht mehr gebaut**: Die GitHub-Mac-Minuten des privaten Repositorys waren aufgebraucht. Die ausgelieferte `Domus_1.0.2_ios_unsigned.ipa` zeigt den Streifen noch |
+| Behoben beim iOS-Test: weißer Streifen unten (die WebView rückte den Inhalt um die sicheren Ränder ein und zeigte darunter ihren weißen Hintergrund) – die WebView füllt jetzt den ganzen Bildschirm mit dunklem Hintergrund, die Ränder regelt die Oberfläche selbst | ✅ im Simulator bestätigt (Screenshots in TESTING.md beschrieben) |
 
 ### macOS (neu in 1.0.2)
 | Funktion | Stand |
