@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Domus – selbst hostbare Discord-Alternative für Windows und Android</title>
-<meta name="description" content="Domus: schlanke, selbst hostbare Kommunikationsplattform für Windows und Android. Text, Sprache, Video, Bildschirm teilen, Fernsteuerung, Direktversand ohne Dateilimit und verschlüsselte Direktnachrichten – auf deinem eigenen Server. Keine Cloud, keine Werbung. Von Christian Schiessl.">
+<title>Domus – selbst hostbare Discord-Alternative für Windows, Mac, Android und iPhone</title>
+<meta name="description" content="Domus: schlanke, selbst hostbare Kommunikationsplattform für Windows, macOS, Android und iPhone. Text, Sprache, Video, Bildschirm teilen, Fernsteuerung, Direktversand ohne Dateilimit und verschlüsselte Direktnachrichten – auf deinem eigenen Server. Keine Cloud, keine Werbung. Von Christian Schiessl.">
 <meta name="author" content="Christian Schiessl">
 <meta name="theme-color" content="#1a0f33">
 <link rel="icon" type="image/png" href="favicon.png">
@@ -20,11 +20,11 @@
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "Domus",
-  "operatingSystem": "Windows 10, Windows 11 (x64)",
+  "operatingSystem": "Windows 10, Windows 11 (x64), macOS 11+, Android 8+, iOS 15+",
   "applicationCategory": "CommunicationApplication",
-  "softwareVersion": "1.0.1",
+  "softwareVersion": "1.0.2",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-  "downloadUrl": "https://domus-talk.netlify.app/download/Domus_1.0.1_x64-setup.exe",
+  "downloadUrl": ["https://domus-talk.netlify.app/download/Domus_1.0.2_x64-setup.exe", "https://domus-talk.netlify.app/download/Domus_1.0.2_universal.dmg", "https://domus-talk.netlify.app/download/Domus_1.0.2_android.apk", "https://domus-talk.netlify.app/download/Domus_1.0.2_ios_unsigned.ipa"],
   "image": "https://domus-talk.netlify.app/assets/logo.png",
   "screenshot": "https://domus-talk.netlify.app/assets/shots/rc-control.jpg",
   "license": "https://opensource.org/licenses/MIT",
@@ -360,6 +360,7 @@ footer a:hover { color: var(--text); }
   <defs>
     <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
     <symbol id="i-windows" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.4v7.1H3zM11.5 4.3 21 3v8.5h-9.5zM3 12.5h7.5v7.1L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></symbol>
+    <symbol id="i-apple" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.7c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.1-1.2 2.9-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.4-1-2.4-3.8zM14 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.1-.6 2.8-1.4z"/></symbol>
     <symbol id="i-android" viewBox="0 0 24 24" fill="currentColor"><path d="M6 9.5h12V17a1.6 1.6 0 0 1-1.6 1.6h-.9V21a1.4 1.4 0 0 1-2.8 0v-2.4h-1.4V21a1.4 1.4 0 0 1-2.8 0v-2.4h-.9A1.6 1.6 0 0 1 6 17zM3.6 9.6a1.4 1.4 0 0 1 2.8 0v5.2a1.4 1.4 0 0 1-2.8 0zm14 0a1.4 1.4 0 0 1 2.8 0v5.2a1.4 1.4 0 0 1-2.8 0zM6.2 8.6a5.9 5.9 0 0 1 3-4.3l-1-1.7a.4.4 0 0 1 .7-.4l1 1.8a6.4 6.4 0 0 1 4.2 0l1-1.8a.4.4 0 1 1 .7.4l-1 1.7a5.9 5.9 0 0 1 3 4.3zM9.6 6.6a.7.7 0 1 0 0 1.4.7.7 0 0 0 0-1.4zm4.8 0a.7.7 0 1 0 0 1.4.7.7 0 0 0 0-1.4z"/></symbol>
     <symbol id="i-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></symbol>
@@ -401,16 +402,18 @@ footer a:hover { color: var(--text); }
   <section class="hero">
     <div class="wrap">
       <div class="hero-logo"><img src="assets/logo.png" alt="Domus-Logo: ein Haus mit Kopfhörern" width="128" height="128"></div>
-      <a class="pill" href="#android"><b>NEU · 1.0.1</b>Domus fürs Handy – Profil per QR-Code mitnehmen →</a>
+      <a class="pill" href="#android"><b>NEU · 1.0.2</b>Jetzt auch für Mac und iPhone – und Server hosten am Android-Handy →</a>
       <h1>Deine Community. <em>Dein Server.</em></h1>
-      <p class="lead"><b>Domus</b> – lateinisch „Zuhause“ – ist die schlanke Alternative zu Discord für Windows und Android: Text, Sprache, Video und Bildschirm – auf einem Server, der dir gehört. Per Klick in der App gestartet. Keine Cloud, keine Werbung, kein Tracking.</p>
+      <p class="lead"><b>Domus</b> – lateinisch „Zuhause“ – ist die schlanke Alternative zu Discord für Windows, Mac, Android und iPhone: Text, Sprache, Video und Bildschirm – auf einem Server, der dir gehört. Per Klick in der App gestartet. Keine Cloud, keine Werbung, kein Tracking.</p>
       <div class="hero-actions">
-        <a class="btn primary" href="download/Domus_1.0.1_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
-        <a class="btn" href="download/Domus_1.0.1_android.apk" download><svg><use href="#i-android"/></svg>Android-App (APK)</a>
+        <a class="btn primary" href="download/Domus_1.0.2_x64-setup.exe" download><svg><use href="#i-windows"/></svg>Für Windows herunterladen</a>
+        <a class="btn" href="download/Domus_1.0.2_universal.dmg" download><svg><use href="#i-apple"/></svg>macOS</a>
+        <a class="btn" href="download/Domus_1.0.2_android.apk" download><svg><use href="#i-android"/></svg>Android (APK)</a>
+        <a class="btn" href="#download-ios"><svg><use href="#i-apple"/></svg>iPhone</a>
       </div>
       <div class="hero-meta">
         <span><svg><use href="#i-check"/></svg>Installer nur <b data-size>7,7&nbsp;MB</b></span>
-        <span><svg><use href="#i-check"/></svg>Windows 10 &amp; 11 · Android 8+</span>
+        <span><svg><use href="#i-check"/></svg>Windows 10/11 · macOS 11+ · Android 8+ · iOS 15+</span>
         <span><svg><use href="#i-check"/></svg>Kostenlos · MIT-Lizenz</span>
         <span><svg><use href="#i-check"/></svg>Kein Konto bei Dritten</span>
       </div>
@@ -439,31 +442,34 @@ footer a:hover { color: var(--text); }
     <div class="wrap">
       <div class="droid">
         <div class="reveal">
-          <div class="kicker">Neu in 1.0.1 · Android</div>
+          <div class="kicker">Neu in 1.0.2 · Android &amp; iPhone</div>
           <h2>Dein Zuhause <em>in der Hosentasche</em></h2>
-          <p>Domus gibt es jetzt auch fürs Handy – mit einer eigenen Oberfläche für den Daumen statt einer gequetschten Desktop-Ansicht. Text, Sprache, Video, Direktnachrichten mit Verschlüsselung, Soundboard und Umfragen sind dabei.</p>
+          <p>Domus gibt es fürs Android-Handy und jetzt auch fürs iPhone – mit einer eigenen Oberfläche für den Daumen statt einer gequetschten Desktop-Ansicht. Text, Sprache, Video, Direktnachrichten mit Verschlüsselung, Soundboard und Umfragen sind dabei. Mit 1.0.2 wird das Android-Handy selbst zum Server.</p>
           <ul class="droid-list">
             <li><svg><use href="#i-qr"/></svg><div><b>Profil per QR-Code mitnehmen</b><span>Am PC „Profil übertragen“, mit dem Handy scannen – alle Server sind da. Und umgekehrt. Ohne Passwort: Jeder Code gilt 3 Minuten und nur einmal, jedes Gerät bekommt eine eigene Sitzung.</span></div></li>
+            <li><svg><use href="#i-server"/></svg><div><b>Server hosten am Android-Handy</b><span>Dieselbe Hosting-Zentrale wie am PC – mit Einladungs- und Internet-Link. Ein Hintergrunddienst hält den Server am Laufen, auch wenn du die App verlässt.</span></div></li>
+            <li><svg><use href="#i-screen"/></svg><div><b>Bildschirm teilen vom Android-Handy</b><span>Über den Freigabedialog von Android geht dein Handybildschirm in den Anruf; Anrufe laufen im Hintergrund weiter.</span></div></li>
             <li><svg><use href="#i-chat"/></svg><div><b>Gemacht für den Daumen</b><span>Kanalliste und Chat im Wechsel, Zurück-Taste, Wischen zum Antworten, Menüs von unten, große Tasten.</span></div></li>
             <li><svg><use href="#i-shield"/></svg><div><b>Geräte im Blick</b><span>Einstellungen › Geräte zeigt, wo du angemeldet bist – ein verlorenes Handy meldest du vom PC aus ab.</span></div></li>
           </ul>
           <div class="droid-actions">
-            <a class="btn primary" href="download/Domus_1.0.1_android.apk" download><svg><use href="#i-android"/></svg>APK herunterladen</a>
+            <a class="btn primary" href="download/Domus_1.0.2_android.apk" download><svg><use href="#i-android"/></svg>APK herunterladen</a>
+            <a class="btn" href="#download-ios"><svg><use href="#i-apple"/></svg>iPhone-App</a>
             <a class="btn" href="#download">Alle Downloads</a>
           </div>
-          <p class="droid-note">Android 8 oder neuer · 25,5 MB · Installation außerhalb des Play Stores („Unbekannte Apps installieren“ einmal erlauben). Das Handy ist reiner Client: Server hosten und den eigenen Bildschirm teilen gehen nur am PC.</p>
+          <p class="droid-note">Android 8 oder neuer · 39 MB · Installation außerhalb des Play Stores („Unbekannte Apps installieren“ einmal erlauben). iPhone/iPad ab iOS 15 · Installation per AltStore oder Sideloadly mit deiner Apple-ID – das iPhone ist reiner Client (kein Server hosten, kein eigener Bildschirm). <b>Ehrlich:</b> Server hosten und Bildschirm teilen am Android-Handy sind neu und noch nicht auf echten Handys getestet; die iPhone-App lief bisher im iPhone-Simulator, nicht auf einem echten iPhone.</p>
         </div>
         <div class="phones reveal">
-          <div class="phone p1"><img src="assets/shots/phone-nav.jpg" alt="Domus auf dem Handy: Server- und Kanalliste" width="400" height="860" loading="lazy"></div>
+          <div class="phone p1"><img src="assets/shots/iphone-nav.jpg" alt="Domus auf dem iPhone (Simulator): Server- und Kanalliste" width="400" height="860" loading="lazy"></div>
           <div class="phone p2"><img src="assets/shots/phone-chat.jpg" alt="Domus auf dem Handy: Chat" width="400" height="860" loading="lazy"></div>
           <div class="phone p3"><img src="assets/shots/phone-qr.jpg" alt="Profil per QR-Code übertragen" width="400" height="860" loading="lazy"></div>
         </div>
       </div>
       <div class="improve reveal">
-        <div><b>Entwürfe pro Kanal</b><span>Halb geschriebene Nachrichten bleiben beim Kanalwechsel und nach dem Neustart erhalten.</span></div>
-        <div><b>Pause für Benachrichtigungen</b><span>1 Stunde, 8 Stunden oder bis morgen früh – danach geht es von selbst weiter.</span></div>
-        <div><b>Schneller antworten</b><span>Doppelklick am PC, Wischen am Handy. Eigene Schriftgröße für Nachrichten.</span></div>
-        <div><b>Globale Stummschalt-Taste</b><span>Mikrofon im Anruf per Taste umschalten – auch wenn ein Spiel im Vordergrund ist.</span></div>
+        <div><b>Chats archivieren &amp; anheften</b><span>Unterhaltungen ins Archiv schieben oder oben anheften – lange drücken bzw. Rechtsklick.</span></div>
+        <div><b>Chat löschen – nur für dich</b><span>Der Verlauf verschwindet bei dir, die andere Person behält ihn. Dazu ein Suchfeld für viele Chats.</span></div>
+        <div><b>Lesebestätigungen</b><span>„Zugestellt“ → „Gelesen“ in Direktnachrichten – nur wenn beide sie eingeschaltet haben.</span></div>
+        <div><b>Ruhezeiten &amp; Status mit Ablauf</b><span>Täglich z. B. 22–7 Uhr keine Benachrichtigungen; ein Status, der nach 30 Minuten bis einer Woche von selbst verschwindet.</span></div>
       </div>
     </div>
   </section>
@@ -677,7 +683,7 @@ footer a:hover { color: var(--text); }
         <div>
           <h4>Ehrlich gesagt – wo Discord (noch) vorn liegt</h4>
           <ul>
-            <li>Kein riesiges Ökosystem: keine Bots, keine Server-Suche, keine Mobil-App (bisher nur Windows-Client).</li>
+            <li>Kein riesiges Ökosystem: keine Bots, keine Server-Suche, nicht in App Store und Play Store (Android-App als APK, iPhone-App nur per Sideloading).</li>
             <li>Sprachkanäle verbinden Teilnehmer direkt (Mesh) – ideal bis etwa 8 Personen mit Video; sehr große Kanäle sind nicht das Ziel.</li>
             <li>Einladungen über das Internet laufen ohne Router-Einstellungen über einen kostenlosen öffentlichen Tunnel (bore.pub) – ein Dienst eines Dritten ohne Verfügbarkeitsgarantie. Wer das nicht möchte, gibt Ports frei oder mietet einen Server.</li>
             <li>Fernsteuerung, Direktversand, Verschlüsselung und Co. sind frisch: gründlich automatisch getestet, aber noch ohne Langzeiterfahrung vieler Nutzer.</li>
@@ -720,34 +726,45 @@ footer a:hover { color: var(--text); }
       <div class="dl reveal">
         <div class="dl-main">
           <div class="kicker" style="margin:0">Download</div>
-          <h2>Domus 1.0.1 für Windows &amp; Android</h2>
-          <p style="color:var(--muted)">Ein Installer für alles: Client und eingebauter Server. Kostenlos, ohne Werbung, ohne Konto bei Dritten.</p>
+          <h2>Domus 1.0.2 für Windows, Mac, Android &amp; iPhone</h2>
+          <p style="color:var(--muted)">Am PC ein Installer für alles: Client und eingebauter Server. Kostenlos, ohne Werbung, ohne Konto bei Dritten.</p>
           <div class="dl-file">
             <img src="assets/logo.png" alt="" width="44" height="44">
-            <div style="flex:1;min-width:0"><b>Domus_1.0.1_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>7,7</span> MB</small></div>
+            <div style="flex:1;min-width:0"><b>Domus_1.0.2_x64-setup.exe</b><small>Windows 10/11 · 64 Bit · <span data-size>7,7</span> MB</small></div>
           </div>
-          <a class="btn primary" href="download/Domus_1.0.1_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
-          <div class="hash">SHA-256: <span class="mono" id="sha-client">6300f218ebc07386d4b885206e88d3b920012766130f787bfa01aa705589ca05</span></div>
-        </div>
-        <div class="dl-side">
-          <h3>Systemvoraussetzungen</h3>
+          <a class="btn primary" href="download/Domus_1.0.2_x64-setup.exe" download><svg><use href="#i-download"/></svg>Jetzt herunterladen</a>
+          <div class="hash">SHA-256: <span class="mono" id="sha-client">546bd80102385fec581d4e39e2477a579871d503e7de13fc4de4af3285bc0136</span></div>
+          <h3 style="margin-top:22px">Systemvoraussetzungen</h3>
           <ul class="req">
-            <li>Windows 10 oder 11, 64 Bit</li>
-            <li>Microsoft WebView2 (in Windows 11 enthalten, unter Windows 10 meist vorinstalliert)</li>
-            <li>Mikrofon/Kamera optional</li>
+            <li>Windows 10 oder 11, 64 Bit, mit Microsoft WebView2 (in Windows 11 enthalten)</li>
+            <li>macOS 11 oder neuer (Apple Silicon und Intel)</li>
+            <li>Android 8 oder neuer · iPhone/iPad mit iOS 15 oder neuer</li>
             <li>Für einen eigenen Server: freie Ports TCP 7878, UDP 3478 (+ Relay-Bereich)</li>
           </ul>
+          <p class="hash">Der Windows-Installer ist (noch) nicht code-signiert. SmartScreen kann deshalb warnen – „Weitere Informationen“ → „Trotzdem ausführen“. Ein Update installierst du einfach über die vorhandene Version; Server, Konten und Einstellungen bleiben erhalten. Alle Prüfsummen: <a href="download/SHA256SUMS.txt">SHA256SUMS.txt</a></p>
+        </div>
+        <div class="dl-side">
+          <h3>Weitere Plattformen</h3>
           <div class="alt-dl">
-            <div><b>Headless-Server für Windows</b><small>domus-server.exe · <span id="srv-size">7,4</span> MB · ohne Oberfläche</small></div>
+            <div><b>macOS</b><small>Domus_1.0.2_universal.dmg · 19,2 MB · macOS 11+, Apple Silicon &amp; Intel</small></div>
+            <a class="btn small" href="download/Domus_1.0.2_universal.dmg" download><svg><use href="#i-apple"/></svg>.dmg</a>
+          </div>
+          <div class="alt-dl">
+            <div><b>Android-App</b><small>Domus_1.0.2_android.apk · 39 MB · Android 8+ (ARM64, x86_64)</small></div>
+            <a class="btn small" href="download/Domus_1.0.2_android.apk" download><svg><use href="#i-android"/></svg>APK</a>
+          </div>
+          <div class="alt-dl" id="download-ios">
+            <div><b>iPhone &amp; iPad</b><small>Domus_1.0.2_ios_unsigned.ipa · 7,3 MB · iOS 15+ · per Sideloading</small></div>
+            <a class="btn small" href="download/Domus_1.0.2_ios_unsigned.ipa" download><svg><use href="#i-apple"/></svg>.ipa</a>
+          </div>
+          <div class="alt-dl">
+            <div><b>Headless-Server für Windows</b><small>domus-server.exe · <span id="srv-size">7,5</span> MB · ohne Oberfläche</small></div>
             <a class="btn small" href="download/domus-server.exe" download><svg><use href="#i-download"/></svg>Server</a>
           </div>
-          <div class="alt-dl" style="margin-top:12px">
-            <div><b>Android-App</b><small>Domus_1.0.1_android.apk · 25,5 MB · Android 8+ (ARM64, x86_64)</small></div>
-            <a class="btn small" href="download/Domus_1.0.1_android.apk" download><svg><use href="#i-android"/></svg>APK</a>
-          </div>
-          <p class="hash">SHA-256 APK: <span class="mono">b23f15c5e5b0ef6bfe5c38d4420452afa09fb0e82e93c58f085871f3eea84838</span></p>
-          <p class="hash">SHA-256 Server: <span class="mono" id="sha-server">0b97602005390c133dcecf3437cbbed8df12318ed455bc6a549147762e89bd53</span></p>
-          <p class="hash">Hinweis: Der Installer ist (noch) nicht code-signiert. Windows SmartScreen kann deshalb warnen – „Weitere Informationen“ → „Trotzdem ausführen“. Prüfe im Zweifel die Prüfsumme. Ein Update installierst du einfach über die vorhandene Version; Server, Konten und Einstellungen bleiben erhalten. Das APK ist mit einem eigenen Schlüssel signiert; Android fragt beim ersten Mal, ob die Installation aus dieser Quelle erlaubt ist.</p>
+          <p class="hash"><b>Mac:</b> Die App ist nicht von Apple notarisiert. .dmg öffnen und Domus in „Programme“ ziehen. Beim ersten Start meldet macOS, dass die App nicht überprüft werden kann – dann unter <i>Systemeinstellungen › Datenschutz &amp; Sicherheit</i> „Dennoch öffnen“ wählen (bis macOS 14 genügt Rechtsklick auf Domus › „Öffnen“).</p>
+          <p class="hash"><b>iPhone:</b> Apple erlaubt Apps außerhalb des App Stores nur mit Signatur. Die .ipa mit <a href="https://sideloadly.io" target="_blank" rel="noopener">Sideloadly</a> oder <a href="https://altstore.io" target="_blank" rel="noopener">AltStore</a> und deiner eigenen Apple-ID aufs iPhone bringen, dann unter <i>Einstellungen › Allgemein › VPN &amp; Geräteverwaltung</i> vertrauen (ab iOS 16 zusätzlich den Entwicklermodus einschalten). Mit einer kostenlosen Apple-ID gilt die Signatur 7 Tage; AltStore und Sideloadly erneuern sie.</p>
+          <p class="hash"><b>Android:</b> Das APK ist mit einem eigenen Schlüssel signiert; Android fragt beim ersten Mal, ob die Installation aus dieser Quelle erlaubt ist. Ein Update installierst du über die vorhandene App.</p>
+          <p class="hash"><b>Ehrlich:</b> Mac- und iPhone-App sind neu in 1.0.2. Sie wurden auf Apple-Rechnern bei GitHub gebaut und dort getestet (Mac: alle automatischen Tests; iPhone: Start und Anmeldung im Simulator), aber noch nicht auf einem echten Mac oder iPhone ausprobiert.</p>
         </div>
       </div>
     </div>
@@ -784,7 +801,7 @@ footer a:hover { color: var(--text); }
         <details><summary>Warum kann sich niemand verbinden?</summary><p>Fast immer ist es die Windows-Firewall auf dem Server-PC. Öffne in Domus „Server hosten“: Der Verbindungs-Check zeigt, was fehlt, und „Firewall freigeben“ erledigt es mit einer Windows-Bestätigung. Zusätzlich muss der Server laufen und auf „Freunde einladen“ stehen. Freunde außerhalb deines WLANs brauchen den <b>Internet-Link</b> (beginnt mit <code>nexustalk://bore.pub:</code>), nicht den Heimnetz-Link.</p></details>
         <details><summary>Können sich Freunde über das Internet verbinden?</summary><p>Ja – ohne Router-Einstellungen. Bei „Freunde einladen“ baut Domus automatisch einen verschlüsselten Tunnel über das kostenlose öffentliche Relay bore.pub auf und zeigt einen Internet-Link, der für alle funktioniert. Das klappt auch bei Anschlüssen ohne eigene öffentliche IPv4 wie Starlink oder DS-Lite. Das Relay ist ein Dienst eines Dritten ohne Verfügbarkeitsgarantie; der Tunnel lässt sich im Verbindungs-Check abschalten.</p></details>
         <details><summary>Hieß Domus früher anders?</summary><p>Ja – von Version 0.8 bis 0.10 hieß die App <b>NexUs</b>, davor <b>NexusTalk</b>. Der Domus-Installer ersetzt die alte Version automatisch: Server, Konten, Chats, Einstellungen und auch „Mit Windows starten“ bleiben erhalten. Einladungslinks beginnen jetzt mit <code>domus://</code>; alte <code>nexustalk://</code>-Links funktionieren weiter. Wer noch NexUs nutzt, sollte aktualisieren, denn ältere Versionen können die neuen <code>domus://</code>-Links nicht öffnen.</p></details>
-        <details><summary>Gibt es Domus fürs Handy, für Mac oder Linux?</summary><p>Ja, fürs Handy: Seit 1.0.1 gibt es eine Android-App (Android 8+, als APK von dieser Seite). Mit „Profil übertragen“ nimmst du per QR-Code alle Server vom PC mit – und umgekehrt. Am Handy kannst du schreiben, telefonieren, Video nutzen und Bildschirme anderer ansehen; Server hosten und den eigenen Bildschirm teilen geht nur am PC. Eine iPhone-Version gibt es nicht. Der Headless-Server läuft auch unter Linux (aus dem Quellcode); Mac- und Linux-Clients sind noch nicht verfügbar.</p></details>
+        <details><summary>Gibt es Domus fürs Handy, für Mac oder Linux?</summary><p>Ja: für Windows, macOS (ab 11, Apple Silicon und Intel), Android (ab 8, als APK) und seit 1.0.2 auch fürs iPhone/iPad (ab iOS 15, per Sideloading mit AltStore oder Sideloadly). Mit „Profil übertragen“ nimmst du per QR-Code alle Server vom PC mit – und umgekehrt. Am Android-Handy kannst du seit 1.0.2 auch einen Server hosten und deinen Bildschirm teilen; das iPhone ist reiner Client, weil iOS Apps im Hintergrund beendet. Fernsteuerung und Zeichnen auf dem eigenen Bildschirm gibt es nur unter Windows. Der Headless-Server läuft auch unter Linux (aus dem Quellcode); einen Linux-Client gibt es noch nicht.</p></details>
         <details><summary>Wie sicher ist die Übertragung per QR-Code?</summary><p>Der QR-Code enthält kein Passwort und keine Sitzung, sondern pro Server einen Einmal-Code, der 3 Minuten gilt und nur einmal funktioniert. Das neue Gerät bekommt damit eine eigene Anmeldung, die du unter Einstellungen › Geräte jederzeit einzeln abmelden kannst. Zeig den Code nur dir selbst – wer ihn in diesen 3 Minuten abfotografiert, könnte sich einmalig anmelden.</p></details>
         <details><summary>Wie viele Personen passen in einen Sprachkanal?</summary><p>Teilnehmer werden direkt miteinander verbunden. Mit Video sind etwa 8 Personen pro Kanal empfehlenswert, nur mit Sprache auch mehr – abhängig von Bandbreite und Rechner.</p></details>
       </div>

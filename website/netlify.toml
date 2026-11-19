@@ -24,3 +24,13 @@
   for = "/download/*.apk"
   [headers.values]
     Content-Type = "application/vnd.android.package-archive"
+
+[[headers]]
+  for = "/download/*.dmg"
+  [headers.values]
+    Content-Type = "application/x-apple-diskimage"
+
+[[headers]]
+  for = "/download/*.ipa"
+  [headers.values]
+    Content-Type = "application/octet-stream"
