@@ -1,0 +1,129 @@
+# Domus
+
+> Domus ist eine kostenlose, quelloffene (MIT) und selbst hostbare Alternative zu Discord für Windows, macOS, Android und iPhone/iPad. Text-Chat, Sprach- und Videoanrufe, Bildschirmübertragung und Ende-zu-Ende-verschlüsselte Direktnachrichten laufen auf einem eigenen Server, der per Klick in der App startet – ohne Cloud, Werbung und Tracking. Entwickler: Christian Schiessl. Aktuelle Version: 1.0.2 vom 20. November 2026.
+
+Domus (lateinisch „Zuhause“, früher NexUs bzw. NexusTalk) richtet sich an Freundeskreise, Gaming-Gruppen, Vereine und kleine Teams, die ihre Gespräche selbst in der Hand behalten wollen. Die Desktop-App (Rust + Tauri, Installer 7,7 MB) enthält Client und Server; der Server braucht im Leerlauf rund 14 MB RAM.
+
+## Kernfakten
+
+- Preis: kostenlos, keine Abos, keine Werbung, keine Telemetrie
+- Lizenz: MIT, Quellcode: https://github.com/Schisi86/domus
+- Plattformen: Windows 10/11 (x64), macOS 11+ (Apple Silicon und Intel), Android 8+ (APK), iOS/iPadOS 15+ (unsignierte .ipa, Installation per AltStore oder Sideloadly), Headless-Server für Windows und Linux (aus dem Quellcode)
+- Sprachen der App: 15 (u. a. Deutsch, Englisch, Spanisch, Französisch, Türkisch, Russisch, Arabisch mit Rechts-nach-links, Chinesisch, Japanisch, Koreanisch)
+- Designs: 20
+
+## Funktionen
+
+- Text-Chat: Kanäle, Antworten, Reaktionen, Umfragen, Weiterleiten, Markdown, Spoiler, Sprachnachrichten, Volltextsuche
+- Sprach- und Videoanrufe mit Opus, Rauschunterdrückung und Push-to-talk; Teilnehmer werden direkt verbunden (Mesh, mit Video bis etwa 8 Personen empfohlen)
+- Bildschirm teilen mit wählbarer Auflösung (720p bis 4K) und 5–60 FPS, mit Systemton
+- Fernsteuerung eines geteilten Bildschirms, Umschalten mit F8, Passwort oder Bestätigung (nur Windows)
+- Zeichnen und Laserpointer auf geteilten Bildschirmen
+- Direktversand von Dateien ohne Größenlimit von Rechner zu Rechner (beide müssen online sein)
+- Ende-zu-Ende-verschlüsselte Direktnachrichten (ECDH P-256, AES-256-GCM; Anhänge und Metadaten nicht verschlüsselt, nicht extern geprüft)
+- Sofort-Clip der letzten 15–120 Sekunden eines Streams (F9), gemeinsam YouTube schauen
+- Eigene Server per Klick, auch mehrere; Internet-Link über einen Tunnel (bore.pub) ohne Router-Einstellungen, auch bei Starlink oder DS-Lite
+- Funktioniert auch ohne Internet im lokalen Netz
+- Profil per QR-Code aufs Handy übertragen (Einmal-Code, 3 Minuten gültig)
+- Neu in 1.0.2: Mac- und iPhone-App, Server hosten und Bildschirm teilen in der Android-App, Chats archivieren/anheften/für sich löschen, Lesebestätigungen, Ruhezeiten, Status mit Ablaufzeit
+
+## Ehrliche Grenzen
+
+- Keine Bots, keine öffentliche Server-Suche, nicht in App Store oder Play Store
+- Installer nicht code-signiert (Windows SmartScreen) bzw. nicht notarisiert (macOS)
+- Mac- und iPhone-App sowie Hosting/Bildschirmteilen am Android-Handy sind neu und noch nicht auf echten Geräten getestet
+- Der Internet-Tunnel nutzt einen öffentlichen Dienst eines Dritten ohne Verfügbarkeitsgarantie
+
+## Links
+
+- [Projektseite](https://domus-talk.netlify.app/): Funktionen, Vergleich mit Discord, Downloads, FAQ
+- [Downloads und Prüfsummen](https://domus-talk.netlify.app/#download)
+- [Quellcode auf GitHub](https://github.com/Schisi86/domus)
+- [Installationsanleitung](https://github.com/Schisi86/domus/blob/master/docs/INSTALL.md)
+- [Entwickler: Christian Schiessl](https://cjs86.netlify.app)
+
+## Downloads (Version 1.0.2)
+
+| Plattform | Datei | Größe | SHA-256 |
+|---|---|---|---|
+| Windows 10/11 | [Domus_1.0.2_x64-setup.exe](https://domus-talk.netlify.app/download/Domus_1.0.2_x64-setup.exe) | 7,7 MB | `546bd80102385fec581d4e39e2477a579871d503e7de13fc4de4af3285bc0136` |
+| macOS 11+ | [Domus_1.0.2_universal.dmg](https://domus-talk.netlify.app/download/Domus_1.0.2_universal.dmg) | 19,2 MB | `247acef9877f22e91be016afd73e9ab459bd3d7798d6a683956926bc47fc2289` |
+| Android 8+ | [Domus_1.0.2_android.apk](https://domus-talk.netlify.app/download/Domus_1.0.2_android.apk) | 39 MB | `a79d996b4f0f88d1edee5bbf878a3782557069e97206cd30ffe02992ab34aaee` |
+| iOS 15+ (Sideloading) | [Domus_1.0.2_ios_unsigned.ipa](https://domus-talk.netlify.app/download/Domus_1.0.2_ios_unsigned.ipa) | 7,3 MB | `46e8f0b47128b778b76746c75c5adfd507838f603949218420fc8f92ce1fba60` |
+| Headless-Server (Windows) | [domus-server.exe](https://domus-talk.netlify.app/download/domus-server.exe) | 7,5 MB | `a573923671ca034a2511d897bf486d3254554d7a2235175bdbf0c7684c828c75` |
+
+## Domus im Vergleich zu Discord
+
+| Merkmal | Domus | Discord |
+|---|---|---|
+| Wo liegen deine Daten? | Auf deinem PC oder deinem Server | In der Cloud eines US-Unternehmens |
+| Konto | Pro Server, ohne E-Mail oder Telefonnummer | Zentrales Konto, teils Telefon-Verifizierung |
+| Werbung & Upselling | Keine – keine Abo-Stufen | Nitro-Abo, Shop und Hinweise in der App |
+| Tracking / Telemetrie | Keine – die App sendet nichts nach Hause | Umfangreiche Nutzungsanalysen |
+| Dateien senden | Direkt von PC zu PC, ohne Größenlimit | Upload-Limit, größere Dateien nur mit Nitro |
+| Verschlüsselte Textnachrichten | Ende-zu-Ende für Direktnachrichten einschaltbar | Texte nicht Ende-zu-Ende verschlüsselt |
+| Fernsteuerung | Eingebaut, mit Passwort oder Bestätigung | Nicht vorhanden |
+| Bildschirmübertragung | Hohe Auflösung und 60 FPS für alle | Höhere Qualität nur mit Nitro |
+| Funktioniert ohne Internet | Ja – im LAN, auf LAN-Partys, im Verein | Nein, immer über Discords Server |
+| Regeln & Moderation | Du bestimmst – niemand sperrt deinen Server | Nutzungsbedingungen der Plattform gelten |
+| Quelloffen | MIT-Lizenz, nachprüfbar auf GitHub | Proprietär |
+
+## Eigenen Server einrichten
+
+1. Domus installieren, die Server-Schaltfläche unten links anklicken, Namen eingeben, „Erstellen & starten“.
+2. Passwort für das Inhaberkonto festlegen; bei „Freunde einladen“ gibt Domus die Firewall frei und erstellt einen Internet-Link.
+3. Den dauerhaften Einladungslink (domus://…) an Freunde schicken.
+
+## Häufige Fragen
+
+### Was ist Domus?
+
+Domus ist eine kostenlose, quelloffene Kommunikations-App mit Text-Chat, Sprach- und Videoanrufen, Bildschirmübertragung und Direktnachrichten – eine selbst hostbare Alternative zu Discord. Der Server läuft auf deinem eigenen Rechner oder Server statt in einer fremden Cloud. Domus gibt es für Windows, macOS, Android und iPhone/iPad.
+
+### Ist Domus wirklich kostenlos?
+
+Ja. Keine Abos, keine Premium-Stufen, keine Werbung. Der Quellcode steht unter der MIT-Lizenz auf GitHub. Freiwillige Spenden helfen bei der Weiterentwicklung.
+
+### Brauche ich einen eigenen Server?
+
+Nein – du kannst dich auch mit dem Server eines Freundes verbinden. Wer selbst hosten möchte, startet den Server direkt in der App; ein separater Rechner ist nicht nötig. Alle eigenen Server starten auf Wunsch automatisch mit Domus.
+
+### Gibt es Domus fürs Handy, für Mac oder Linux?
+
+Ja: für Windows, macOS (ab 11, Apple Silicon und Intel), Android (ab 8, als APK) und seit 1.0.2 auch fürs iPhone und iPad (ab iOS 15, per Sideloading mit AltStore oder Sideloadly). Mit „Profil übertragen“ nimmst du per QR-Code alle Server vom PC mit – und umgekehrt. Am Android-Handy kannst du seit 1.0.2 auch einen Server hosten und deinen Bildschirm teilen; das iPhone ist reiner Client, weil iOS Apps im Hintergrund beendet. Fernsteuerung und Zeichnen auf dem eigenen Bildschirm gibt es nur unter Windows. Der Headless-Server läuft auch unter Linux (aus dem Quellcode); einen Linux-Client gibt es noch nicht.
+
+### Können sich Freunde über das Internet verbinden?
+
+Ja – ohne Router-Einstellungen. Bei „Freunde einladen“ baut Domus automatisch einen verschlüsselten Tunnel über das kostenlose öffentliche Relay bore.pub auf und zeigt einen Internet-Link, der für alle funktioniert. Das klappt auch bei Anschlüssen ohne eigene öffentliche IPv4 wie Starlink oder DS-Lite. Das Relay ist ein Dienst eines Dritten ohne Verfügbarkeitsgarantie; der Tunnel lässt sich im Verbindungs-Check abschalten.
+
+### Warum kann sich niemand verbinden?
+
+Fast immer ist es die Windows-Firewall auf dem Server-PC. Öffne in Domus „Server hosten“: Der Verbindungs-Check zeigt, was fehlt, und „Firewall freigeben“ erledigt es mit einer Windows-Bestätigung. Zusätzlich muss der Server laufen und auf „Freunde einladen“ stehen. Freunde außerhalb deines WLANs brauchen den Internet-Link, nicht den Heimnetz-Link.
+
+### Wie sicher ist die Fernsteuerung?
+
+Sie funktioniert nur, solange du deinen ganzen Bildschirm teilst und sie ausdrücklich eingeschaltet hast. Entweder verlangst du ein Passwort (fünf Fehlversuche sperren fünf Minuten) oder du bestätigst jede Anfrage einzeln. Während jemand steuert, siehst du einen deutlichen Hinweis und beendest alles sofort mit F8. Trotzdem gilt: Wer steuert, kann deinen PC bedienen – gib die Steuerung nur an Menschen, denen du vertraust.
+
+### Was bedeutet „Ende-zu-Ende-verschlüsselt“ bei Domus genau?
+
+Für eingeschaltete Direktnachrichten wird der Text auf deinem Gerät verschlüsselt und erst beim Empfänger wieder entschlüsselt; der Server speichert nur das Chiffrat. Nicht verschlüsselt sind Anhänge, Umfragen, Reaktionen und Metadaten (wer wann mit wem schreibt). Kanalnachrichten sind per TLS auf dem Weg geschützt, liegen auf dem Server aber lesbar. Die Schlüssel sind langlebig, und die Umsetzung wurde nicht von Externen geprüft.
+
+### Wie groß dürfen Dateien sein?
+
+Für Uploads in Kanäle gilt das Limit des jeweiligen Servers (vom Betreiber einstellbar). In Direktnachrichten gibt es zusätzlich den Direktversand: Die Datei geht ohne Größenlimit direkt von deinem Rechner zum Empfänger, solange ihr beide online seid.
+
+### Wie viele Personen passen in einen Sprachkanal?
+
+Teilnehmer werden direkt miteinander verbunden. Mit Video sind etwa 8 Personen pro Kanal empfehlenswert, nur mit Sprache auch mehr – abhängig von Bandbreite und Rechner.
+
+### Warum warnen Windows oder macOS beim ersten Start?
+
+Domus ist (noch) nicht mit einem kostenpflichtigen Zertifikat signiert bzw. nicht von Apple notarisiert. Deshalb zeigt Windows SmartScreen einen Hinweis und macOS fragt beim ersten Start nach. Die Anleitung steht oben im Download-Bereich; mit der SHA-256-Prüfsumme kannst du sicherstellen, dass die Datei unverändert ist.
+
+### Wie sicher ist die Übertragung per QR-Code?
+
+Der QR-Code enthält kein Passwort und keine Sitzung, sondern pro Server einen Einmal-Code, der 3 Minuten gilt und nur einmal funktioniert. Das neue Gerät bekommt damit eine eigene Anmeldung, die du unter Einstellungen › Geräte jederzeit einzeln abmelden kannst. Zeig den Code nur dir selbst.
+
+### Hieß Domus früher anders?
+
+Ja – von Version 0.8 bis 0.10 hieß die App NexUs, davor NexusTalk. Der Domus-Installer ersetzt die alte Version automatisch: Server, Konten, Chats und Einstellungen bleiben erhalten. Einladungslinks beginnen jetzt mit domus://; alte nexustalk://-Links funktionieren weiter.

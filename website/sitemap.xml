@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://domus-talk.netlify.app/</loc><lastmod>2026-11-12</lastmod></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://domus-talk.netlify.app/</loc>
+    <lastmod>2026-11-21</lastmod>
+    <image:image><image:loc>https://domus-talk.netlify.app/assets/og.png</image:loc></image:image>
+    <image:image><image:loc>https://domus-talk.netlify.app/assets/img/rc-control-l.webp</image:loc></image:image>
+    <image:image><image:loc>https://domus-talk.netlify.app/assets/img/ink-l.webp</image:loc></image:image>
+    <image:image><image:loc>https://domus-talk.netlify.app/assets/img/dm-e2e-l.webp</image:loc></image:image>
+    <image:image><image:loc>https://domus-talk.netlify.app/assets/img/host-two-l.webp</image:loc></image:image>
+    <image:image><image:loc>https://domus-talk.netlify.app/assets/img/phone-chat-l.webp</image:loc></image:image>
+    <image:image><image:loc>https://domus-talk.netlify.app/assets/img/iphone-nav-l.webp</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://domus-talk.netlify.app/llms.txt</loc>
+    <lastmod>2026-11-21</lastmod>
+  </url>
 </urlset>

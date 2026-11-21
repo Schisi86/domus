@@ -1,0 +1,44 @@
+# Domus
+
+> Domus ist eine kostenlose, quelloffene (MIT) und selbst hostbare Alternative zu Discord für Windows, macOS, Android und iPhone/iPad. Text-Chat, Sprach- und Videoanrufe, Bildschirmübertragung und Ende-zu-Ende-verschlüsselte Direktnachrichten laufen auf einem eigenen Server, der per Klick in der App startet – ohne Cloud, Werbung und Tracking. Entwickler: Christian Schiessl. Aktuelle Version: 1.0.2 vom 20. November 2026.
+
+Domus (lateinisch „Zuhause“, früher NexUs bzw. NexusTalk) richtet sich an Freundeskreise, Gaming-Gruppen, Vereine und kleine Teams, die ihre Gespräche selbst in der Hand behalten wollen. Die Desktop-App (Rust + Tauri, Installer 7,7 MB) enthält Client und Server; der Server braucht im Leerlauf rund 14 MB RAM.
+
+## Kernfakten
+
+- Preis: kostenlos, keine Abos, keine Werbung, keine Telemetrie
+- Lizenz: MIT, Quellcode: https://github.com/Schisi86/domus
+- Plattformen: Windows 10/11 (x64), macOS 11+ (Apple Silicon und Intel), Android 8+ (APK), iOS/iPadOS 15+ (unsignierte .ipa, Installation per AltStore oder Sideloadly), Headless-Server für Windows und Linux (aus dem Quellcode)
+- Sprachen der App: 15 (u. a. Deutsch, Englisch, Spanisch, Französisch, Türkisch, Russisch, Arabisch mit Rechts-nach-links, Chinesisch, Japanisch, Koreanisch)
+- Designs: 20
+
+## Funktionen
+
+- Text-Chat: Kanäle, Antworten, Reaktionen, Umfragen, Weiterleiten, Markdown, Spoiler, Sprachnachrichten, Volltextsuche
+- Sprach- und Videoanrufe mit Opus, Rauschunterdrückung und Push-to-talk; Teilnehmer werden direkt verbunden (Mesh, mit Video bis etwa 8 Personen empfohlen)
+- Bildschirm teilen mit wählbarer Auflösung (720p bis 4K) und 5–60 FPS, mit Systemton
+- Fernsteuerung eines geteilten Bildschirms, Umschalten mit F8, Passwort oder Bestätigung (nur Windows)
+- Zeichnen und Laserpointer auf geteilten Bildschirmen
+- Direktversand von Dateien ohne Größenlimit von Rechner zu Rechner (beide müssen online sein)
+- Ende-zu-Ende-verschlüsselte Direktnachrichten (ECDH P-256, AES-256-GCM; Anhänge und Metadaten nicht verschlüsselt, nicht extern geprüft)
+- Sofort-Clip der letzten 15–120 Sekunden eines Streams (F9), gemeinsam YouTube schauen
+- Eigene Server per Klick, auch mehrere; Internet-Link über einen Tunnel (bore.pub) ohne Router-Einstellungen, auch bei Starlink oder DS-Lite
+- Funktioniert auch ohne Internet im lokalen Netz
+- Profil per QR-Code aufs Handy übertragen (Einmal-Code, 3 Minuten gültig)
+- Neu in 1.0.2: Mac- und iPhone-App, Server hosten und Bildschirm teilen in der Android-App, Chats archivieren/anheften/für sich löschen, Lesebestätigungen, Ruhezeiten, Status mit Ablaufzeit
+
+## Ehrliche Grenzen
+
+- Keine Bots, keine öffentliche Server-Suche, nicht in App Store oder Play Store
+- Installer nicht code-signiert (Windows SmartScreen) bzw. nicht notarisiert (macOS)
+- Mac- und iPhone-App sowie Hosting/Bildschirmteilen am Android-Handy sind neu und noch nicht auf echten Geräten getestet
+- Der Internet-Tunnel nutzt einen öffentlichen Dienst eines Dritten ohne Verfügbarkeitsgarantie
+
+## Links
+
+- [Projektseite](https://domus-talk.netlify.app/): Funktionen, Vergleich mit Discord, Downloads, FAQ
+- [Downloads und Prüfsummen](https://domus-talk.netlify.app/#download)
+- [Ausführliche Fassung für KI-Assistenten](https://domus-talk.netlify.app/llms-full.txt)
+- [Quellcode auf GitHub](https://github.com/Schisi86/domus)
+- [Installationsanleitung](https://github.com/Schisi86/domus/blob/master/docs/INSTALL.md)
+- [Entwickler: Christian Schiessl](https://cjs86.netlify.app)
